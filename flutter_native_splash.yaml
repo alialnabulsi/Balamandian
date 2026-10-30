@@ -1,0 +1,12 @@
+# Balamandian native Android splash. On Android 12+, the system uses
+# the generated launcher icon, including the adaptive mask and safe inset.
+flutter_native_splash:
+  color: "#14263B"
+  color_dark: "#14263B"
+  image: "assets/branding/uob_seal.png"
+  android: true
+  ios: false
+  web: false
+  android_12:
+    color: "#14263B"
+    color_dark: "#14263B"

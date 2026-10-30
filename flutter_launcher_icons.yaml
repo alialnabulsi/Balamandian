@@ -1,0 +1,8 @@
+# Balamandian Android launcher icon, based on the university seal from Figma.
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/branding/uob_seal.png"
+  adaptive_icon_background: "#14263B"
+  adaptive_icon_foreground: "assets/branding/uob_seal.png"
+  adaptive_icon_foreground_inset: 20
