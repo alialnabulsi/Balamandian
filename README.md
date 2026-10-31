@@ -25,17 +25,41 @@ when real behavior requires them:
 - Put presentation logic and UI state in
   `lib/ui/<feature>/view_models/`, with a view model for each view that needs one.
   Views render state and forward user actions to their view models.
-- Put sources of truth for application data in `lib/data/repositories/` and
-  external data access in `lib/data/services/`. View models consume repositories;
-  widgets should not access services directly. Data components can be shared
-  across features, so organize them by type rather than by UI feature.
 - Keep shared themes in `lib/ui/core/themes/`. Introduce shared widgets under
-  `lib/ui/core/` when they are needed across views. Add domain models or use cases
-  only when actual requirements call for them.
+  `lib/ui/core/` when they are needed across views.
 
 Additional directories are intentionally absent until they contain working
 code. No state-management package or implementation is needed for the current
 screen.
+
+Data and services conventions:
+
+The Flutter client communicates with Balamandian-API. Integration with SIS-API
+belongs to the main backend. The dependency direction is
+`View -> ViewModel -> Repository -> Service -> Balamandian-API`; widgets and view
+models do not call services directly.
+
+This preparation stage records conventions only. Create the following directories
+and components alongside their first real feature, using its approved API contract:
+
+| Future location | Responsibility |
+| --- | --- |
+| `lib/data/services/` | Wrap actual backend requests and response decoding; hold no application data state. |
+| `lib/data/repositories/` | Own application data by data type, expose immutable application models, and implement required data policies. |
+| `lib/domain/models/` | Define application data types shared by the UI and data layers. |
+
+Organize data components by type so features can share them. Keep repositories
+independent of each other. Introduce focused repository contracts and implementations
+with the consuming feature, inject services and repositories through constructors,
+and test their actual behavior. Separate API models from application models only
+when their shapes or responsibilities differ. The models directory does not imply
+a separate use-case layer.
+
+Defer HTTP-package selection, environment configuration, authentication storage,
+error conventions, caching, retries, and offline support until feature requirements
+and the API contract justify them. Do not pre-create empty folders, speculative
+endpoints, generic base repositories, a dependency-injection container, or code
+generation. Add use cases only when complex or repeated logic warrants them.
 
 Navigation uses Flutter's recommended `go_router` package with
 `MaterialApp.router`. The route table lives in `lib/routing/app_router.dart`;
@@ -100,6 +124,7 @@ Architecture references:
 - [Flutter architecture guide](https://docs.flutter.dev/app-architecture/guide)
 - [Flutter architecture recommendations](https://docs.flutter.dev/app-architecture/recommendations)
 - [Compass case study and package structure](https://docs.flutter.dev/app-architecture/case-study)
+- [Compass data-layer case study](https://docs.flutter.dev/app-architecture/case-study/data-layer)
 
 Lightweight validation commands (run from the repository root after resolving
 dependencies):
