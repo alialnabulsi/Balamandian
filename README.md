@@ -1,7 +1,11 @@
 # Balamandian
 
-A Flutter application, organized incrementally around Flutter's recommended
-UI/Data separation and MVVM principles.
+A Flutter Android client. This README records the agreed architecture and code
+organization, adapted from Flutter's [Compass architecture case study](https://docs.flutter.dev/app-architecture/case-study#package-structure),
+architecture guide, and recommendations. These are principles to apply as the
+app grows, rather than a requirement to reproduce every Compass directory.
+
+Current implementation (architecture-related files):
 
 ```text
 lib/
@@ -16,50 +20,82 @@ lib/
     home/
       widgets/
         home_screen.dart          # Existing starter screen.
+test/
+  routing/
+    app_router_test.dart          # Router wiring and lifecycle checks.
 ```
 
-The starter screen is static, so it currently needs only a view. Add components
-when real behavior requires them:
+`main.dart` launches `MainApp`; `app.dart` owns the root `MaterialApp.router`
+and router lifecycle. The only route is `/`, displaying the static home screen.
+The app has a shared default light theme and one routing widget test. There are
+no view models, repositories, services, application models, or API integrations.
+The static screen does not need placeholder MVVM components.
 
-- Keep feature screens and their widgets in `lib/ui/<feature>/widgets/`.
-- Put presentation logic and UI state in
-  `lib/ui/<feature>/view_models/`, with a view model for each view that needs one.
-  Views render state and forward user actions to their view models.
-- Keep shared themes in `lib/ui/core/themes/`. Introduce shared widgets under
-  `lib/ui/core/` when they are needed across views.
+Agreed architecture and future organization:
 
-Additional directories are intentionally absent until they contain working
-code. No state-management package or implementation is needed for the current
-screen.
+Use Compass's hybrid organization: group UI code by feature and shared data code
+by type. Keep the existing `lib/ui/<feature>/` layout, without adding a separate
+`features/` level. The table defines placement conventions; create future paths
+only alongside code needed by a real feature.
 
-Data and services conventions:
+| Location | Responsibility | Current status |
+| --- | --- | --- |
+| `lib/ui/<feature>/widgets/` | Feature screen and its local widgets. | Exists for `home`. |
+| `lib/ui/<feature>/view_models/` | Presentation logic, UI state, and user-action methods. | Future. |
+| `lib/ui/core/ui/` | Widgets shared across features. | Future. |
+| `lib/ui/core/themes/` | Shared theme configuration. | Exists. |
+| `lib/data/repositories/` | Sources of truth organized by application data type. | Future. |
+| `lib/data/services/` | External API access and response decoding; no application data state. | Future. |
+| `lib/data/model/` | API-specific response/request models when a separate representation is needed. | Conditional future path, using Compass's singular `model/` name. |
+| `lib/domain/models/` | Immutable application data types consumed by the data and UI layers. | Future. |
+| `lib/routing/` | Application route configuration. | Exists. |
+
+Views render state and forward user actions to their view models. Keep business
+and data-access logic out of widgets; layout, animation, and simple navigation
+remain view responsibilities. Pair a view with a view model when it needs
+presentation logic; this does not mean one view model per individual widget.
+Keep `main.dart` minimal and `app.dart` as the root application configuration.
+
+Data boundaries:
 
 The Flutter client communicates with Balamandian-API. Integration with SIS-API
 belongs to the main backend. The dependency direction is
 `View -> ViewModel -> Repository -> Service -> Balamandian-API`; widgets and view
 models do not call services directly.
 
-This preparation stage records conventions only. Create the following directories
-and components alongside their first real feature, using its approved API contract:
+View models consume repository contracts; repositories privately consume services
+and expose application models. Data and resulting state updates flow back toward
+the UI. Repositories own data updates and the data policies a feature actually
+requires. Keep repositories independent of each other; combine their outputs in
+the view model, or an optional use case when warranted.
 
-| Future location | Responsibility |
-| --- | --- |
-| `lib/data/services/` | Wrap actual backend requests and response decoding; hold no application data state. |
-| `lib/data/repositories/` | Own application data by data type, expose immutable application models, and implement required data policies. |
-| `lib/domain/models/` | Define application data types shared by the UI and data layers. |
+Introduce focused abstract repository contracts and their required implementations
+with the consuming feature and approved API contract. Inject services and
+repositories through constructors and wire dependencies at the application
+composition point when needed. Separate API models from application models only
+when their shapes or responsibilities differ. Placing data types in
+`domain/models/` does not require a domain use-case layer.
 
-Organize data components by type so features can share them. Keep repositories
-independent of each other. Introduce focused repository contracts and implementations
-with the consuming feature, inject services and repositories through constructors,
-and test their actual behavior. Separate API models from application models only
-when their shapes or responsibilities differ. The models directory does not imply
-a separate use-case layer.
+Testing and deliberately deferred structure:
+
+Keep unit and widget tests in `test/`, mirroring the relevant `lib/` paths as
+components are added; `test/routing/` already follows this convention. Test new
+services, repositories, and view models independently, and views with widget
+tests. Introduce fakes alongside tests that need them. A separate `testing/`
+subpackage is only justified by actual shared test-support requirements.
 
 Defer HTTP-package selection, environment configuration, authentication storage,
 error conventions, caching, retries, and offline support until feature requirements
 and the API contract justify them. Do not pre-create empty folders, speculative
 endpoints, generic base repositories, a dependency-injection container, or code
 generation. Add use cases only when complex or repeated logic warrants them.
+Compass's `config/`, `utils/`, and separate environment entry points are examples,
+not a checklist: introduce them only for concrete configuration, reusable
+utilities, or distinct startup requirements. State management, dependency
+injection packages, and model code generation remain feature-driven decisions;
+Compass's particular package choices are not prerequisites for these boundaries.
+
+Navigation (current foundation and future conventions):
 
 Navigation uses Flutter's recommended `go_router` package with
 `MaterialApp.router`. The route table lives in `lib/routing/app_router.dart`;
@@ -90,6 +126,8 @@ Navigation references:
 - [go_router configuration](https://pub.dev/documentation/go_router/latest/topics/Configuration-topic.html)
 - [go_router redirection](https://pub.dev/documentation/go_router/latest/topics/Redirection-topic.html)
 - [MaterialApp.router](https://api.flutter.dev/flutter/material/MaterialApp/MaterialApp.router.html)
+
+Theming (current baseline and future conventions):
 
 The application theme is defined once in `lib/ui/core/themes/app_theme.dart`
 and applied by `MaterialApp` in `lib/app.dart`. It uses `ThemeData.light()`,
