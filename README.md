@@ -6,6 +6,7 @@ architecture guide, and recommendations. These are principles to apply as the
 app grows, rather than a requirement to reproduce every Compass directory.
 
 Current implementation (architecture-related files):
+![Alt Text](C:\Users\user\Desktop\Projects\balamandian\Docs\Images\FolderStructure.png)
 
 ```text
 lib/
