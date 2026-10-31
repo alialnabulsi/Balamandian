@@ -12,6 +12,11 @@
 .swiftpm/
 migrate_working_dir/
 
+# Android diagnostic reports and heap dumps
+bugreport*.zip
+bugreport*.txt
+*.hprof
+
 # IntelliJ related
 *.iml
 *.ipr

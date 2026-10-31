@@ -126,6 +126,51 @@ Architecture references:
 - [Compass case study and package structure](https://docs.flutter.dev/app-architecture/case-study)
 - [Compass data-layer case study](https://docs.flutter.dev/app-architecture/case-study/data-layer)
 
+Android development baseline and release limitations:
+
+Observed on 2026-10-31 from the installed Flutter SDK and checked-in configuration.
+These values describe the current setup; they do not pin the installed toolchain
+or establish that release builds have been validated.
+
+| Component | Observed version or configuration |
+| --- | --- |
+| Flutter / Dart | Flutter 3.47.5 stable / Dart 3.13.4 |
+| Android Gradle Plugin / Gradle wrapper | 9.1.0 / 9.3.1 |
+| Kotlin Gradle Plugin declaration | 2.4.0 (`apply false` in settings) |
+| Java / Kotlin bytecode targets | 17; this does not specify the JDK used to run Gradle |
+| Flutter-managed Android SDK levels | Minimum 24; compile and target 36 |
+| Flutter-managed NDK | 28.2.13676358 |
+
+Keep SDK levels and compatibility flags as configured unless a deliberate
+toolchain update or feature requirement warrants changes. Android versioning
+comes from `pubspec.yaml`: `0.1.0+1` currently maps to version name `0.1.0` and
+version code `1`.
+
+- Application ID, namespace, and Kotlin package remain `com.example.balamandian`.
+  A final identity requires approval before distribution or identity-dependent
+  integrations; none has been selected here.
+- Release builds currently use debug signing for local development and are not
+  suitable for store publication. Approve key ownership and configure production
+  signing during release preparation; keep signing credentials outside Git.
+- `INTERNET` permission currently exists only in debug/profile manifests. Add it
+  to the main manifest with the first network feature, before testing release
+  networking. No permission or signing changes are part of this preparation step.
+
+Repository hygiene:
+
+Diagnostic bug-report ZIP/text files and heap dumps are ignored. Keep diagnostic
+copies local or in an appropriate restricted location, and review them before
+sharing. Untracking a diagnostic archive preserves its local copy but does not
+remove copies from earlier commits or existing clones. Any history cleanup needs
+a separate exposure assessment and approval.
+
+References:
+
+- [Flutter Android deployment](https://docs.flutter.dev/deployment/android)
+- [Android app signing](https://developer.android.com/studio/publish/app-signing)
+- [Git ignore rules](https://git-scm.com/docs/gitignore)
+- [Git index-only removal](https://git-scm.com/docs/git-rm#Documentation/git-rm.txt---cached)
+
 Lightweight validation commands (run from the repository root after resolving
 dependencies):
 
