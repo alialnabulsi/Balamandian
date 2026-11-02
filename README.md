@@ -5,8 +5,11 @@ organization, adapted from Flutter's [Compass architecture case study](https://d
 architecture guide, and recommendations. These are principles to apply as the
 app grows, rather than a requirement to reproduce every Compass directory.
 
-Current implementation (architecture-related files):
-![Balamandian Folder Structure](Docs/Images/FolderStructure.png)
+Current architecture-related structure, including prepared directories:
+
+Directories marked `prepared` contain only a `.gitkeep` file so Git can track
+them. They do not contain feature implementations or tests.
+
 ```text
 lib/
   main.dart                       # Entry point: launches the app.
@@ -17,13 +20,35 @@ lib/
     core/
       themes/
         app_theme.dart            # Shared application theme.
+      ui/                         # Prepared: shared widget classes.
     home/
       widgets/
         home_screen.dart          # Existing starter screen.
+    onboarding/
+      widgets/                    # Prepared: screens and local widgets.
+      view_models/                # Prepared: presentation state and actions.
+    auth/
+      widgets/                    # Prepared: authentication UI.
+      view_models/                # Prepared: presentation state and commands.
+  data/
+    repositories/                 # Prepared: data contracts and implementations.
+    services/                     # Prepared: external data-source adapters.
+  domain/
+    models/                       # Prepared: application-level data types.
 test/
   routing/
     app_router_test.dart          # Router wiring and lifecycle checks.
+  ui/
+    onboarding/                   # Prepared: feature tests.
+    auth/                         # Prepared: feature tests.
+  data/
+    repositories/                 # Prepared: repository tests.
+    services/                     # Prepared: service tests.
 ```
+
+The [reference folder diagram](Docs/Images/FolderStructure.png) illustrates
+broader possible organization, including deferred paths; it is not the current
+repository tree. The text tree above records the actual prepared structure.
 
 `main.dart` launches `MainApp`; `app.dart` owns the root `MaterialApp.router`
 and router lifecycle. The only route is `/`, displaying the static home screen.
@@ -35,20 +60,31 @@ Agreed architecture and future organization:
 
 Use Compass's hybrid organization: group UI code by feature and shared data code
 by type. Keep the existing `lib/ui/<feature>/` layout, without adding a separate
-`features/` level. The table defines placement conventions; create future paths
-only alongside code needed by a real feature.
+`features/` level. The table defines placement conventions. The onboarding and
+authentication preparation explicitly reserves the directories shown above;
+create other future paths only alongside code needed by a real feature.
 
 | Location | Responsibility | Current status |
 | --- | --- | --- |
-| `lib/ui/<feature>/widgets/` | Feature screen and its local widgets. | Exists for `home`. |
-| `lib/ui/<feature>/view_models/` | Presentation logic, UI state, and user-action methods. | Future. |
-| `lib/ui/core/ui/` | Widgets shared across features. | Future. |
+| `lib/ui/<feature>/widgets/` | Feature screen and its local widgets. | Implemented for starter `home`; prepared for `onboarding` and `auth`. |
+| `lib/ui/<feature>/view_models/` | Presentation logic, UI state, and user-action methods. | Prepared for `onboarding` and `auth`; no view models implemented. |
+| `lib/ui/core/ui/` | Reusable, configurable widget classes shared across features. | Prepared; no shared components implemented. |
 | `lib/ui/core/themes/` | Shared theme configuration. | Exists. |
-| `lib/data/repositories/` | Sources of truth organized by application data type. | Future. |
-| `lib/data/services/` | External API access and response decoding; no application data state. | Future. |
+| `lib/data/repositories/` | Sources of truth organized by application data type; contracts and implementations, including authentication and session state. | Prepared; no repositories implemented. |
+| `lib/data/services/` | External API access, response decoding, local storage, and other data-source adapters; no presentation logic or application data state. | Prepared; no services implemented. |
 | `lib/data/model/` | API-specific response/request models when a separate representation is needed. | Conditional future path, using Compass's singular `model/` name. |
-| `lib/domain/models/` | Immutable application data types consumed by the data and UI layers. | Future. |
+| `lib/domain/models/` | Immutable application data types consumed by repositories and view models. | Prepared; no application models implemented. |
 | `lib/routing/` | Application route configuration. | Exists. |
+
+Onboarding screens, page components, and local UI belong in
+`lib/ui/onboarding/widgets/`; their presentation state and user actions belong
+in the adjacent `view_models/`. Authentication UI, such as welcome, login,
+account creation, and OTP verification, belongs in `lib/ui/auth/widgets/`, with
+presentation state and commands in its `view_models/`. These are placement
+conventions, not implemented flows. Both features use the same architecture and
+component-first rules: inspect existing widgets before adding reusable,
+configurable widget classes, compose screens from them, and centralize shared
+styling in the theme.
 
 Views render state and forward user actions to their view models. Keep business
 and data-access logic out of widgets; layout, animation, and simple navigation
@@ -58,10 +94,12 @@ Keep `main.dart` minimal and `app.dart` as the root application configuration.
 
 Data boundaries:
 
-The Flutter client communicates with Balamandian-API. Integration with SIS-API
-belongs to the main backend. The dependency direction is
-`View -> ViewModel -> Repository -> Service -> Balamandian-API`; widgets and view
-models do not call services directly.
+The Flutter client communicates with Balamandian-API and must never call SIS-API
+directly. Balamandian-API owns the backend authentication workflow and SIS-API
+integration. The dependency direction is
+`View -> ViewModel -> Repository -> Service -> Balamandian-API`. Views do not
+call repositories or services directly; view models consume repositories and
+do not make HTTP requests. Services do not contain presentation logic.
 
 View models consume repository contracts; repositories privately consume services
 and expose application models. Data and resulting state updates flow back toward
@@ -84,11 +122,19 @@ services, repositories, and view models independently, and views with widget
 tests. Introduce fakes alongside tests that need them. A separate `testing/`
 subpackage is only justified by actual shared test-support requirements.
 
+`test/ui/onboarding/`, `test/ui/auth/`, `test/data/repositories/`, and
+`test/data/services/` are prepared with `.gitkeep` files only. Add matching test
+subdirectories and real tests as their implementations are introduced. Remove
+each `.gitkeep` when its directory contains real files.
+
 Defer HTTP-package selection, environment configuration, authentication storage,
 error conventions, caching, retries, and offline support until feature requirements
-and the API contract justify them. Do not pre-create empty folders, speculative
-endpoints, generic base repositories, a dependency-injection container, or code
-generation. Add use cases only when complex or repeated logic warrants them.
+and the API contract justify them. The explicitly prepared directories above
+are the exception to the normal preference against empty folders; remove each
+`.gitkeep` when its directory contains real files. Do not pre-create additional
+empty folders, speculative endpoints, generic base repositories, a
+dependency-injection container, or code generation. Add use cases only when
+complex or repeated logic warrants them.
 Compass's `config/`, `utils/`, and separate environment entry points are examples,
 not a checklist: introduce them only for concrete configuration, reusable
 utilities, or distinct startup requirements. State management, dependency
