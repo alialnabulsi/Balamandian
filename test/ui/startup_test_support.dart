@@ -14,6 +14,22 @@ Future<void> loadStartupFonts() async {
   await loader.load();
 }
 
+// Widget tests have no Android overlay. Keep platform replies in the fake-async
+// test zone; splash-specific tests override these with controlled acknowledgments.
+void mockNativeSplash(WidgetTester tester) {
+  const channel = MethodChannel('balamandian/splash');
+  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+    channel,
+    (_) async => null,
+  );
+  addTearDown(
+    () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      channel,
+      null,
+    ),
+  );
+}
+
 Future<void> pumpStartup(
   WidgetTester tester, {
   String screen = 'campus',
@@ -26,6 +42,7 @@ Future<void> pumpStartup(
   FakeViewPadding padding = FakeViewPadding.zero,
   VoidCallback? onOnboardingCompleted,
 }) async {
+  mockNativeSplash(tester);
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
   tester.view.viewInsets = FakeViewPadding(bottom: keyboard);

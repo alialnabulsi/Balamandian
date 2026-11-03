@@ -41,6 +41,16 @@ void main() {
           screen: signup ? 'sign-up' : 'sign-in',
           host: host,
         );
+        expect(
+          find.text('Your campus is right where you left it.'),
+          findsNothing,
+        );
+        expect(
+          find.text(
+            'Start with your university account. Make the experience yours next.',
+          ),
+          findsNothing,
+        );
         final submit = find.byType(ActionButton);
         await tester.tap(submit);
         await tester.pump();

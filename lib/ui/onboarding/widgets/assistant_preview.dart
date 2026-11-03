@@ -4,6 +4,8 @@ import '../../core/themes/startup_tokens.dart';
 import '../../core/ui/brand.dart';
 
 class AssistantPreview extends StatelessWidget {
+  static const financialAidReference =
+      'https://www.balamand.edu.lb/FinancialAidApplication/';
   const AssistantPreview({
     super.key,
     required this.compact,
@@ -48,7 +50,7 @@ class AssistantPreview extends StatelessWidget {
               weight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerRight,
             child: Padding(
@@ -64,7 +66,7 @@ class AssistantPreview extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  'How can I get ready for class?',
+                  'Where can I apply for financial aid?',
                   style: StartupTokens.text(
                     compact ? 11 : 12,
                     compact ? 17 : 18,
@@ -73,7 +75,7 @@ class AssistantPreview extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.only(right: 24),
             child: Row(
@@ -82,13 +84,32 @@ class AssistantPreview extends StatelessWidget {
                 const UniversityCrest(size: 22, decorative: true),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    'Check your schedule, review your notes, and plan your next stop.',
-                    style: StartupTokens.text(
-                      compact ? 11 : 12,
-                      compact ? 17 : 19,
-                      color: palette.muted,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "You can apply online through the University's",
+                        style: StartupTokens.text(
+                          compact ? 11 : 12,
+                          compact ? 17 : 19,
+                          color: palette.muted,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      // A reference in a static assistant illustration, not a chat action.
+                      Tooltip(
+                        message: financialAidReference,
+                        child: Text(
+                          'Financial Aid Application.',
+                          style: StartupTokens.text(
+                            compact ? 11 : 12,
+                            compact ? 16 : 18,
+                            color: scheme.primary,
+                            weight: FontWeight.w600,
+                          ).copyWith(decoration: TextDecoration.underline),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

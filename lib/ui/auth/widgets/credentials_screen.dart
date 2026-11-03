@@ -70,9 +70,6 @@ class _CredentialsScreenState extends State<CredentialsScreen> {
     final gap = MediaQuery.sizeOf(context).height <= 780 ? 18.0 : 22.0;
     return AccessFrame(
       title: up ? 'Create your account' : 'Welcome back',
-      description: up
-          ? 'Start with your university account. Make the experience yours next.'
-          : 'Your campus is right where you left it.',
       label: up ? 'First-time setup' : 'Log in',
       step: up ? 1 : null,
       child: ListenableBuilder(

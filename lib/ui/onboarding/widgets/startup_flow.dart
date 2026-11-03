@@ -180,7 +180,9 @@ class _StartupFlowState extends State<StartupFlow>
                 : Brightness.dark,
           ),
           child: ColoredBox(
-            color: Theme.of(context).colorScheme.surface,
+            color: screen == StartupDestination.splash
+                ? StartupTokens.blue
+                : Theme.of(context).colorScheme.surface,
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 440),

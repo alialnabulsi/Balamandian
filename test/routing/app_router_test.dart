@@ -2,6 +2,7 @@ import 'package:balamandian/app.dart';
 import 'package:balamandian/ui/core/themes/app_theme.dart';
 import 'package:balamandian/ui/home/widgets/home_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
@@ -9,6 +10,20 @@ void main() {
   testWidgets('Home and theme load, and navigation survives an app rebuild', (
     tester,
   ) async {
+    const channel = MethodChannel('balamandian/splash');
+    final splashCalls = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
+      call,
+    ) async {
+      splashCalls.add(call.method);
+      return null;
+    });
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        channel,
+        null,
+      ),
+    );
     final appKey = GlobalKey();
     await tester.pumpWidget(
       MainApp(key: appKey, initialLocation: '/', themeMode: ThemeMode.light),
@@ -17,6 +32,7 @@ void main() {
 
     final home = find.byType(HomeScreen);
     expect(home, findsOneWidget);
+    expect(splashCalls, ['reveal']);
     expect(find.text('Hello Worldd!'), findsOneWidget);
     expect(Theme.of(tester.element(home)).colorScheme, appTheme.colorScheme);
 

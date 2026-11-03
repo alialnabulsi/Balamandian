@@ -52,14 +52,19 @@ void main() {
   testWidgets('Splash advances automatically with reduced motion', (
     tester,
   ) async {
+    mockNativeSplash(tester);
     tester.platformDispatcher.accessibilityFeaturesTestValue =
         const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAllTestValues);
     await tester.pumpWidget(const MainApp());
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 250));
-    await tester.pump(const Duration(milliseconds: 25));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 80)),
+    );
     await tester.pump();
+    await tester.pump();
+    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('Find your way.\nFeel at home.'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -118,7 +123,28 @@ void main() {
     expect(tester.getBottomRight(button).dy, lessThan(915 - 24));
     expect(find.text('Your campus companion'), findsNothing);
     expect(find.text('Ask your campus\nassistant'), findsNothing);
-    expect(find.text('How can I get ready for class?'), findsOneWidget);
+    expect(find.text('Where can I apply for financial aid?'), findsOneWidget);
+    expect(
+      find.text(
+        "You can apply online through the University's Financial Aid Application.",
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Financial Aid Application'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+  testWidgets('Assistant action fits the connected Samsung viewport', (
+    tester,
+  ) async {
+    await pumpStartup(
+      tester,
+      screen: 'assistant',
+      size: const Size(384, 832),
+      padding: const FakeViewPadding(top: 29, bottom: 24),
+    );
+    expect(find.text('Get started').hitTestable(), findsOneWidget);
+    expect(tester.getBottomRight(find.text('Get started')).dy, lessThan(808));
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });

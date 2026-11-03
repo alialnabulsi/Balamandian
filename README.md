@@ -57,9 +57,11 @@ destinations live under `/welcome`. The existing static Home stays at `/`.
 Inter typography and the handoff's exact light/dark palette are shared themes.
 The implementation is UI only: no repositories, services, sessions, authentication
 guards or API integration. See [the implementation and verification report](Docs/onboarding-auth-implementation.md)
-for the initial screen map and integration contract. The latest
+for the initial screen map and integration contract. The
 [focused refinement report](Docs/onboarding-auth-refinement.md) records updated
-splash, tool-card motion, navigation and entry theme behavior.
+splash, tool-card motion, navigation and entry theme behavior. The
+[final polish report](Docs/onboarding-auth-final-polish.md) documents native
+splash synchronization, logo continuity and the final assistant/auth copy changes.
 
 Agreed architecture and future organization:
 

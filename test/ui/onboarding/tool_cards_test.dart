@@ -23,6 +23,12 @@ void main() {
     Finder tile(String name, int slot) =>
         find.byKey(ValueKey('tool-$name-$slot'));
     final center = tester.getCenter(tile('Notes', 0));
+    final viewport = tester.getRect(find.byType(AnimatedToolCards));
+    final focused = tester.getRect(tile('Notes', 0));
+    expect(focused.width, closeTo(132, .01)); // 120px tile at 1.10x.
+    expect(focused.top, greaterThanOrEqualTo(viewport.top));
+    expect(focused.bottom, lessThanOrEqualTo(viewport.bottom));
+    expect(tester.getRect(tile('Schedule', -1)).right, lessThan(focused.left));
     expect(
       tester.getRect(tile('Notes', 0)).width,
       greaterThan(tester.getRect(tile('Schedule', -1)).width),

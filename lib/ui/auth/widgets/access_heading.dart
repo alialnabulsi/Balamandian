@@ -8,12 +8,13 @@ class AccessHeading extends StatelessWidget {
   const AccessHeading({
     super.key,
     required this.title,
-    required this.description,
+    this.description,
     required this.setup,
     required this.short,
     required this.narrow,
   });
-  final String title, description;
+  final String title;
+  final String? description;
   final bool setup, short, narrow;
   @override
   Widget build(BuildContext context) => Padding(
@@ -59,16 +60,18 @@ class AccessHeading extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        BodyCopy(
-          description,
-          textAlign: TextAlign.center,
-          style: StartupTokens.text(
-            14,
-            22,
-            color: StartupPalette.of(context).muted,
+        if (description != null) ...[
+          const SizedBox(height: 12),
+          BodyCopy(
+            description!,
+            textAlign: TextAlign.center,
+            style: StartupTokens.text(
+              14,
+              22,
+              color: StartupPalette.of(context).muted,
+            ),
           ),
-        ),
+        ],
       ],
     ),
   );

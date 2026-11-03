@@ -11,12 +11,13 @@ class AccessFrame extends StatelessWidget {
   const AccessFrame({
     super.key,
     required this.title,
-    required this.description,
+    this.description,
     required this.label,
     required this.child,
     this.step,
   });
-  final String title, description, label;
+  final String title, label;
+  final String? description;
   final int? step;
   final Widget child;
   @override

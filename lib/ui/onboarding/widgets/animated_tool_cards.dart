@@ -154,7 +154,7 @@ class _AnimatedToolCardsState extends State<AnimatedToolCards>
                             child: Transform.scale(
                               scale:
                                   .94 +
-                                  .10 *
+                                  .16 *
                                       (1 -
                                           (i - 5 + travel).abs().clamp(
                                             0.0,
