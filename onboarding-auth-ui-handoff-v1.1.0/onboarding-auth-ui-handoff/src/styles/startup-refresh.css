@@ -1,0 +1,257 @@
+/* Approved library entry and mascot composition, November 2026. */
+.onboarding .onb-welcome {
+  background: #031d32;
+  color: #fff;
+  padding: max(14px, env(safe-area-inset-top)) 26px
+    max(36px, calc(env(safe-area-inset-bottom) + 24px));
+}
+.onboarding .onb-welcome .onb-welcome-photo {
+  height: 44dvh;
+  min-height: 0;
+  opacity: 1;
+  object-position: 55% center;
+}
+.onboarding .onb-welcome-fade {
+  background: linear-gradient(180deg, transparent 24%, #031d3208 29%, #031d32e8 40%, #031d32 47%);
+}
+.onboarding .onb-welcome-back.icon-button {
+  color: #061e32;
+}
+.onboarding .onb-welcome-brand {
+  flex: 0 0 auto;
+  margin-top: calc(33dvh - 62px);
+  padding: 0;
+  justify-content: flex-start;
+}
+.onboarding .onb-welcome-brand .onb-coin {
+  width: clamp(96px, 28vw, 120px);
+  height: clamp(96px, 28vw, 120px);
+  margin-bottom: 12px;
+}
+.onboarding .onb-welcome-brand .onb-university-label {
+  margin: 0 0 8px;
+  color: #9fc4df;
+  font-size: 9px;
+  line-height: 16px;
+  letter-spacing: 2.5px;
+}
+.onboarding .onb-welcome-brand h1 {
+  color: #fff;
+  font-size: clamp(32px, 8.9vw, 38px);
+  line-height: 1.18;
+  letter-spacing: -0.9px;
+}
+.onboarding .onb-welcome-brand > p:last-child {
+  margin-top: 8px;
+  max-width: 26ch;
+  color: #f1f5fa;
+  font-size: clamp(17px, 4.8vw, 20px);
+  line-height: 1.35;
+}
+.onboarding .onb-welcome-olive {
+  left: -34px;
+  bottom: 178px;
+  width: 235px;
+  height: 144px;
+  color: #0d3555;
+  opacity: 0.68;
+  transform: rotate(23deg);
+  z-index: 0;
+}
+.onboarding .onb-welcome-actions {
+  gap: 0;
+  padding-top: 32px;
+}
+.onboarding .onb-entry-login {
+  min-height: 48px;
+  padding: 12px 18px;
+  border-radius: 8px;
+  background: #ffcf36;
+  color: #071f33;
+  box-shadow: none;
+  font-size: 16px;
+  font-weight: 700;
+}
+.onboarding .onb-entry-login:hover {
+  background: #f4c222;
+}
+.onboarding .onb-entry-signup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  column-gap: 5px;
+  margin: 0;
+  color: #a4b0c0;
+  font-size: 14px;
+  line-height: 20px;
+}
+.onboarding .onb-entry-signup button {
+  min-height: 48px;
+  padding: 0;
+  color: #9ecf52;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.onboarding .onb-welcome-actions .onb-guest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  border-radius: 0;
+  background: transparent;
+  color: #f1f5fa;
+  font-size: 14px;
+  font-weight: 500;
+}
+.onboarding .onb-tools-art.onb-art {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: clamp(305px, 43dvh, 400px);
+  gap: 26px;
+  padding: 24px 0 12px;
+}
+.onboarding .onb-assistant-composition {
+  position: relative;
+  flex: 0 0 auto;
+  width: 100%;
+  padding-top: 12px;
+}
+.onboarding .onb-tools-art .onb-assistant-preview {
+  position: relative;
+  inset: auto;
+  width: 73%;
+  min-height: 250px;
+  padding: 16px 14px;
+  transform: rotate(-3deg);
+  z-index: 1;
+}
+.onboarding .onb-assistant-heading {
+  margin-bottom: 14px;
+}
+.onboarding .onb-assistant-heading strong {
+  font-size: 15px;
+  line-height: 22px;
+}
+.onboarding .onb-assistant-heading small {
+  display: block;
+  font-size: 11px;
+  line-height: 18px;
+  margin-top: 3px;
+}
+.onboarding .onb-assistant-answer {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 16px;
+  gap: 9px;
+  padding-right: 18px;
+}
+.onboarding .onb-assistant-answer .onb-crest {
+  width: 25px;
+  height: 25px;
+}
+.onboarding .onb-assistant-answer p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 19px;
+}
+.onboarding .onb-assistant-question {
+  width: fit-content;
+  margin-left: auto;
+  margin-right: 16px;
+  padding: 10px 12px;
+  border-radius: 8px 8px 0 8px;
+  background: var(--action-subtle);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 18px;
+}
+.onboarding .onb-assistant-prompt {
+  display: flex;
+  margin-top: 16px;
+  padding-top: 12px;
+  font-size: 10px;
+  line-height: 17px;
+}
+.onboarding .onb-assistant-prompt span {
+  max-width: 17ch;
+}
+.onboarding .onb-assistant-mascot {
+  position: absolute;
+  z-index: 2;
+  top: -8px;
+  right: -20px;
+  width: 46%;
+  height: calc(100% + 8px);
+  object-fit: contain;
+  object-position: right bottom;
+  pointer-events: none;
+  filter: drop-shadow(0 9px 5px #14263b1c);
+}
+.onboarding .onb-tools-art .onb-tool-shortcuts {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  flex: 0 0 auto;
+}
+.onboarding .onb-tools-art > .onb-olive {
+  top: -9px;
+  left: -4px;
+}
+@media (max-width: 360px), (max-height: 780px) {
+  .onboarding .onb-tools-art.onb-art {
+    min-height: 290px;
+    gap: 26px;
+    padding-top: 12px;
+  }
+  .onboarding .onb-tools-art .onb-assistant-preview {
+    min-height: 228px;
+    padding: 12px 10px;
+  }
+  .onboarding .onb-assistant-heading strong {
+    font-size: 13px;
+    line-height: 18px;
+  }
+  .onboarding .onb-assistant-heading small {
+    font-size: 10px;
+    line-height: 16px;
+  }
+  .onboarding .onb-assistant-question {
+    font-size: 11px;
+    line-height: 17px;
+    padding: 8px;
+  }
+  .onboarding .onb-assistant-answer p {
+    font-size: 11px;
+    line-height: 17px;
+  }
+  .onboarding .onb-assistant-prompt {
+    margin-top: 12px;
+    padding-top: 10px;
+  }
+  .onboarding .onb-assistant-mascot {
+    right: -14px;
+  }
+}
+@media (max-height: 700px) {
+  .onboarding .onb-welcome-brand {
+    margin-top: calc(31dvh - 62px);
+  }
+  .onboarding .onb-welcome-brand .onb-coin {
+    width: 88px;
+    height: 88px;
+  }
+  .onboarding .onb-welcome-actions {
+    padding-top: 24px;
+  }
+  .onboarding .onb-tools-art .onb-assistant-preview {
+    min-height: 208px;
+  }
+  .onboarding .onb-assistant-prompt {
+    display: none;
+  }
+}

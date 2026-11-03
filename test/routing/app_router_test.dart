@@ -10,7 +10,9 @@ void main() {
     tester,
   ) async {
     final appKey = GlobalKey();
-    await tester.pumpWidget(MainApp(key: appKey));
+    await tester.pumpWidget(
+      MainApp(key: appKey, initialLocation: '/', themeMode: ThemeMode.light),
+    );
     await tester.pumpAndSettle();
 
     final home = find.byType(HomeScreen);
@@ -24,7 +26,9 @@ void main() {
 
     router.go('/?source=route-check');
     await tester.pumpAndSettle();
-    await tester.pumpWidget(MainApp(key: appKey));
+    await tester.pumpWidget(
+      MainApp(key: appKey, initialLocation: '/', themeMode: ThemeMode.light),
+    );
     await tester.pumpAndSettle();
 
     expect(home, findsOneWidget);

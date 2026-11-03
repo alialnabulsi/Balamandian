@@ -20,16 +20,16 @@ lib/
     core/
       themes/
         app_theme.dart            # Shared application theme.
-      ui/                         # Prepared: shared widget classes.
+      ui/                         # Shared branding, controls, copy, artwork and motion.
     home/
       widgets/
         home_screen.dart          # Existing starter screen.
     onboarding/
-      widgets/                    # Prepared: screens and local widgets.
+      widgets/                    # Splash, three tour screens, artwork and startup flow.
       view_models/                # Prepared: presentation state and actions.
     auth/
-      widgets/                    # Prepared: authentication UI.
-      view_models/                # Prepared: presentation state and commands.
+      widgets/                    # Entry choices, sign-in/up and account setup.
+      view_models/                # Host UI contract, validation and local photo state.
   data/
     repositories/                 # Prepared: data contracts and implementations.
     services/                     # Prepared: external data-source adapters.
@@ -39,8 +39,9 @@ test/
   routing/
     app_router_test.dart          # Router wiring and lifecycle checks.
   ui/
-    onboarding/                   # Prepared: feature tests.
-    auth/                         # Prepared: feature tests.
+    onboarding/                   # Tour, navigation, transitions and reduced motion.
+    auth/                         # Form, pending, photo and callback tests.
+    startup_visual_test.dart      # Native screenshots and constrained-layout checks.
   data/
     repositories/                 # Prepared: repository tests.
     services/                     # Prepared: service tests.
@@ -51,24 +52,26 @@ broader possible organization, including deferred paths; it is not the current
 repository tree. The text tree above records the actual prepared structure.
 
 `main.dart` launches `MainApp`; `app.dart` owns the root `MaterialApp.router`
-and router lifecycle. The only route is `/`, displaying the static home screen.
-The app has a shared default light theme and one routing widget test. There are
-no view models, repositories, services, application models, or API integrations.
-The static screen does not need placeholder MVVM components.
+and router lifecycle. Startup opens `/welcome/splash`; the eight approved startup
+destinations live under `/welcome`. The existing static Home stays at `/`.
+Inter typography and the handoff's exact light/dark palette are shared themes.
+The implementation is UI only: no repositories, services, sessions, authentication
+guards or API integration. See [the implementation and verification report](Docs/onboarding-auth-implementation.md)
+for the screen map, components, future integration contract and verification limits.
 
 Agreed architecture and future organization:
 
 Use Compass's hybrid organization: group UI code by feature and shared data code
 by type. Keep the existing `lib/ui/<feature>/` layout, without adding a separate
 `features/` level. The table defines placement conventions. The onboarding and
-authentication preparation explicitly reserves the directories shown above;
+authentication features use the directories shown above;
 create other future paths only alongside code needed by a real feature.
 
 | Location | Responsibility | Current status |
 | --- | --- | --- |
-| `lib/ui/<feature>/widgets/` | Feature screen and its local widgets. | Implemented for starter `home`; prepared for `onboarding` and `auth`. |
-| `lib/ui/<feature>/view_models/` | Presentation logic, UI state, and user-action methods. | Prepared for `onboarding` and `auth`; no view models implemented. |
-| `lib/ui/core/ui/` | Reusable, configurable widget classes shared across features. | Prepared; no shared components implemented. |
+| `lib/ui/<feature>/widgets/` | Feature screen and its local widgets. | Implemented for `home`, `onboarding` and `auth`. |
+| `lib/ui/<feature>/view_models/` | Presentation logic, UI state, and user-action methods. | Auth presentation, credential validation and photo state; onboarding remains prepared because its current state is navigation/animation only. |
+| `lib/ui/core/ui/` | Reusable, configurable widget classes shared across features. | Shared branding, buttons, fields feedback, body copy, crest and decorative motion. |
 | `lib/ui/core/themes/` | Shared theme configuration. | Exists. |
 | `lib/data/repositories/` | Sources of truth organized by application data type; contracts and implementations, including authentication and session state. | Prepared; no repositories implemented. |
 | `lib/data/services/` | External API access, response decoding, local storage, and other data-source adapters; no presentation logic or application data state. | Prepared; no services implemented. |
@@ -81,7 +84,7 @@ Onboarding screens, page components, and local UI belong in
 in the adjacent `view_models/`. Authentication UI, such as welcome, login,
 account creation, and OTP verification, belongs in `lib/ui/auth/widgets/`, with
 presentation state and commands in its `view_models/`. These are placement
-conventions, not implemented flows. Both features use the same architecture and
+conventions; OTP has no approved design and is not implemented. Both features use the same architecture and
 component-first rules: inspect existing widgets before adding reusable,
 configurable widget classes, compose screens from them, and centralize shared
 styling in the theme.
@@ -144,11 +147,12 @@ Compass's particular package choices are not prerequisites for these boundaries.
 Navigation (current foundation and future conventions):
 
 Navigation uses Flutter's recommended `go_router` package with
-`MaterialApp.router`. The route table lives in `lib/routing/app_router.dart`;
-the only registered destination is `/`, which displays the existing home screen.
+`MaterialApp.router`. The route table lives in `lib/routing/app_router.dart`.
+`/` displays the existing Home; `/welcome/*` contains the eight startup screens.
+Their persistent shell owns the approved curved wipe and prevents duplicate navigation.
 `MainApp` owns one router for its widget lifecycle, retains it across rebuilds,
-and disposes it when removed. `main.dart` remains only an entry point, and the
-existing application theme is still applied at the app root.
+and disposes it when removed. `main.dart` remains only an entry point. Light/dark
+themes and externally supplied `AuthUiController` presentation state are composed at the app root.
 
 Add real destinations to the route table when their features exist. Widgets
 can use go_router's context navigation methods for simple navigation. Keep
@@ -161,9 +165,10 @@ Authentication redirects, session refresh behavior, roles and access rules,
 post-login destinations, tab shells, nested navigators, and state restoration
 are deferred until their requirements exist. Native app-link configuration is
 also deferred; adopting a declarative router alone does not configure it.
-Unmatched locations currently use go_router's built-in error handling; a custom
-not-found experience awaits an approved design. No placeholder routes, access
-policies, navigation wrappers, or route code generation are included.
+Unmatched locations use go_router's built-in error handling; a custom not-found
+experience awaits an approved design. No placeholder routes, access policies or
+route code generation are included. Form callbacks never navigate to account
+setup or Home on their own.
 
 Navigation references:
 
@@ -176,23 +181,18 @@ Navigation references:
 Theming (current baseline and future conventions):
 
 The application theme is defined once in `lib/ui/core/themes/app_theme.dart`
-and applied by `MaterialApp` in `lib/app.dart`. It uses `ThemeData.light()`,
-preserving Flutter's existing Material 3 colors, typography, and component
-defaults. The starter screen inherits its styling without local overrides.
+and applied by `MaterialApp` in `lib/app.dart`. It now uses the approved handoff's
+exact colors, bundled Inter weights, control dimensions and system light/dark
+appearances. `startup_tokens.dart` centralizes the custom palette, geometry and
+motion. `StartupPalette` extends the theme for the handoff's extra semantic colors.
+The navy entry canvas is identical in both appearances as specified by the latest
+`startup-refresh.css`. Native launcher/splash configuration is unchanged.
 
-No approved in-app palette, typography specification, component styles, or
-dark-mode requirements were found in this repository. Launcher and splash
-branding define assets and white backgrounds for those native surfaces; they
-do not establish an in-app palette. The current theme is a technical baseline,
-not an approved Balamandian visual design.
-
-As design specifications become available, configure the theme's `colorScheme`
-and `textTheme` centrally. Use `ColorScheme.fromSeed` if the approved design calls
-for a generated palette, or supply the specified color roles directly. Add
-component themes for approved shared styles when those components are used.
+Configure future approved design changes in `colorScheme`, `textTheme` and
+component themes centrally; use specified roles directly when exact colors exist.
 Custom widgets should read semantic values from `Theme.of(context).colorScheme`
 and `Theme.of(context).textTheme`. Standard Material widgets already inherit
-the app theme. Dark-theme support and theme switching await product requirements.
+the app theme. The app follows system appearance; `MainApp.themeMode` supports host control and review.
 
 Theming references:
 
@@ -264,6 +264,8 @@ flutter analyze --no-pub
 flutter test --no-pub test/routing/app_router_test.dart
 ```
 
-The routing widget test checks startup, the inherited color scheme, the root
+The routing widget test checks the preserved Home, inherited color scheme, root
 back stack, and preservation of the router and current location across an app
-rebuild. It also unmounts the app to exercise router cleanup.
+rebuild. It also unmounts the app to exercise router cleanup. `flutter test --no-pub`
+additionally verifies startup, forms, accessibility, photo handling and responsive
+screenshots. Screenshot artifacts are generated in ignored `build/ui-verification/`.

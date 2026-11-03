@@ -1,0 +1,33 @@
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #e8edf2;
+  font-family: Inter, Arial, sans-serif;
+}
+.review-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #fff;
+  color: #14263b;
+  font-size: 12px;
+  border-bottom: 1px solid #d5dde5;
+}
+.review-controls label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.review-controls select {
+  font: inherit;
+  min-height: 36px;
+  max-width: 180px;
+}
+.review-controls p {
+  flex-basis: 100%;
+  text-align: center;
+  margin: 0;
+}

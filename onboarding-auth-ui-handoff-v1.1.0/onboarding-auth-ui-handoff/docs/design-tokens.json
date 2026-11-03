@@ -1,0 +1,162 @@
+{
+  "reference": {
+    "width": 412,
+    "height": 915,
+    "maxContentWidth": 440,
+    "minimumWidth": 320
+  },
+  "typography": {
+    "family": "Inter",
+    "weights": [
+      400,
+      500,
+      600,
+      700
+    ],
+    "tourHeading": {
+      "sizeCss": "clamp(30px, 8.6vw, 38px)",
+      "lineHeight": 1.12,
+      "letterSpacing": -1.5,
+      "weight": 700
+    },
+    "tourBody": {
+      "size": 15,
+      "lineHeight": 23
+    },
+    "authHeading": {
+      "size": 30,
+      "lineHeight": 38,
+      "weight": 700
+    },
+    "input": {
+      "size": 15,
+      "lineHeight": 24
+    },
+    "formLabel": {
+      "size": 13,
+      "lineHeight": 20,
+      "weight": 600
+    }
+  },
+  "geometry": {
+    "gutter": 24,
+    "narrowGutter": 20,
+    "controlRadius": 14,
+    "cardRadius": 8,
+    "tapSize": 48,
+    "buttonMinHeight": 54,
+    "inputMinHeight": 54,
+    "buttonPadding": {
+      "vertical": 14,
+      "horizontal": 48
+    },
+    "inputPadding": 14,
+    "borderWidth": 1,
+    "avatarSize": 76
+  },
+  "motion": {
+    "splashMs": 2350,
+    "splashReducedMs": 250,
+    "coinMs": 1900,
+    "coinDelayMs": 100,
+    "coinEasing": [
+      0.2,
+      0.7,
+      0.24,
+      1
+    ],
+    "oliveSwayMs": 10000,
+    "raySwayMs": 14000,
+    "wipeCoverMs": 360,
+    "wipePauseMs": 20,
+    "wipeExitMs": 460,
+    "wipeEasing": "cubic ease-in-out"
+  },
+  "themes": {
+    "light": {
+      "bg": "#f7f8fa",
+      "surface": "#fff",
+      "surface-subtle": "#f2f4f6",
+      "text": "#14263b",
+      "muted": "#526579",
+      "line": "#d5dde5",
+      "strong-line": "#526579",
+      "action": "#0e569e",
+      "action-pressed": "#083f77",
+      "action-text": "#fff",
+      "action-subtle": "#eaf3fc",
+      "success": "#2f6c22",
+      "success-bg": "#f1f8ec",
+      "error": "#b42332",
+      "error-bg": "#fff0f2",
+      "warning": "#8a5900",
+      "warning-bg": "#fff6da",
+      "yellow": "#ffcf36",
+      "yellow-text": "#3e3100",
+      "green-identity": "#63a042",
+      "green": "var(--action)",
+      "green-dark": "var(--action-pressed)",
+      "green-light": "var(--action-subtle)",
+      "blue": "var(--action)",
+      "blue-light": "var(--action-subtle)",
+      "rose": "var(--error-bg)",
+      "shadow": "0 4px 16px #0000001f",
+      "control-radius": "14px",
+      "card-radius": "8px",
+      "sheet-radius": "12px",
+      "tap-size": "48px"
+    },
+    "dark": {
+      "bg": "#0b121a",
+      "surface": "#101821",
+      "surface-subtle": "#14263b",
+      "text": "#eaf3fc",
+      "muted": "#a2b3c6",
+      "line": "#35495f",
+      "strong-line": "#a2b3c6",
+      "action": "#80b6e7",
+      "action-pressed": "#a9d0f0",
+      "action-text": "#102841",
+      "action-subtle": "#0b3158",
+      "success": "#a0d88b",
+      "success-bg": "#213827",
+      "error": "#ffadb6",
+      "error-bg": "#422b35",
+      "warning": "#ffd074",
+      "warning-bg": "#423820",
+      "yellow": "#ffcf36",
+      "yellow-text": "#3e3100",
+      "green-identity": "#63a042",
+      "green": "var(--action)",
+      "green-dark": "var(--action-pressed)",
+      "green-light": "var(--action-subtle)",
+      "blue": "var(--action)",
+      "blue-light": "var(--action-subtle)",
+      "rose": "var(--error-bg)",
+      "shadow": "0 4px 16px #0006"
+    }
+  },
+  "entry": {
+    "canvas": "#031D32",
+    "action": "#FFCF36",
+    "actionText": "#071F33",
+    "signupLink": "#9ECF52",
+    "primaryText": "#FFFFFF",
+    "secondaryText": "#A4B0C0",
+    "buttonRadius": 8,
+    "buttonMinHeight": 48,
+    "coinSizeCss": "clamp(96px, 28vw, 120px)",
+    "photoHeightCss": "44dvh",
+    "photoOpacity": 1
+  },
+  "version": "1.1.0",
+  "oliveBranch": {
+    "file": "src/assets/illustrations/olive-branch.png",
+    "width": 2172,
+    "height": 724,
+    "aspectRatio": 3,
+    "fit": "contain",
+    "tintMode": "source alpha / srcIn",
+    "geometry": "unchanged supplied artwork"
+  }
+}
