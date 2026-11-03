@@ -6,7 +6,8 @@ enum StartupDestination {
   gettingStarted('getting-started'),
   signUp('sign-up'),
   signIn('sign-in'),
-  accountSetup('account-setup');
+  accountSetup('account-setup'),
+  verifyEmail('verify-email');
 
   const StartupDestination(this.segment);
   final String segment;

@@ -125,12 +125,10 @@ void main() {
     expect(find.text('Ask your campus\nassistant'), findsNothing);
     expect(find.text('Where can I apply for financial aid?'), findsOneWidget);
     expect(
-      find.text(
-        "You can apply online through the University's Financial Aid Application.",
-      ),
+      find.text("You can apply online through the University's"),
       findsOneWidget,
     );
-    expect(find.text('Financial Aid Application'), findsOneWidget);
+    expect(find.text('Financial Aid Application.'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });

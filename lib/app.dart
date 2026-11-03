@@ -2,7 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 
+import 'data/repositories/api_auth_repository.dart';
+import 'data/repositories/auth_repository.dart';
+import 'data/services/auth_api_service.dart';
+import 'data/services/session_credential_store.dart';
 import 'routing/app_router.dart';
 import 'routing/startup_destination.dart';
 import 'ui/core/themes/app_theme.dart';
@@ -13,6 +18,7 @@ class MainApp extends StatefulWidget {
   const MainApp({
     super.key,
     this.authUi,
+    this.authRepository,
     this.themeMode = ThemeMode.system,
     this.initialLocation = '/welcome/splash',
     this.holdSplash = false,
@@ -20,6 +26,7 @@ class MainApp extends StatefulWidget {
     this.onOnboardingCompleted,
   });
   final AuthUiController? authUi;
+  final AuthRepository? authRepository;
   final ThemeMode themeMode;
   final String initialLocation;
   final bool holdSplash;
@@ -31,7 +38,18 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> {
+  AuthApiService? _api;
+  late final AuthRepository _authRepository =
+      widget.authRepository ??
+      ApiAuthRepository(
+        api: _api = AuthApiService(
+          client: http.Client(),
+          baseUrl: Uri.parse(AuthApiService.configuredBaseUrl),
+        ),
+        credentials: const SecureSessionCredentialStore(),
+      );
   late final GoRouter _router = createAppRouter(
+    authRepository: _authRepository,
     initialLocation: widget.initialLocation,
     holdSplash: widget.holdSplash,
     afterSplash: widget.afterSplash,
@@ -55,6 +73,7 @@ class _MainAppState extends State<MainApp> {
   @override
   void dispose() {
     _router.dispose();
+    _api?.close();
     _defaultAuthUi.dispose();
     super.dispose();
   }

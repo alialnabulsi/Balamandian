@@ -68,6 +68,7 @@ void main() {
                 StartupDestination.signIn,
                 StartupDestination.signUp,
                 StartupDestination.accountSetup,
+                StartupDestination.verifyEmail,
               ].contains(screen)
               ? 280
               : 0,
@@ -83,6 +84,8 @@ void main() {
               ? 'Finish setup'
               : screen == StartupDestination.signUp
               ? 'Continue'
+              : screen == StartupDestination.verifyEmail
+              ? 'Start again'
               : 'Log in';
           final target = find.text(action).last;
           await tester.ensureVisible(target);

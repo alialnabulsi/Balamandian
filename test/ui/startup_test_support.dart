@@ -1,4 +1,5 @@
 import 'package:balamandian/app.dart';
+import 'package:balamandian/data/repositories/auth_repository.dart';
 import 'package:balamandian/ui/auth/view_models/auth_ui_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -37,6 +38,7 @@ Future<void> pumpStartup(
   bool dark = false,
   bool reduced = true,
   AuthUiController? host,
+  AuthRepository? authRepository,
   double textScale = 1,
   double keyboard = 0,
   FakeViewPadding padding = FakeViewPadding.zero,
@@ -61,6 +63,7 @@ Future<void> pumpStartup(
       holdSplash: true,
       onOnboardingCompleted: onOnboardingCompleted,
       authUi: host,
+      authRepository: authRepository,
       themeMode: dark ? ThemeMode.dark : ThemeMode.light,
     ),
   );

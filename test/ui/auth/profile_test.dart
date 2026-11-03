@@ -41,7 +41,7 @@ void main() {
             home: StartupNavigation(
               busy: false,
               screen: StartupDestination.accountSetup,
-              navigate: (_) {},
+              navigate: (_, {extra}) {},
               back: () {},
               child: AccountSetupScreen(pickPhoto: () async => selected),
             ),

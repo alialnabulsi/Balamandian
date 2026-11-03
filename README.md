@@ -29,12 +29,12 @@ lib/
       view_models/                # Prepared: presentation state and actions.
     auth/
       widgets/                    # Entry choices, sign-in/up and account setup.
-      view_models/                # Host UI contract, validation and local photo state.
+      view_models/                # Credentials/OTP state, deferred profile UI state.
   data/
-    repositories/                 # Prepared: data contracts and implementations.
-    services/                     # Prepared: external data-source adapters.
+    repositories/                 # Authentication contract and API implementation.
+    services/                     # Authentication HTTP and secure session storage.
   domain/
-    models/                       # Prepared: application-level data types.
+    models/                       # Pending registration, issued session/user and errors.
 test/
   routing/
     app_router_test.dart          # Router wiring and lifecycle checks.
@@ -43,8 +43,8 @@ test/
     auth/                         # Form, pending, photo and callback tests.
     startup_visual_test.dart      # Native screenshots and constrained-layout checks.
   data/
-    repositories/                 # Prepared: repository tests.
-    services/                     # Prepared: service tests.
+    repositories/                 # Authentication orchestration/persistence tests.
+    services/                     # Mocked HTTP contract and secure-storage tests.
 ```
 
 The [reference folder diagram](Docs/Images/FolderStructure.png) illustrates
@@ -52,11 +52,13 @@ broader possible organization, including deferred paths; it is not the current
 repository tree. The text tree above records the actual prepared structure.
 
 `main.dart` launches `MainApp`; `app.dart` owns the root `MaterialApp.router`
-and router lifecycle. Startup opens `/welcome/splash`; the eight approved startup
-destinations live under `/welcome`. The existing static Home stays at `/`.
+and router lifecycle. Startup opens `/welcome/splash`; the approved startup
+destinations and email OTP verification live under `/welcome`. The existing static Home stays at `/`.
 Inter typography and the handoff's exact light/dark palette are shared themes.
-The implementation is UI only: no repositories, services, sessions, authentication
-guards or API integration. See [the implementation and verification report](Docs/onboarding-auth-implementation.md)
+Registration, email OTP verification/resend and SIS login connect to Balamandian-API.
+Successful verification/login securely saves the newly issued session before opening Home.
+See [the API integration report](Docs/auth-api-integration.md) for configuration,
+scope and verification, and [the initial UI report](Docs/onboarding-auth-implementation.md)
 for the initial screen map and integration contract. The
 [focused refinement report](Docs/onboarding-auth-refinement.md) records updated
 splash, tool-card motion, navigation and entry theme behavior. The
@@ -77,10 +79,10 @@ create other future paths only alongside code needed by a real feature.
 | `lib/ui/<feature>/view_models/` | Presentation logic, UI state, and user-action methods. | Auth presentation, credential validation and photo state; onboarding remains prepared because its current state is navigation/animation only. |
 | `lib/ui/core/ui/` | Reusable, configurable widget classes shared across features. | Shared branding, buttons, fields feedback, body copy, crest and decorative motion. |
 | `lib/ui/core/themes/` | Shared theme configuration. | Exists. |
-| `lib/data/repositories/` | Sources of truth organized by application data type; contracts and implementations, including authentication and session state. | Prepared; no repositories implemented. |
-| `lib/data/services/` | External API access, response decoding, local storage, and other data-source adapters; no presentation logic or application data state. | Prepared; no services implemented. |
+| `lib/data/repositories/` | Sources of truth organized by application data type; contracts and implementations, including authentication and session state. | Authentication contract and API implementation; persistence completes before authentication succeeds. |
+| `lib/data/services/` | External API access, response decoding, local storage, and other data-source adapters; no presentation logic or application data state. | Authentication HTTP service and secure credential store. |
 | `lib/data/model/` | API-specific response/request models when a separate representation is needed. | Conditional future path, using Compass's singular `model/` name. |
-| `lib/domain/models/` | Immutable application data types consumed by repositories and view models. | Prepared; no application models implemented. |
+| `lib/domain/models/` | Immutable application data types consumed by repositories and view models. | Pending registration, authenticated user/session and safe failures. |
 | `lib/routing/` | Application route configuration. | Exists. |
 
 Onboarding screens, page components, and local UI belong in
@@ -88,7 +90,7 @@ Onboarding screens, page components, and local UI belong in
 in the adjacent `view_models/`. Authentication UI, such as welcome, login,
 account creation, and OTP verification, belongs in `lib/ui/auth/widgets/`, with
 presentation state and commands in its `view_models/`. These are placement
-conventions; OTP has no approved design and is not implemented. Both features use the same architecture and
+conventions; OTP reuses the approved authentication components. Both features use the same architecture and
 component-first rules: inspect existing widgets before adding reusable,
 configurable widget classes, compose screens from them, and centralize shared
 styling in the theme.
@@ -129,14 +131,14 @@ services, repositories, and view models independently, and views with widget
 tests. Introduce fakes alongside tests that need them. A separate `testing/`
 subpackage is only justified by actual shared test-support requirements.
 
-`test/ui/onboarding/`, `test/ui/auth/`, `test/data/repositories/`, and
-`test/data/services/` are prepared with `.gitkeep` files only. Add matching test
-subdirectories and real tests as their implementations are introduced. Remove
-each `.gitkeep` when its directory contains real files.
+Tests mirror the implemented features and data layer. Shared authentication
+fixtures and an in-memory credential-store fake live in `test/auth_test_support.dart`.
+HTTP tests inject `http.MockClient`; widget tests use the actual service/repository
+with mocked network responses. Remove each `.gitkeep` when its directory contains real files.
 
-Defer HTTP-package selection, environment configuration, authentication storage,
-error conventions, caching, retries, and offline support until feature requirements
-and the API contract justify them. The explicitly prepared directories above
+Authentication uses `http`, build-time `API_BASE_URL`, `flutter_secure_storage`,
+and allowlisted error messages. Defer caching, automatic retries and offline
+support until feature requirements justify them. The explicitly prepared directories above
 are the exception to the normal preference against empty folders; remove each
 `.gitkeep` when its directory contains real files. Do not pre-create additional
 empty folders, speculative endpoints, generic base repositories, a
@@ -152,11 +154,12 @@ Navigation (current foundation and future conventions):
 
 Navigation uses Flutter's recommended `go_router` package with
 `MaterialApp.router`. The route table lives in `lib/routing/app_router.dart`.
-`/` displays the existing Home; `/welcome/*` contains the eight startup screens.
+`/` displays the existing Home; `/welcome/*` contains the startup screens and OTP verification.
 Their persistent shell owns the approved curved wipe and prevents duplicate navigation.
 `MainApp` owns one router for its widget lifecycle, retains it across rebuilds,
 and disposes it when removed. `main.dart` remains only an entry point. Light/dark
-themes and externally supplied `AuthUiController` presentation state are composed at the app root.
+themes, constructor-injected authentication dependencies and shared navigation
+presentation state are composed at the app root.
 
 Add real destinations to the route table when their features exist. Widgets
 can use go_router's context navigation methods for simple navigation. Keep
@@ -166,13 +169,32 @@ and screen access policies are specified. Client routing will not replace
 server-side authorization.
 
 Authentication redirects, session refresh behavior, roles and access rules,
-post-login destinations, tab shells, nested navigators, and state restoration
+tab shells, nested navigators, and state restoration
 are deferred until their requirements exist. Native app-link configuration is
 also deferred; adopting a declarative router alone does not configure it.
 Unmatched locations use go_router's built-in error handling; a custom not-found
 experience awaits an approved design. No placeholder routes, access policies or
-route code generation are included. Form callbacks never navigate to account
-setup or Home on their own.
+route code generation are included. Registration opens `/welcome/verify-email`;
+successful verification/login opens Home after secure session persistence.
+Account setup and guest actions remain unconnected. Onboarding still appears on every launch.
+
+Local authentication development:
+
+```sh
+# Android emulator (also the default debug origin)
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000
+
+# USB-connected Android phone
+adb reverse tcp:3000 tcp:3000
+flutter run --dart-define=API_BASE_URL=http://127.0.0.1:3000
+```
+
+Run Balamandian-API separately on port 3000. `API_BASE_URL` is an origin without
+an `/api` suffix. Only debug builds allow HTTP, restricted to emulator/loopback
+hosts. Profile/release builds require an explicit HTTPS origin, for example
+`--dart-define=API_BASE_URL=https://api.example.com`. Build definitions contain
+public configuration only; SIS/Resend keys stay in the backend. No token is read
+at startup, and no `/me`, logout, refresh or route-guard behavior is implemented.
 
 Navigation references:
 
@@ -241,9 +263,10 @@ version code `1`.
 - Release builds currently use debug signing for local development and are not
   suitable for store publication. Approve key ownership and configure production
   signing during release preparation; keep signing credentials outside Git.
-- `INTERNET` permission currently exists only in debug/profile manifests. Add it
-  to the main manifest with the first network feature, before testing release
-  networking. No permission or signing changes are part of this preparation step.
+- `INTERNET` permission is in the main manifest for authentication networking.
+  Debug-only network rules allow local HTTP; other builds require HTTPS. Secure
+  storage is excluded from Android backup and device transfer. Signing remains
+  the existing development configuration.
 
 Repository hygiene:
 

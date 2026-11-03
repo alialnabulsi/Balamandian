@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../data/repositories/auth_repository.dart';
 import '../../../routing/startup_destination.dart';
 import '../../core/themes/startup_tokens.dart';
 import '../../core/ui/action_button.dart';
@@ -12,8 +14,13 @@ import 'access_frame.dart';
 import 'auth_field.dart';
 
 class CredentialsScreen extends StatefulWidget {
-  const CredentialsScreen({super.key, required this.signingUp});
+  const CredentialsScreen({
+    super.key,
+    required this.signingUp,
+    required this.repository,
+  });
   final bool signingUp;
+  final AuthRepository repository;
   @override
   State<CredentialsScreen> createState() => _CredentialsScreenState();
 }
@@ -22,12 +29,15 @@ class _CredentialsScreenState extends State<CredentialsScreen> {
   final _identifier = TextEditingController(),
       _password = TextEditingController();
   final _identifierFocus = FocusNode(), _passwordFocus = FocusNode();
-  late final _model = CredentialsViewModel(signingUp: widget.signingUp);
-  bool _submitting = false;
+  late final _model = CredentialsViewModel(
+    signingUp: widget.signingUp,
+    repository: widget.repository,
+  );
 
-  void _submit() {
+  Future<void> _submit() async {
     final host = AuthUiScope.of(context);
-    if (host.pending || StartupNavigation.of(context).busy || _submitting) {
+    final nav = StartupNavigation.of(context);
+    if (host.pending || nav.busy || _model.pending) {
       return;
     }
     if (!_model.validate(_identifier.text, _password.text)) {
@@ -35,20 +45,24 @@ class _CredentialsScreenState extends State<CredentialsScreen> {
           .requestFocus();
       return;
     }
-    _submitting = true;
-    final values = Credentials(
-      identifier: _identifier.text.trim(),
-      password: _password.text,
-    );
-    _password.clear();
     _model.conceal();
     FocusManager.instance.primaryFocus?.unfocus();
+    host.pending = true;
+    var success = false;
     try {
-      host.submitCredentials(values, signingUp: widget.signingUp);
+      success = await _model.submit(_identifier.text, _password.text);
     } finally {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _submitting = false;
-      });
+      if (mounted) host.pending = false;
+    }
+    if (!mounted || !success) return;
+    _password.clear();
+    if (widget.signingUp) {
+      nav.navigate(
+        StartupDestination.verifyEmail,
+        extra: _model.pendingRegistration,
+      );
+    } else {
+      context.go('/');
     }
   }
 
@@ -77,8 +91,8 @@ class _CredentialsScreenState extends State<CredentialsScreen> {
         builder: (context, child) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (host.formError != null) ...[
-              FormMessage(host.formError!),
+            if (_model.formError ?? host.formError case final message?) ...[
+              FormMessage(message),
               SizedBox(height: gap),
             ],
             AuthField(

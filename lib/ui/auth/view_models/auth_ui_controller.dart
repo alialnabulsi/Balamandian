@@ -2,12 +2,6 @@ import 'package:flutter/widgets.dart';
 import 'package:image_picker/image_picker.dart';
 
 @immutable
-class Credentials {
-  const Credentials({required this.identifier, required this.password});
-  final String identifier, password;
-}
-
-@immutable
 class UniversityIdentity {
   const UniversityIdentity({this.name, this.major, this.faculty});
   final String? name, major, faculty;
@@ -20,15 +14,9 @@ class ProfileDraft {
   final XFile? photo;
 }
 
-// Host-facing presentation boundary. No credential/session state is retained.
+// Shared navigation lock and deferred profile/guest UI callbacks.
 class AuthUiController extends ChangeNotifier {
-  AuthUiController({
-    this.onSignIn,
-    this.onSignUp,
-    this.onGuest,
-    this.onSetupSubmit,
-  });
-  final ValueChanged<Credentials>? onSignIn, onSignUp;
+  AuthUiController({this.onGuest, this.onSetupSubmit});
   final VoidCallback? onGuest;
   final ValueChanged<ProfileDraft>? onSetupSubmit;
   bool _pending = false;
@@ -53,17 +41,6 @@ class AuthUiController extends ChangeNotifier {
   set identity(UniversityIdentity? value) {
     _identity = value;
     notifyListeners();
-  }
-
-  void submitCredentials(Credentials values, {required bool signingUp}) {
-    if (_pending) return;
-    final callback = signingUp ? onSignUp : onSignIn;
-    if (callback == null) {
-      formError =
-          'No service is connected. Your request has not been submitted.';
-    } else {
-      callback(values);
-    }
   }
 
   void requestGuest() {

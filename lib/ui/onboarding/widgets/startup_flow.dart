@@ -20,7 +20,7 @@ class StartupNavigation extends InheritedWidget {
   });
   final bool busy;
   final StartupDestination screen;
-  final ValueChanged<StartupDestination> navigate;
+  final void Function(StartupDestination, {Object? extra}) navigate;
   final VoidCallback back;
   static StartupNavigation of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<StartupNavigation>()!;
@@ -80,7 +80,7 @@ class _StartupFlowState extends State<StartupFlow>
     if (_moving && _reduced && _wipe.isAnimating) _wipe.stop(canceled: false);
   }
 
-  Future<void> _navigate(StartupDestination next) async {
+  Future<void> _navigate(StartupDestination next, {Object? extra}) async {
     if (_busy || widget.screen == next) return;
     final leavingTour =
         widget.screen.tourIndex >= 0 &&
@@ -107,7 +107,7 @@ class _StartupFlowState extends State<StartupFlow>
             .orCancel;
       }
       if (!mounted) return;
-      context.go(next.path);
+      context.go(next.path, extra: extra);
       if (leavingTour) widget.onOnboardingCompleted?.call();
       await Future<void>.delayed(const Duration(milliseconds: 20));
       if (!mounted) return;
@@ -133,7 +133,8 @@ class _StartupFlowState extends State<StartupFlow>
       StartupDestination.assistant => StartupDestination.community,
       StartupDestination.signIn ||
       StartupDestination.signUp => StartupDestination.gettingStarted,
-      StartupDestination.accountSetup => StartupDestination.signUp,
+      StartupDestination.accountSetup ||
+      StartupDestination.verifyEmail => StartupDestination.signUp,
       _ => null,
     };
     if (previous != null) unawaited(_navigate(previous));
@@ -161,7 +162,7 @@ class _StartupFlowState extends State<StartupFlow>
       child: StartupNavigation(
         busy: _busy,
         screen: screen,
-        navigate: (next) => unawaited(_navigate(next)),
+        navigate: (next, {extra}) => unawaited(_navigate(next, extra: extra)),
         back: _back,
         child: AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle(

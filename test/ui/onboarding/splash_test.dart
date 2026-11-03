@@ -104,7 +104,7 @@ void main() {
             busy: false,
             screen: StartupDestination.splash,
             back: () {},
-            navigate: (screen) {
+            navigate: (screen, {extra}) {
               expect(screen, StartupDestination.campus);
               navigations++;
             },

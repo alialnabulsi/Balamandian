@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/themes/startup_tokens.dart';
 import '../../core/ui/form_message.dart';
@@ -22,6 +23,8 @@ class AuthField extends StatelessWidget {
     this.multiline = false,
     this.maxLength,
     this.optional = false,
+    this.inputFormatters,
+    this.autofillHints = const [],
   });
   final String label, hint;
   final TextEditingController controller;
@@ -33,6 +36,8 @@ class AuthField extends StatelessWidget {
   final TextInputType? keyboardType;
   final TextInputAction action;
   final int? maxLength;
+  final List<TextInputFormatter>? inputFormatters;
+  final Iterable<String> autofillHints;
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -73,7 +78,8 @@ class AuthField extends StatelessWidget {
             obscureText: obscure,
             enableSuggestions: !sensitive,
             autocorrect: false,
-            autofillHints: const [],
+            autofillHints: autofillHints,
+            inputFormatters: inputFormatters,
             enableIMEPersonalizedLearning: !sensitive,
             textCapitalization: TextCapitalization.none,
             keyboardType:
