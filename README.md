@@ -57,7 +57,9 @@ destinations live under `/welcome`. The existing static Home stays at `/`.
 Inter typography and the handoff's exact light/dark palette are shared themes.
 The implementation is UI only: no repositories, services, sessions, authentication
 guards or API integration. See [the implementation and verification report](Docs/onboarding-auth-implementation.md)
-for the screen map, components, future integration contract and verification limits.
+for the initial screen map and integration contract. The latest
+[focused refinement report](Docs/onboarding-auth-refinement.md) records updated
+splash, tool-card motion, navigation and entry theme behavior.
 
 Agreed architecture and future organization:
 
@@ -185,8 +187,9 @@ and applied by `MaterialApp` in `lib/app.dart`. It now uses the approved handoff
 exact colors, bundled Inter weights, control dimensions and system light/dark
 appearances. `startup_tokens.dart` centralizes the custom palette, geometry and
 motion. `StartupPalette` extends the theme for the handoff's extra semantic colors.
-The navy entry canvas is identical in both appearances as specified by the latest
-`startup-refresh.css`. Native launcher/splash configuration is unchanged.
+The refined entry uses the existing pale-blue tokens in light appearance and
+retains the navy canvas in dark appearance. Native startup now matches the blue
+branded Flutter splash; its circular loading stroke controls the first transition.
 
 Configure future approved design changes in `colorScheme`, `textTheme` and
 component themes centrally; use specified roles directly when exact colors exist.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'routing/app_router.dart';
+import 'routing/startup_destination.dart';
 import 'ui/core/themes/app_theme.dart';
 import 'ui/auth/view_models/auth_ui_controller.dart';
 
@@ -12,11 +13,15 @@ class MainApp extends StatefulWidget {
     this.themeMode = ThemeMode.system,
     this.initialLocation = '/welcome/splash',
     this.holdSplash = false,
+    this.afterSplash = StartupDestination.campus,
+    this.onOnboardingCompleted,
   });
   final AuthUiController? authUi;
   final ThemeMode themeMode;
   final String initialLocation;
   final bool holdSplash;
+  final StartupDestination afterSplash;
+  final VoidCallback? onOnboardingCompleted;
 
   @override
   State<MainApp> createState() => _MainAppState();
@@ -26,6 +31,8 @@ class _MainAppState extends State<MainApp> {
   late final GoRouter _router = createAppRouter(
     initialLocation: widget.initialLocation,
     holdSplash: widget.holdSplash,
+    afterSplash: widget.afterSplash,
+    onOnboardingCompleted: widget.onOnboardingCompleted,
   );
   late final AuthUiController _defaultAuthUi = AuthUiController();
 

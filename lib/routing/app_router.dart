@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:flutter/foundation.dart';
 
 import '../ui/home/widgets/home_screen.dart';
 import '../ui/auth/widgets/account_setup_screen.dart';
@@ -12,6 +13,8 @@ import 'startup_destination.dart';
 GoRouter createAppRouter({
   String initialLocation = '/welcome/splash',
   bool holdSplash = false,
+  StartupDestination afterSplash = StartupDestination.campus,
+  VoidCallback? onOnboardingCompleted,
 }) {
   return GoRouter(
     initialLocation: initialLocation,
@@ -20,6 +23,7 @@ GoRouter createAppRouter({
       ShellRoute(
         builder: (context, state, child) => StartupFlow(
           screen: StartupDestination.fromPath(state.uri.path),
+          onOnboardingCompleted: onOnboardingCompleted,
           child: child,
         ),
         routes: [
@@ -29,7 +33,10 @@ GoRouter createAppRouter({
               pageBuilder: (context, state) => NoTransitionPage(
                 key: state.pageKey,
                 child: switch (destination) {
-                  StartupDestination.splash => SplashScreen(hold: holdSplash),
+                  StartupDestination.splash => SplashScreen(
+                    hold: holdSplash,
+                    nextDestination: afterSplash,
+                  ),
                   StartupDestination.campus => const TourScreen(index: 0),
                   StartupDestination.community => const TourScreen(index: 1),
                   StartupDestination.assistant => const TourScreen(index: 2),

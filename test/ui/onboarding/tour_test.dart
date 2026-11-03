@@ -11,17 +11,26 @@ import '../startup_test_support.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(loadStartupFonts);
-  testWidgets('A directly opened tour step is remembered by entry Back', (
-    tester,
-  ) async {
-    await pumpStartup(tester, screen: 'assistant');
-    await tester.tap(find.text('Get started'));
-    await advanceTransition(tester);
-    await tester.tap(find.byTooltip('Back to welcome tour'));
-    await advanceTransition(tester);
-    expect(find.text('Your Campus\nAssistant'), findsOneWidget);
-    await tester.pumpWidget(const SizedBox.shrink());
-  });
+  testWidgets(
+    'Finishing the tour emits once; entry has no path back to onboarding',
+    (tester) async {
+      var completions = 0;
+      await pumpStartup(
+        tester,
+        screen: 'assistant',
+        onOnboardingCompleted: () => completions++,
+      );
+      await tester.tap(find.text('Get started'));
+      await tester.tap(find.text('Get started'), warnIfMissed: false);
+      await advanceTransition(tester);
+      expect(completions, 1);
+      expect(find.byTooltip('Back to welcome tour'), findsNothing);
+      await tester.binding.handlePopRoute();
+      await advanceTransition(tester);
+      expect(find.text('Log in with SIS'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
   testWidgets(
     'Enabling reduced motion during a wipe completes the transition',
     (tester) async {
@@ -64,11 +73,6 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await advanceTransition(tester);
     expect(find.text('Your Campus\nAssistant'), findsOneWidget);
-    await tester.tap(find.text('Get started'));
-    await advanceTransition(tester);
-    await tester.tap(find.byTooltip('Back to welcome tour'));
-    await advanceTransition(tester);
-    expect(find.text('Your Campus\nAssistant'), findsOneWidget);
     await tester.tap(find.byTooltip('Go to step 1: Find your way'));
     await advanceTransition(tester);
     expect(find.text('Find your way.\nFeel at home.'), findsOneWidget);
@@ -100,5 +104,22 @@ void main() {
     expect(StartupNavigation.of(tester.element(flow)).busy, isFalse);
     await tester.pumpWidget(const SizedBox.shrink());
     expect(tester.takeException(), isNull);
+  });
+  testWidgets('Assistant fits the primary Android viewport with safe areas', (
+    tester,
+  ) async {
+    await pumpStartup(
+      tester,
+      screen: 'assistant',
+      padding: const FakeViewPadding(top: 50, bottom: 24),
+    );
+    final button = find.text('Get started');
+    expect(button.hitTestable(), findsOneWidget);
+    expect(tester.getBottomRight(button).dy, lessThan(915 - 24));
+    expect(find.text('Your campus companion'), findsNothing);
+    expect(find.text('Ask your campus\nassistant'), findsNothing);
+    expect(find.text('How can I get ready for class?'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }

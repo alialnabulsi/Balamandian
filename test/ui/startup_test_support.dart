@@ -24,6 +24,7 @@ Future<void> pumpStartup(
   double textScale = 1,
   double keyboard = 0,
   FakeViewPadding padding = FakeViewPadding.zero,
+  VoidCallback? onOnboardingCompleted,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
@@ -41,6 +42,7 @@ Future<void> pumpStartup(
       key: UniqueKey(),
       initialLocation: '/welcome/$screen',
       holdSplash: true,
+      onOnboardingCompleted: onOnboardingCompleted,
       authUi: host,
       themeMode: dark ? ThemeMode.dark : ThemeMode.light,
     ),

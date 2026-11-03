@@ -30,9 +30,15 @@ class StartupNavigation extends InheritedWidget {
 }
 
 class StartupFlow extends StatefulWidget {
-  const StartupFlow({super.key, required this.screen, required this.child});
+  const StartupFlow({
+    super.key,
+    required this.screen,
+    required this.child,
+    this.onOnboardingCompleted,
+  });
   final StartupDestination screen;
   final Widget child;
+  final VoidCallback? onOnboardingCompleted;
   @override
   State<StartupFlow> createState() => _StartupFlowState();
 }
@@ -44,13 +50,7 @@ class _StartupFlowState extends State<StartupFlow>
     upperBound: 1.7,
   );
   bool _moving = false, _precached = false;
-  int _lastTour = 0;
   Color _wipeColor = StartupTokens.blue;
-  @override
-  void initState() {
-    super.initState();
-    if (widget.screen.tourIndex >= 0) _lastTour = widget.screen.tourIndex;
-  }
 
   bool get _reduced =>
       MediaQuery.disableAnimationsOf(context) ||
@@ -80,14 +80,11 @@ class _StartupFlowState extends State<StartupFlow>
     if (_moving && _reduced && _wipe.isAnimating) _wipe.stop(canceled: false);
   }
 
-  @override
-  void didUpdateWidget(StartupFlow oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.screen.tourIndex >= 0) _lastTour = widget.screen.tourIndex;
-  }
-
   Future<void> _navigate(StartupDestination next) async {
     if (_busy || widget.screen == next) return;
+    final leavingTour =
+        widget.screen.tourIndex >= 0 &&
+        next == StartupDestination.gettingStarted;
     FocusManager.instance.primaryFocus?.unfocus();
     AuthUiScope.of(context).clearMessage();
     setState(() {
@@ -111,6 +108,7 @@ class _StartupFlowState extends State<StartupFlow>
       }
       if (!mounted) return;
       context.go(next.path);
+      if (leavingTour) widget.onOnboardingCompleted?.call();
       await Future<void>.delayed(const Duration(milliseconds: 20));
       if (!mounted) return;
       if (!_reduced) {
@@ -133,8 +131,6 @@ class _StartupFlowState extends State<StartupFlow>
     final previous = switch (widget.screen) {
       StartupDestination.community => StartupDestination.campus,
       StartupDestination.assistant => StartupDestination.community,
-      StartupDestination.gettingStarted =>
-        StartupDestination.values[_lastTour + 1],
       StartupDestination.signIn ||
       StartupDestination.signUp => StartupDestination.gettingStarted,
       StartupDestination.accountSetup => StartupDestination.signUp,
@@ -155,6 +151,7 @@ class _StartupFlowState extends State<StartupFlow>
     final canExit =
         !_busy &&
         (screen == StartupDestination.splash ||
+            screen == StartupDestination.gettingStarted ||
             screen == StartupDestination.campus);
     return PopScope(
       canPop: canExit,
@@ -178,7 +175,6 @@ class _StartupFlowState extends State<StartupFlow>
                 : Brightness.dark,
             systemNavigationBarIconBrightness:
                 screen == StartupDestination.splash ||
-                    screen == StartupDestination.gettingStarted ||
                     Theme.of(context).brightness == Brightness.dark
                 ? Brightness.light
                 : Brightness.dark,

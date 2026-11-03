@@ -1,5 +1,9 @@
 # Onboarding and authentication UI implementation
 
+This records the initial implementation. See the later
+[focused refinement report](onboarding-auth-refinement.md) for current splash,
+onboarding-3, tool animation, auth navigation and entry-theme updates.
+
 Implemented on 2026-11-03 against the complete v1.1.0 handoff. Its source, tokens,
 assets, behavior documentation and screenshots were inspected. Stylesheet order
 is honored: `startup-refresh.css` overrides `onboarding.css`. This is native

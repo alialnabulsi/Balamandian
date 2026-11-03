@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -6,28 +5,45 @@ import 'package:flutter/material.dart';
 import '../../../routing/startup_destination.dart';
 import '../../core/themes/startup_tokens.dart';
 import '../../core/ui/copy_entrance.dart';
-import '../../core/ui/crest_coin.dart';
 import '../../core/ui/decorative_art.dart';
 import 'startup_flow.dart';
+import 'splash_loading_logo.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key, this.hold = false});
+  const SplashScreen({
+    super.key,
+    this.hold = false,
+    this.nextDestination = StartupDestination.campus,
+  });
   final bool hold;
+  // A future startup policy can select entry here without changing the view.
+  final StartupDestination nextDestination;
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  Timer? _timer;
-  late final AnimationController _progress = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2350),
-  );
+  bool _advanced = false;
+  late final AnimationController _progress =
+      AnimationController(vsync: this, duration: StartupTokens.splashDuration)
+        ..addStatusListener((status) {
+          if (status == AnimationStatus.completed) _scheduleAdvance();
+        });
+
+  void _scheduleAdvance() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || widget.hold || _advanced) return;
+      final nav = StartupNavigation.of(context);
+      if (nav.busy) return;
+      _advanced = true;
+      nav.navigate(widget.nextDestination);
+    });
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final nav = StartupNavigation.of(context);
     final reduced =
         MediaQuery.disableAnimationsOf(context) ||
         WidgetsBinding
@@ -35,23 +51,21 @@ class _SplashScreenState extends State<SplashScreen>
             .platformDispatcher
             .accessibilityFeatures
             .reduceMotion;
-    if (reduced) {
-      _progress.value = 1;
-    } else if (_progress.value == 0) {
+    if (reduced && _progress.isAnimating) _progress.stop();
+    _progress.duration = reduced
+        ? const Duration(milliseconds: 250)
+        : StartupTokens.splashDuration;
+    if (_progress.isCompleted) {
+      _scheduleAdvance();
+    } else if (!_progress.isAnimating) {
       _progress.forward();
     }
-    if (!widget.hold && !nav.busy && (_timer == null || !_timer!.isActive)) {
-      _timer = Timer(Duration(milliseconds: reduced ? 250 : 2350), () {
-        if (mounted) {
-          StartupNavigation.of(context).navigate(StartupDestination.campus);
-        }
-      });
-    }
+    // Observe pending changes so an already completed stroke can advance later.
+    StartupNavigation.of(context);
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
     _progress.dispose();
     super.dispose();
   }
@@ -88,7 +102,9 @@ class _SplashScreenState extends State<SplashScreen>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const CrestCoin(),
+                        SplashLoadingLogo(
+                          progress: reducedMotionProgress(context),
+                        ),
                         const SizedBox(height: 26),
                         CopyEntrance(
                           duration: const Duration(milliseconds: 600),
@@ -123,48 +139,19 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
             ),
-            Positioned(
-              bottom: math.max(40, MediaQuery.paddingOf(context).bottom + 24),
-              left: 24,
-              right: 24,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const DecorativeArt.olive(
-                    width: 78,
-                    height: 44,
-                    color: Color(0xff8eb2d5),
-                    opacity: .8,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Rooted in Balamand. Made for you.',
-                    style: StartupTokens.text(
-                      12,
-                      20,
-                      color: const Color(0xffe2effb),
-                    ),
-                  ),
-                  const SizedBox(height: 22),
-                  SizedBox(
-                    width: 40,
-                    height: 3,
-                    child: AnimatedBuilder(
-                      animation: _progress,
-                      builder: (context, child) => LinearProgressIndicator(
-                        value: _progress.value,
-                        backgroundColor: const Color(0x30ffffff),
-                        color: StartupTokens.yellow,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         );
       },
     ),
   );
+
+  Animation<double> reducedMotionProgress(BuildContext context) =>
+      MediaQuery.disableAnimationsOf(context) ||
+          WidgetsBinding
+              .instance
+              .platformDispatcher
+              .accessibilityFeatures
+              .reduceMotion
+      ? const AlwaysStoppedAnimation(1)
+      : _progress;
 }

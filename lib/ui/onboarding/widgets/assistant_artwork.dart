@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/themes/startup_tokens.dart';
 import '../../core/ui/brand.dart';
 import 'assistant_preview.dart';
-import 'tool_tile.dart';
+import 'animated_tool_cards.dart';
 import '../../core/ui/decorative_art.dart';
 
 class AssistantArtwork extends StatelessWidget {
@@ -23,11 +23,11 @@ class AssistantArtwork extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         Positioned(
-          top: 15,
-          left: width * .05,
+          top: 8,
+          left: width * .14,
           child: Container(
-            width: width * .9,
-            height: width * .9,
+            width: width * .72,
+            height: width * .65,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Theme.of(context).colorScheme.primaryContainer,
@@ -35,18 +35,18 @@ class AssistantArtwork extends StatelessWidget {
           ),
         ),
         const Positioned(
-          right: -35,
-          top: -12,
+          right: 0,
+          top: -8,
           child: DecorativeArt.rays(
-            width: 220,
-            height: 240,
+            width: 176,
+            height: 190,
             color: StartupTokens.yellow,
-            opacity: .3,
+            opacity: .24,
             rotation: -15,
           ),
         ),
         Padding(
-          padding: EdgeInsets.fromLTRB(0, compact ? 12 : 24, 0, 12),
+          padding: EdgeInsets.fromLTRB(0, compact ? 8 : 12, 0, 6),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -54,23 +54,23 @@ class AssistantArtwork extends StatelessWidget {
                 clipBehavior: Clip.none,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(top: 12),
+                    padding: const EdgeInsets.only(top: 8),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: SizedBox(
-                        width: width * .73,
+                        width: width * .76,
                         child: Transform.rotate(
-                          angle: -3 * math.pi / 180,
+                          angle: -2 * math.pi / 180,
                           child: AssistantPreview(compact: compact, tiny: tiny),
                         ),
                       ),
                     ),
                   ),
                   Positioned(
-                    top: -8,
-                    right: compact ? -14 : -20,
+                    top: 0,
+                    right: 0,
                     bottom: 0,
-                    width: width * .46,
+                    width: width * .34,
                     child: Image.asset(
                       StartupAssets.image('campus-assistant-robot'),
                       fit: BoxFit.contain,
@@ -79,54 +79,17 @@ class AssistantArtwork extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 26),
-              Transform.rotate(
-                angle: 2 * math.pi / 180,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: ToolTile(
-                        icon: 'calendar-dots',
-                        label: 'Schedule',
-                        compact: compact,
-                        tiny: tiny,
-                      ),
-                    ),
-                    SizedBox(width: compact ? 8 : 10),
-                    Expanded(
-                      child: ToolTile(
-                        icon: 'note-pencil',
-                        label: 'Notes',
-                        compact: compact,
-                        tiny: tiny,
-                        foreground: StartupPalette.of(context).warning,
-                        background: StartupPalette.of(context).warningBg,
-                      ),
-                    ),
-                    SizedBox(width: compact ? 8 : 10),
-                    Expanded(
-                      child: ToolTile(
-                        icon: 'calculator',
-                        label: 'GPA',
-                        compact: compact,
-                        tiny: tiny,
-                        foreground: StartupPalette.of(context).success,
-                        background: StartupPalette.of(context).successBg,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              const SizedBox(height: 16),
+              AnimatedToolCards(width: width, compact: true, tiny: tiny),
             ],
           ),
         ),
         const Positioned(
-          top: -9,
-          left: -4,
+          top: -6,
+          left: 0,
           child: DecorativeArt.olive(
-            width: 86,
-            height: 48,
+            width: 72,
+            height: 40,
             color: Color(0xff88aa72),
             rotation: -20,
           ),

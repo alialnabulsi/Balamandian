@@ -67,7 +67,6 @@ class AccessFrame extends StatelessWidget {
                               AppIconButton(
                                 icon: 'arrow-left',
                                 label: 'Back',
-                                outlined: true,
                                 onPressed: nav.busy ? null : nav.back,
                               ),
                               Flexible(

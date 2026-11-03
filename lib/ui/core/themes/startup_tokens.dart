@@ -9,6 +9,8 @@ abstract final class StartupTokens {
   static const radius = 14.0;
   static const tapSize = 48.0;
   static const coinDuration = Duration(milliseconds: 1900);
+  static const splashDuration = Duration(milliseconds: 2100);
+  static const toolCycleDuration = Duration(milliseconds: 7200);
   static const coinCurve = Cubic(.2, .7, .24, 1);
   static const wipeCover = Duration(milliseconds: 360);
   static const wipeExit = Duration(milliseconds: 460);

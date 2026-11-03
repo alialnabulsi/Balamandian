@@ -1,5 +1,6 @@
 flutter_native_splash:
-  color: "#FFFFFF"
+  color: "#0E569E"
+  color_dark: "#0E569E"
   image: "assets/branding/splash_logo.png"
 
   android: true
@@ -7,5 +8,6 @@ flutter_native_splash:
   web: false
 
   android_12:
-    color: "#FFFFFF"
+    color: "#0E569E"
+    color_dark: "#0E569E"
     image: "assets/branding/splash_logo.png"

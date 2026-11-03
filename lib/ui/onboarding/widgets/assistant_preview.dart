@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../core/themes/startup_tokens.dart';
-import '../../core/ui/asset_icon.dart';
 import '../../core/ui/brand.dart';
 
 class AssistantPreview extends StatelessWidget {
@@ -16,13 +15,7 @@ class AssistantPreview extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme,
         palette = StartupPalette.of(context);
     return Container(
-      constraints: BoxConstraints(
-        minHeight: tiny
-            ? 208
-            : compact
-            ? 228
-            : 250,
-      ),
+      constraints: BoxConstraints(minHeight: compact ? 166 : 182),
       padding: EdgeInsets.symmetric(
         vertical: compact ? 12 : 16,
         horizontal: compact ? 10 : 14,
@@ -55,20 +48,11 @@ class AssistantPreview extends StatelessWidget {
               weight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 3),
-          Text(
-            'Your campus companion',
-            style: StartupTokens.text(
-              compact ? 10 : 11,
-              compact ? 16 : 18,
-              color: palette.muted,
-            ),
-          ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerRight,
             child: Padding(
-              padding: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.only(right: 24),
               child: Container(
                 padding: EdgeInsets.all(compact ? 8 : 10),
                 decoration: BoxDecoration(
@@ -80,7 +64,7 @@ class AssistantPreview extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  'Explore campus services',
+                  'How can I get ready for class?',
                   style: StartupTokens.text(
                     compact ? 11 : 12,
                     compact ? 17 : 18,
@@ -89,17 +73,17 @@ class AssistantPreview extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Padding(
-            padding: const EdgeInsets.only(right: 18),
+            padding: const EdgeInsets.only(right: 24),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const UniversityCrest(size: 25, decorative: true),
-                const SizedBox(width: 9),
+                const UniversityCrest(size: 22, decorative: true),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Find your next stop, explore campus services, or get ready for class.',
+                    'Check your schedule, review your notes, and plan your next stop.',
                     style: StartupTokens.text(
                       compact ? 11 : 12,
                       compact ? 17 : 19,
@@ -110,22 +94,6 @@ class AssistantPreview extends StatelessWidget {
               ],
             ),
           ),
-          if (!tiny) ...[
-            SizedBox(height: compact ? 12 : 16),
-            Divider(height: 1, color: scheme.outline),
-            SizedBox(height: compact ? 10 : 12),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Ask your campus\nassistant',
-                    style: StartupTokens.text(10, 17, color: scheme.primary),
-                  ),
-                ),
-                AssetIcon('arrow-right', size: 18, color: scheme.primary),
-              ],
-            ),
-          ],
         ],
       ),
     );
