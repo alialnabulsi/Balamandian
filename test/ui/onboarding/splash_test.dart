@@ -19,7 +19,13 @@ void main() {
     tester,
   ) async {
     mockNativeSplash(tester);
-    await tester.pumpWidget(const MainApp(holdSplash: true));
+    await tester.pumpWidget(
+      MainApp(
+        holdSplash: true,
+        authRepository: noSessionRepository(),
+        onboardingRepository: testOnboardingRepository(),
+      ),
+    );
     await tester.pump();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 80)),
@@ -34,9 +40,13 @@ void main() {
         .value;
     final before = stroke();
     expect(before, greaterThan(0));
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
     await tester.pump(const Duration(seconds: 8));
     expect(stroke(), before);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -61,7 +71,12 @@ void main() {
           null,
         ),
       );
-      await tester.pumpWidget(const MainApp());
+      await tester.pumpWidget(
+        MainApp(
+          authRepository: noSessionRepository(),
+          onboardingRepository: testOnboardingRepository(),
+        ),
+      );
       await tester.pump();
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 80)),

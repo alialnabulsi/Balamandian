@@ -3,11 +3,34 @@ import 'dart:convert';
 import 'package:balamandian/data/repositories/api_auth_repository.dart';
 import 'package:balamandian/data/services/auth_api_service.dart';
 import 'package:balamandian/data/services/session_credential_store.dart';
+import 'package:balamandian/data/services/onboarding_store.dart';
+import 'package:balamandian/data/repositories/onboarding_repository.dart';
 import 'package:balamandian/domain/models/auth_session.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 const registrationId = '0b3b97c7-c8fd-44b0-b013-cdbd9cf735f0';
+
+class MemoryOnboardingStore implements OnboardingStore {
+  bool completed = false, fail = false;
+  int reads = 0, writes = 0;
+  @override
+  Future<bool> readCompleted() async {
+    reads++;
+    if (fail) throw StateError('Store unavailable');
+    return completed;
+  }
+
+  @override
+  Future<void> markCompleted() async {
+    writes++;
+    if (fail) throw StateError('Store unavailable');
+    completed = true;
+  }
+}
+
+OnboardingRepository testOnboardingRepository({bool completed = false}) =>
+    OnboardingRepository(store: MemoryOnboardingStore()..completed = completed);
 
 Map<String, Object> pendingData({
   DateTime? now,
@@ -54,7 +77,26 @@ class MemoryCredentialStore implements SessionCredentialStore {
   IssuedSession? session;
   int writes = 0;
   bool fail = false;
+  bool failRead = false, failDelete = false;
+  int reads = 0, deletes = 0;
   Future<void>? waitForWrite;
+  Future<void>? waitForRead, waitForDelete;
+
+  @override
+  Future<IssuedSession?> read() async {
+    reads++;
+    await waitForRead;
+    if (failRead) throw StateError('Storage unavailable');
+    return session;
+  }
+
+  @override
+  Future<void> delete() async {
+    deletes++;
+    await waitForDelete;
+    if (failDelete) throw StateError('Storage unavailable');
+    session = null;
+  }
 
   @override
   Future<void> save(IssuedSession value) async {
@@ -69,17 +111,25 @@ class AuthTestHarness {
   AuthTestHarness(
     Future<http.Response> Function(http.Request) handler, {
     Duration timeout = const Duration(seconds: 30),
+    Duration credentialTimeout = const Duration(seconds: 10),
   }) {
     api = AuthApiService(
       client: MockClient(handler),
       baseUrl: Uri.parse('https://api.example.test'),
       timeout: timeout,
     );
-    repository = ApiAuthRepository(api: api, credentials: store);
+    repository = ApiAuthRepository(
+      api: api,
+      credentials: store,
+      credentialTimeout: credentialTimeout,
+    );
   }
 
   final store = MemoryCredentialStore();
   late final AuthApiService api;
   late final ApiAuthRepository repository;
-  void close() => api.close();
+  void close() {
+    repository.dispose();
+    api.close();
+  }
 }

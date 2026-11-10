@@ -16,8 +16,14 @@ class SplashScreen extends StatefulWidget {
     super.key,
     this.hold = false,
     this.nextDestination = StartupDestination.campus,
+    this.nextPath,
+    this.onAnimationCompleted,
+    this.nativeHandoff = true,
   });
   final bool hold;
+  final bool nativeHandoff;
+  final String? nextPath;
+  final VoidCallback? onAnimationCompleted;
   // A future startup policy can select entry here without changing the view.
   final StartupDestination nextDestination;
   @override
@@ -27,6 +33,7 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   bool _advanced = false, _preparing = false, _revealed = false;
+  bool _completionReported = false;
   bool _reduced = false, _visible = true, _foreground = true;
   Rect? _nativeIcon;
   late final AnimationController _progress =
@@ -60,7 +67,9 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _prepare() async {
-    final nativeLayout = NativeSplashHandoff.prepare();
+    final nativeLayout = widget.nativeHandoff
+        ? NativeSplashHandoff.prepare()
+        : Future<Rect?>.value();
     await precacheImage(const AssetImage(SplashLoadingLogo.asset), context);
     final layout = await nativeLayout;
     if (mounted) {
@@ -68,7 +77,7 @@ class _SplashScreenState extends State<SplashScreen>
       // Submit the stable, matching logo before asking Android to uncover it.
       await WidgetsBinding.instance.endOfFrame;
     }
-    await NativeSplashHandoff.reveal();
+    if (widget.nativeHandoff) await NativeSplashHandoff.reveal();
     if (!mounted) return;
     setState(() => _revealed = true);
     _syncMotion();
@@ -76,14 +85,29 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _scheduleAdvance() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || widget.hold || _advanced || !_foreground || !_visible) {
+      if (!mounted || _advanced || !_foreground || !_visible) {
         return;
       }
+      if (!_completionReported) {
+        _completionReported = true;
+        widget.onAnimationCompleted?.call();
+      }
+      if (widget.hold) return;
       final nav = StartupNavigation.of(context);
       if (nav.busy) return;
       _advanced = true;
-      nav.navigate(widget.nextDestination);
+      if (widget.nextPath case final path?) {
+        nav.navigatePath!(path);
+      } else {
+        nav.navigate(widget.nextDestination);
+      }
     });
+  }
+
+  @override
+  void didUpdateWidget(SplashScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_progress.isCompleted) _scheduleAdvance();
   }
 
   void _syncMotion() {
@@ -110,8 +134,9 @@ class _SplashScreenState extends State<SplashScreen>
     _progress.duration = _reduced
         ? const Duration(milliseconds: 250)
         : StartupTokens.splashDuration;
-    // Observe pending changes so an already completed stroke can advance later.
-    StartupNavigation.of(context);
+    // A held splash also presents session validation outside the onboarding
+    // shell. Only advancing onboarding splashes depend on its navigation state.
+    if (!widget.hold) StartupNavigation.of(context);
     if (!_preparing) {
       _preparing = true;
       unawaited(_prepare());

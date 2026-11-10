@@ -71,16 +71,31 @@ class AuthApiService {
     PendingRegistration.fromJson,
   );
 
+  Future<ValidatedSession> me(String token) =>
+      _request('GET', '/me', 200, ValidatedSession.fromJson, token: token);
+
+  Future<void> logout(String token) =>
+      _request<void>('POST', '/logout', 204, (_) {}, token: token);
+
   Future<T> _post<T>(
     String path,
     Map<String, String> body,
     int successStatus,
     T Function(Map<String, dynamic>) parse,
-  ) async {
+  ) => _request('POST', path, successStatus, parse, body: body);
+
+  Future<T> _request<T>(
+    String method,
+    String path,
+    int successStatus,
+    T Function(Map<String, dynamic>) parse, {
+    Map<String, String>? body,
+    String? token,
+  }) async {
     final abort = Completer<void>();
     final request =
         http.AbortableRequest(
-            'POST',
+            method,
             _baseUrl.resolve('/api/v1/auth$path'),
             abortTrigger: abort.future,
           )
@@ -88,8 +103,9 @@ class AuthApiService {
           ..headers.addAll({
             'Content-Type': 'application/json; charset=UTF-8',
             'Accept': 'application/json',
-          })
-          ..body = jsonEncode(body);
+          });
+    if (token != null) request.headers['Authorization'] = 'Bearer $token';
+    if (body != null) request.body = jsonEncode(body);
     try {
       final response = await _client
           .send(request)
@@ -112,11 +128,13 @@ class AuthApiService {
         final seconds = int.tryParse(response.headers['retry-after'] ?? '');
         throw AuthFailure.fromApi(
           code,
+          statusCode: response.statusCode,
           retryAfter: seconds != null && seconds > 0
               ? Duration(seconds: seconds.clamp(1, 3600))
               : null,
         );
       }
+      if (successStatus == 204) return parse(const {});
       final payload = jsonDecode(utf8.decode(response.bodyBytes));
       if (payload case {'data': Map<String, dynamic> data}) return parse(data);
       throw const FormatException('Missing authentication data.');

@@ -6,19 +6,24 @@ import 'package:http/http.dart' as http;
 
 import 'data/repositories/api_auth_repository.dart';
 import 'data/repositories/auth_repository.dart';
+import 'data/repositories/onboarding_repository.dart';
+import 'data/services/onboarding_store.dart';
 import 'data/services/auth_api_service.dart';
 import 'data/services/session_credential_store.dart';
 import 'routing/app_router.dart';
 import 'routing/startup_destination.dart';
 import 'ui/core/themes/app_theme.dart';
 import 'ui/auth/view_models/auth_ui_controller.dart';
-import 'ui/onboarding/widgets/native_splash_handoff.dart';
+import 'ui/auth/view_models/session_view_model.dart';
+import 'ui/onboarding/view_models/app_entry_view_model.dart';
+import 'ui/onboarding/widgets/app_entry_overlay.dart';
 
 class MainApp extends StatefulWidget {
   const MainApp({
     super.key,
     this.authUi,
     this.authRepository,
+    this.onboardingRepository,
     this.themeMode = ThemeMode.system,
     this.initialLocation = '/welcome/splash',
     this.holdSplash = false,
@@ -27,6 +32,7 @@ class MainApp extends StatefulWidget {
   });
   final AuthUiController? authUi;
   final AuthRepository? authRepository;
+  final OnboardingRepository? onboardingRepository;
   final ThemeMode themeMode;
   final String initialLocation;
   final bool holdSplash;
@@ -50,29 +56,40 @@ class _MainAppState extends State<MainApp> {
       );
   late final GoRouter _router = createAppRouter(
     authRepository: _authRepository,
-    initialLocation: widget.initialLocation,
+    session: _session,
+    entry: _entry,
     holdSplash: widget.holdSplash,
-    afterSplash: widget.afterSplash,
-    onOnboardingCompleted: widget.onOnboardingCompleted,
+    onOnboardingCompleted: () async {
+      final completed = await _entry.completeOnboarding();
+      if (completed) widget.onOnboardingCompleted?.call();
+      return completed;
+    },
   );
   late final AuthUiController _defaultAuthUi = AuthUiController();
+  late final SessionViewModel _session = SessionViewModel(
+    repository: _authRepository,
+  );
+  late final AppEntryViewModel _entry = AppEntryViewModel(
+    auth: _authRepository,
+    onboarding:
+        widget.onboardingRepository ??
+        OnboardingRepository(store: const SecureOnboardingStore()),
+    initialLocation: widget.initialLocation,
+    firstDestination: widget.afterSplash,
+  );
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted &&
-          _router.routeInformationProvider.value.uri.path !=
-              StartupDestination.splash.path) {
-        // A direct route has no branded splash to release Android's overlay.
-        unawaited(NativeSplashHandoff.reveal());
-      }
-    });
+    unawaited(_entry.initialize());
   }
 
   @override
   void dispose() {
     _router.dispose();
+    _entry.dispose();
+    _session.dispose();
+    if (widget.authRepository == null) _authRepository.dispose();
     _api?.close();
     _defaultAuthUi.dispose();
     super.dispose();
@@ -89,6 +106,8 @@ class _MainAppState extends State<MainApp> {
         darkTheme: appDarkTheme,
         themeMode: widget.themeMode,
         routerConfig: _router,
+        builder: (context, child) =>
+            AppEntryOverlay(model: _entry, child: child!),
       ),
     );
   }

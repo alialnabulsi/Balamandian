@@ -31,7 +31,7 @@ class OtpViewModel extends ChangeNotifier {
   bool _codeExpired = false, _codeLocked = false;
   bool verifying = false, resending = false, requiresLogin = false;
   String? formError, codeError, notice;
-  AuthUser? authenticatedUser;
+  AuthUser? get authenticatedUser => _repository.user;
 
   bool get pending => verifying || resending;
   bool get requiresRestart => _registration == null || _invalidRegistration;
@@ -74,11 +74,10 @@ class OtpViewModel extends ChangeNotifier {
       return false;
     }
     verifying = true;
-    authenticatedUser = null;
     formError = codeError = notice = null;
     notifyListeners();
     try {
-      authenticatedUser = await _repository.verify(_registration!.id, code);
+      await _repository.verify(_registration!.id, code);
       return true;
     } on AuthFailure catch (error) {
       _handleFailure(error);

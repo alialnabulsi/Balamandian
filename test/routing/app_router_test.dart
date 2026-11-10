@@ -6,6 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
+import '../auth_test_support.dart';
+import '../ui/startup_test_support.dart' show prepareAppSplash;
+
 void main() {
   testWidgets('Home and theme load, and navigation survives an app rebuild', (
     tester,
@@ -25,14 +28,24 @@ void main() {
       ),
     );
     final appKey = GlobalKey();
+    final harness = AuthTestHarness((_) async => success(sessionData(), 200));
+    addTearDown(harness.close);
+    await harness.repository.login('FICTION001', 'test');
     await tester.pumpWidget(
-      MainApp(key: appKey, initialLocation: '/', themeMode: ThemeMode.light),
+      MainApp(
+        key: appKey,
+        initialLocation: '/',
+        themeMode: ThemeMode.light,
+        authRepository: harness.repository,
+        onboardingRepository: testOnboardingRepository(),
+      ),
     );
+    await prepareAppSplash(tester);
     await tester.pumpAndSettle();
 
     final home = find.byType(HomeScreen);
     expect(home, findsOneWidget);
-    expect(splashCalls, ['reveal']);
+    expect(splashCalls, containsAllInOrder(['prepare', 'reveal']));
     expect(find.text('Community feed coming soon'), findsOneWidget);
     expect(Theme.of(tester.element(home)).colorScheme, appTheme.colorScheme);
 
@@ -43,7 +56,12 @@ void main() {
     router.go('/?source=route-check');
     await tester.pumpAndSettle();
     await tester.pumpWidget(
-      MainApp(key: appKey, initialLocation: '/', themeMode: ThemeMode.light),
+      MainApp(
+        key: appKey,
+        initialLocation: '/',
+        themeMode: ThemeMode.light,
+        authRepository: harness.repository,
+      ),
     );
     await tester.pumpAndSettle();
 

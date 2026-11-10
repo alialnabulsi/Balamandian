@@ -11,6 +11,42 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const channel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
 
+  test('Reads the existing secure record, rejects corruption and deletes only its key', () async {
+    String? record;
+    final methods = <String>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          expect(
+            (call.arguments as Map)['key'],
+            SecureSessionCredentialStore.storageKey,
+          );
+          methods.add(call.method);
+          switch (call.method) {
+            case 'read':
+              return record;
+            case 'write':
+              record = (call.arguments as Map)['value'] as String;
+            case 'delete':
+              record = null;
+          }
+          return null;
+        });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null),
+    );
+    const store = SecureSessionCredentialStore();
+    expect(await store.read(), isNull);
+    final session = AuthSession.fromJson(sessionData()).session;
+    await store.save(session);
+    expect((await store.read())!.token == session.token, isTrue);
+    record = '{broken';
+    await expectLater(store.read(), throwsFormatException);
+    await store.delete();
+    expect(await store.read(), isNull);
+    expect(methods, ['read', 'write', 'read', 'read', 'delete', 'read']);
+  });
+
   test(
     'Writes and replaces one session record through the secure platform plugin',
     () async {

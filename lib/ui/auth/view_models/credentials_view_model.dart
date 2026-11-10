@@ -13,7 +13,7 @@ class CredentialsViewModel extends ChangeNotifier {
   String? identifierError, passwordError;
   String? formError;
   PendingRegistration? pendingRegistration;
-  AuthUser? authenticatedUser;
+  AuthUser? get authenticatedUser => _repository.user;
   bool passwordVisible = false;
   bool pending = false, _disposed = false;
   DateTime? _retryAt;
@@ -41,7 +41,6 @@ class CredentialsViewModel extends ChangeNotifier {
     pending = true;
     formError = null;
     pendingRegistration = null;
-    authenticatedUser = null;
     notifyListeners();
     try {
       if (signingUp) {
@@ -50,10 +49,7 @@ class CredentialsViewModel extends ChangeNotifier {
           password,
         );
       } else {
-        authenticatedUser = await _repository.login(
-          identifier.trim(),
-          password,
-        );
+        await _repository.login(identifier.trim(), password);
       }
       return true;
     } on AuthFailure catch (error) {

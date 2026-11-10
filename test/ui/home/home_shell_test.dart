@@ -44,16 +44,20 @@ Future<void> pumpHome(
     tester.platformDispatcher.clearAllTestValues();
   });
   final harness = AuthTestHarness((request) async {
+    if (request.url.path.endsWith('/login')) return success(sessionData(), 200);
     fail('The Home Shell must not request ${request.url.path}');
   });
   addTearDown(harness.close);
+  await harness.repository.login('FICTION001', 'test');
   await tester.pumpWidget(
     MainApp(
       initialLocation: location,
       authRepository: harness.repository,
+      onboardingRepository: testOnboardingRepository(),
       themeMode: dark ? ThemeMode.dark : ThemeMode.light,
     ),
   );
+  await prepareAppSplash(tester);
   await tester.pumpAndSettle();
 }
 
@@ -109,7 +113,7 @@ void main() {
     await tester.tap(find.byTooltip('Open account menu'));
     await tester.pumpAndSettle();
     expect(find.text('Your account'), findsOneWidget);
-    expect(find.textContaining('SIS ID:'), findsNothing);
+    expect(find.text('SIS ID: FICTION001'), findsOneWidget);
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(find.text('Your account'), findsNothing);
@@ -332,7 +336,7 @@ void main() {
   });
 
   testWidgets('Authentication stays outside the shell', (tester) async {
-    await pumpHome(tester, location: '/welcome/sign-in');
+    await pumpStartup(tester, screen: 'sign-in');
     expect(find.byType(AppShell), findsNothing);
     expect(find.byType(ExpandableQuickActions), findsNothing);
     expect(find.byType(AppBottomBar), findsNothing);

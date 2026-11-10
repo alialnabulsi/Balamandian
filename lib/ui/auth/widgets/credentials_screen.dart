@@ -20,10 +20,12 @@ class CredentialsScreen extends StatefulWidget {
     required this.signingUp,
     required this.repository,
     this.onAuthenticated,
+    this.notice,
   });
   final bool signingUp;
   final AuthRepository repository;
   final ValueChanged<AuthUser>? onAuthenticated;
+  final String? notice;
   @override
   State<CredentialsScreen> createState() => _CredentialsScreenState();
 }
@@ -97,6 +99,10 @@ class _CredentialsScreenState extends State<CredentialsScreen> {
         builder: (context, child) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (!up && widget.notice != null) ...[
+              FormMessage(widget.notice!),
+              SizedBox(height: gap),
+            ],
             if (_model.formError ?? host.formError case final message?) ...[
               FormMessage(message),
               SizedBox(height: gap),

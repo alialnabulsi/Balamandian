@@ -8,6 +8,8 @@ import '../../../routing/startup_destination.dart';
 import '../../auth/view_models/auth_ui_controller.dart';
 import '../../core/themes/startup_tokens.dart';
 import '../../core/ui/brand.dart';
+import '../../core/ui/form_message.dart';
+import 'startup_frame.dart';
 
 class StartupNavigation extends InheritedWidget {
   const StartupNavigation({
@@ -15,12 +17,14 @@ class StartupNavigation extends InheritedWidget {
     required this.busy,
     required this.screen,
     required this.navigate,
+    this.navigatePath,
     required this.back,
     required super.child,
   });
   final bool busy;
   final StartupDestination screen;
   final void Function(StartupDestination, {Object? extra}) navigate;
+  final ValueChanged<String>? navigatePath;
   final VoidCallback back;
   static StartupNavigation of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<StartupNavigation>()!;
@@ -35,10 +39,14 @@ class StartupFlow extends StatefulWidget {
     required this.screen,
     required this.child,
     this.onOnboardingCompleted,
+    this.onStartupCompleted,
+    this.onboardingError,
   });
   final StartupDestination screen;
   final Widget child;
-  final VoidCallback? onOnboardingCompleted;
+  final Future<bool> Function()? onOnboardingCompleted;
+  final VoidCallback? onStartupCompleted;
+  final String? onboardingError;
   @override
   State<StartupFlow> createState() => _StartupFlowState();
 }
@@ -59,7 +67,10 @@ class _StartupFlowState extends State<StartupFlow>
           .platformDispatcher
           .accessibilityFeatures
           .reduceMotion;
-  bool get _busy => _moving || AuthUiScope.of(context).pending;
+  bool get _busy =>
+      _moving ||
+      (widget.screen != StartupDestination.splash &&
+          AuthUiScope.of(context).pending);
 
   @override
   void didChangeDependencies() {
@@ -80,13 +91,19 @@ class _StartupFlowState extends State<StartupFlow>
     if (_moving && _reduced && _wipe.isAnimating) _wipe.stop(canceled: false);
   }
 
-  Future<void> _navigate(StartupDestination next, {Object? extra}) async {
-    if (_busy || widget.screen == next) return;
+  Future<void> _navigate(StartupDestination next, {Object? extra}) =>
+      _navigatePath(next.path, extra: extra);
+
+  Future<void> _navigatePath(String path, {Object? extra}) async {
+    if (_busy || widget.screen.path == path) return;
+    final next = StartupDestination.fromPath(path);
     final leavingTour =
         widget.screen.tourIndex >= 0 &&
         next == StartupDestination.gettingStarted;
     FocusManager.instance.primaryFocus?.unfocus();
-    AuthUiScope.of(context).clearMessage();
+    if (widget.screen != StartupDestination.splash) {
+      AuthUiScope.of(context).clearMessage();
+    }
     setState(() {
       _moving = true;
       _wipeColor = switch (next) {
@@ -96,6 +113,11 @@ class _StartupFlowState extends State<StartupFlow>
       };
     });
     try {
+      if (leavingTour &&
+          !(await widget.onOnboardingCompleted?.call() ?? true)) {
+        return;
+      }
+      if (!mounted) return;
       if (!_reduced) {
         _wipe.value = 0;
         await _wipe
@@ -107,8 +129,9 @@ class _StartupFlowState extends State<StartupFlow>
             .orCancel;
       }
       if (!mounted) return;
-      context.go(next.path, extra: extra);
-      if (leavingTour) widget.onOnboardingCompleted?.call();
+      final leavingSplash = widget.screen == StartupDestination.splash;
+      context.go(path, extra: extra);
+      if (leavingSplash) widget.onStartupCompleted?.call();
       await Future<void>.delayed(const Duration(milliseconds: 20));
       if (!mounted) return;
       if (!_reduced) {
@@ -163,6 +186,7 @@ class _StartupFlowState extends State<StartupFlow>
         busy: _busy,
         screen: screen,
         navigate: (next, {extra}) => unawaited(_navigate(next, extra: extra)),
+        navigatePath: (path) => unawaited(_navigatePath(path)),
         back: _back,
         child: AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle(
@@ -180,31 +204,32 @@ class _StartupFlowState extends State<StartupFlow>
                 ? Brightness.light
                 : Brightness.dark,
           ),
-          child: ColoredBox(
-            color: screen == StartupDestination.splash
-                ? StartupTokens.blue
-                : Theme.of(context).colorScheme.surface,
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 440),
-                child: ClipRect(
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      AbsorbPointer(absorbing: _moving, child: widget.child),
-                      if (_moving && !_reduced)
-                        IgnorePointer(
-                          child: AnimatedBuilder(
-                            animation: _wipe,
-                            builder: (context, child) => CustomPaint(
-                              painter: _WipePainter(_wipe.value, _wipeColor),
-                            ),
-                          ),
-                        ),
-                    ],
+          child: StartupFrame(
+            splash: screen == StartupDestination.splash,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                AbsorbPointer(absorbing: _moving, child: widget.child),
+                if (widget.onboardingError case final error?)
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: FormMessage(error),
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                if (_moving && !_reduced)
+                  IgnorePointer(
+                    child: AnimatedBuilder(
+                      animation: _wipe,
+                      builder: (context, child) => CustomPaint(
+                        painter: _WipePainter(_wipe.value, _wipeColor),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),

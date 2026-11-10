@@ -6,6 +6,8 @@ import '../../domain/models/auth_session.dart';
 
 abstract class SessionCredentialStore {
   Future<void> save(IssuedSession session);
+  Future<IssuedSession?> read();
+  Future<void> delete();
 }
 
 class SecureSessionCredentialStore implements SessionCredentialStore {
@@ -15,6 +17,22 @@ class SecureSessionCredentialStore implements SessionCredentialStore {
 
   final FlutterSecureStorage _storage;
   static const storageKey = 'balamandian.application_session';
+
+  @override
+  Future<IssuedSession?> read() async {
+    final value = await _storage.read(key: storageKey);
+    if (value == null) return null;
+    try {
+      final json = jsonDecode(value);
+      if (json is Map<String, dynamic>) return IssuedSession.fromJson(json);
+    } on FormatException {
+      // Do not retain the sensitive input as FormatException.source.
+    }
+    throw const FormatException('Invalid saved session.');
+  }
+
+  @override
+  Future<void> delete() => _storage.delete(key: storageKey);
 
   @override
   Future<void> save(IssuedSession session) => _storage.write(
