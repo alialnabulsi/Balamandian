@@ -54,7 +54,26 @@ class MemoryCredentialStore implements SessionCredentialStore {
   IssuedSession? session;
   int writes = 0;
   bool fail = false;
+  bool failRead = false, failDelete = false;
+  int reads = 0, deletes = 0;
   Future<void>? waitForWrite;
+  Future<void>? waitForRead, waitForDelete;
+
+  @override
+  Future<IssuedSession?> read() async {
+    reads++;
+    await waitForRead;
+    if (failRead) throw StateError('Storage unavailable');
+    return session;
+  }
+
+  @override
+  Future<void> delete() async {
+    deletes++;
+    await waitForDelete;
+    if (failDelete) throw StateError('Storage unavailable');
+    session = null;
+  }
 
   @override
   Future<void> save(IssuedSession value) async {
@@ -69,17 +88,25 @@ class AuthTestHarness {
   AuthTestHarness(
     Future<http.Response> Function(http.Request) handler, {
     Duration timeout = const Duration(seconds: 30),
+    Duration credentialTimeout = const Duration(seconds: 10),
   }) {
     api = AuthApiService(
       client: MockClient(handler),
       baseUrl: Uri.parse('https://api.example.test'),
       timeout: timeout,
     );
-    repository = ApiAuthRepository(api: api, credentials: store);
+    repository = ApiAuthRepository(
+      api: api,
+      credentials: store,
+      credentialTimeout: credentialTimeout,
+    );
   }
 
   final store = MemoryCredentialStore();
   late final AuthApiService api;
   late final ApiAuthRepository repository;
-  void close() => api.close();
+  void close() {
+    repository.dispose();
+    api.close();
+  }
 }

@@ -19,7 +19,9 @@ void main() {
     tester,
   ) async {
     mockNativeSplash(tester);
-    await tester.pumpWidget(const MainApp(holdSplash: true));
+    await tester.pumpWidget(
+      MainApp(holdSplash: true, authRepository: noSessionRepository()),
+    );
     await tester.pump();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 80)),
@@ -61,7 +63,7 @@ void main() {
           null,
         ),
       );
-      await tester.pumpWidget(const MainApp());
+      await tester.pumpWidget(MainApp(authRepository: noSessionRepository()));
       await tester.pump();
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 80)),

@@ -110,8 +110,9 @@ class _SplashScreenState extends State<SplashScreen>
     _progress.duration = _reduced
         ? const Duration(milliseconds: 250)
         : StartupTokens.splashDuration;
-    // Observe pending changes so an already completed stroke can advance later.
-    StartupNavigation.of(context);
+    // A held splash also presents session validation outside the onboarding
+    // shell. Only advancing onboarding splashes depend on its navigation state.
+    if (!widget.hold) StartupNavigation.of(context);
     if (!_preparing) {
       _preparing = true;
       unawaited(_prepare());

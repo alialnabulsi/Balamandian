@@ -71,3 +71,32 @@ class AuthSession {
     throw const FormatException('Invalid authentication response.');
   }
 }
+
+/// The validation response deliberately contains no new bearer token.
+class ValidatedSession {
+  const ValidatedSession({required this.user, required this.expiresAt});
+
+  final AuthUser user;
+  final DateTime expiresAt;
+
+  factory ValidatedSession.fromJson(Map<String, dynamic> json) {
+    if (json case {
+      'user': Map<String, dynamic> user,
+      'session': {'expiresAt': String expires},
+    }) {
+      return ValidatedSession(
+        user: AuthUser.fromJson(user),
+        expiresAt: DateTime.parse(expires).toUtc(),
+      );
+    }
+    throw const FormatException('Invalid session validation response.');
+  }
+}
+
+enum SessionStatus {
+  initializing,
+  authenticated,
+  unauthenticated,
+  validationError,
+  signingOut,
+}

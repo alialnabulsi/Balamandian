@@ -56,6 +56,10 @@ class MainActivity : FlutterActivity() {
                             splashView = null
                         }
                         nativeDismissed = true
+                        // A destination can change while Flutter is preparing
+                        // the matched logo. Complete that pending layout even
+                        // when another screen releases the overlay first.
+                        replyWithLayout()
                         window.decorView.postOnAnimation {
                             pendingReveal?.success(null)
                             pendingReveal = null

@@ -1,10 +1,20 @@
 class AuthFailure implements Exception {
-  const AuthFailure(this.code, this.message, {this.retryAfter});
+  const AuthFailure(
+    this.code,
+    this.message, {
+    this.retryAfter,
+    this.statusCode,
+  });
 
   final String code, message;
   final Duration? retryAfter;
+  final int? statusCode;
+
+  bool get invalidSession => statusCode == 401 && code == 'UNAUTHENTICATED';
 
   static const messages = {
+    'UNAUTHENTICATED': 'Your session has expired. Please log in again.',
+    'FORBIDDEN': 'This account cannot access this resource.',
     'SIS_INVALID_CREDENTIALS': 'Your SIS ID/email or password is incorrect.',
     'ACCOUNT_EXISTS': 'An account already exists. Please log in.',
     'REGISTRATION_REQUIRED': 'Create an account before logging in.',
@@ -33,11 +43,23 @@ class AuthFailure implements Exception {
         'The email could not be sent. Please wait and try again.',
   };
 
-  factory AuthFailure.fromApi(String? code, {Duration? retryAfter}) {
+  factory AuthFailure.fromApi(
+    String? code, {
+    Duration? retryAfter,
+    int? statusCode,
+  }) {
     return AuthFailure(
-      messages.containsKey(code) ? code! : 'SERVICE_ERROR',
-      messages[code] ?? 'The service is unavailable. Please try again later.',
+      messages.containsKey(code)
+          ? code!
+          : statusCode == 403
+          ? 'FORBIDDEN'
+          : 'SERVICE_ERROR',
+      messages[code] ??
+          (statusCode == 403
+              ? messages['FORBIDDEN']!
+              : 'The service is unavailable. Please try again later.'),
       retryAfter: retryAfter,
+      statusCode: statusCode,
     );
   }
 

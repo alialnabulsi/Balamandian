@@ -12,7 +12,7 @@ import 'routing/app_router.dart';
 import 'routing/startup_destination.dart';
 import 'ui/core/themes/app_theme.dart';
 import 'ui/auth/view_models/auth_ui_controller.dart';
-import 'ui/onboarding/widgets/native_splash_handoff.dart';
+import 'ui/auth/view_models/session_view_model.dart';
 
 class MainApp extends StatefulWidget {
   const MainApp({
@@ -50,29 +50,28 @@ class _MainAppState extends State<MainApp> {
       );
   late final GoRouter _router = createAppRouter(
     authRepository: _authRepository,
+    session: _session,
     initialLocation: widget.initialLocation,
     holdSplash: widget.holdSplash,
     afterSplash: widget.afterSplash,
     onOnboardingCompleted: widget.onOnboardingCompleted,
   );
   late final AuthUiController _defaultAuthUi = AuthUiController();
+  late final SessionViewModel _session = SessionViewModel(
+    repository: _authRepository,
+  );
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted &&
-          _router.routeInformationProvider.value.uri.path !=
-              StartupDestination.splash.path) {
-        // A direct route has no branded splash to release Android's overlay.
-        unawaited(NativeSplashHandoff.reveal());
-      }
-    });
+    unawaited(_authRepository.restoreSession());
   }
 
   @override
   void dispose() {
     _router.dispose();
+    _session.dispose();
+    if (widget.authRepository == null) _authRepository.dispose();
     _api?.close();
     _defaultAuthUi.dispose();
     super.dispose();

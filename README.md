@@ -59,6 +59,12 @@ inside the persistent application shell, alongside Map, Market and Profile.
 Inter typography and the handoff's exact light/dark palette are shared themes.
 Registration, email OTP verification/resend and SIS login connect to Balamandian-API.
 Successful verification/login securely saves the newly issued session before opening Home.
+The shared authentication repository restores saved sessions through `/me`, owns
+the current account identity, protects shell routes, and coordinates current-session
+logout. See [the session lifecycle report](Docs/auth-session-lifecycle.md) for
+state transitions, recovery behavior, verification, and Android test steps.
+The [startup regression report](Docs/auth-startup-regression.md) documents native
+splash release during saved-session restoration and restart/device verification.
 See [the API integration report](Docs/auth-api-integration.md) for configuration,
 scope and verification, and [the initial UI report](Docs/onboarding-auth-implementation.md)
 for the initial screen map and integration contract. The
@@ -172,15 +178,21 @@ redirects or guards that consume the actual application state once authenticatio
 and screen access policies are specified. Client routing will not replace
 server-side authorization.
 
-Authentication redirects, session refresh behavior, roles and access rules,
-and state restoration remain deferred. The Home shell uses
+Authentication redirects and session restoration consume the shared repository's
+notifications. `/session` reuses the existing Flutter splash during validation
+and shows recoverable errors while credentials
+are unvalidated. Shell destinations require an authenticated session; login,
+registration, OTP and onboarding remain public. Successful restoration opens
+Home; invalid sessions and logout lead to Login with protected history removed.
+Refresh tokens, roles and additional access rules remain deferred. The Home shell uses
 `StatefulShellRoute.indexedStack` for its four tab navigators. Native app-link configuration is
 also deferred; adopting a declarative router alone does not configure it.
 Unmatched locations use go_router's built-in error handling; a custom not-found
 experience awaits an approved design. Shell feature placeholders are explicit;
-no access policies or route code generation are included. Registration opens `/welcome/verify-email`;
+no role policies or route code generation are included. Registration opens `/welcome/verify-email`;
 successful verification/login opens Home after secure session persistence.
-Account setup and guest actions remain unconnected. Onboarding still appears on every launch.
+Account setup and guest actions remain unconnected. Without a saved session,
+the existing splash and onboarding behavior is preserved. Validated sessions skip onboarding.
 
 See [Home Shell implementation notes](Docs/home-shell.md) for the component tree,
 destination behavior, identity handoff, theme decisions and focused checks.
@@ -200,8 +212,10 @@ Run Balamandian-API separately on port 3000. `API_BASE_URL` is an origin without
 an `/api` suffix. Only debug builds allow HTTP, restricted to emulator/loopback
 hosts. Profile/release builds require an explicit HTTPS origin, for example
 `--dart-define=API_BASE_URL=https://api.example.com`. Build definitions contain
-public configuration only; SIS/Resend keys stay in the backend. No token is read
-at startup, and no `/me`, logout, refresh or route-guard behavior is implemented.
+public configuration only; SIS/Resend keys stay in the backend. Session tokens
+remain in the existing secure-storage record and are validated at startup.
+Transient failures retain the token and block protected UI until validation succeeds.
+There is no refresh-token mechanism; expired sessions require login.
 
 Navigation references:
 

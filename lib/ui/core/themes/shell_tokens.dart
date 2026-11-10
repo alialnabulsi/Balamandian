@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'startup_tokens.dart';
 
 abstract final class ShellTokens {
+  static const controlRadius = 14.0;
   static const tapSize = StartupTokens.tapSize;
   static const actionSize = 56.0;
   static const toolbarHeight = 64.0;

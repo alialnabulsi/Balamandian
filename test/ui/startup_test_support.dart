@@ -5,6 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../auth_test_support.dart';
+
+AuthRepository noSessionRepository() {
+  final harness = AuthTestHarness((request) async {
+    fail('Unexpected API request: ${request.url.path}');
+  });
+  addTearDown(harness.close);
+  return harness.repository;
+}
+
 Future<void> loadStartupFonts() async {
   final loader = FontLoader('Inter');
   for (final weight in ['Regular', 'Medium', 'SemiBold', 'Bold']) {
@@ -63,7 +73,7 @@ Future<void> pumpStartup(
       holdSplash: true,
       onOnboardingCompleted: onOnboardingCompleted,
       authUi: host,
-      authRepository: authRepository,
+      authRepository: authRepository ?? noSessionRepository(),
       themeMode: dark ? ThemeMode.dark : ThemeMode.light,
     ),
   );
