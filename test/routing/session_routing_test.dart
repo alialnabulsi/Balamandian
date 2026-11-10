@@ -28,9 +28,13 @@ Future<void> pumpSession(
       const FakeAccessibilityFeatures(disableAnimations: true);
   addTearDown(tester.platformDispatcher.clearAllTestValues);
   await tester.pumpWidget(
-    MainApp(authRepository: h.repository, initialLocation: location),
+    MainApp(
+      authRepository: h.repository,
+      initialLocation: location,
+      onboardingRepository: testOnboardingRepository(),
+    ),
   );
-  await tester.pump();
+  await prepareAppSplash(tester);
 }
 
 Future<void> openLogout(WidgetTester tester) async {
@@ -157,9 +161,15 @@ void main() {
       h.store.session = AuthSession.fromJson(sessionData()).session;
       final key = GlobalKey();
       mockNativeSplash(tester);
-      await tester.pumpWidget(MainApp(key: key, authRepository: h.repository));
-      await tester.pump();
-      expect(find.byType(SessionGateScreen), findsOneWidget);
+      await tester.pumpWidget(
+        MainApp(
+          key: key,
+          authRepository: h.repository,
+          onboardingRepository: testOnboardingRepository(),
+        ),
+      );
+      await prepareAppSplash(tester);
+      expect(find.text('Your campus, connected.'), findsOneWidget);
       expect(find.byType(HomeScreen), findsNothing);
       expect(find.byType(CredentialsScreen), findsNothing);
       reply.complete(success(sessionData(), 200));

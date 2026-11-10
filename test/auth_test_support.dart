@@ -3,11 +3,34 @@ import 'dart:convert';
 import 'package:balamandian/data/repositories/api_auth_repository.dart';
 import 'package:balamandian/data/services/auth_api_service.dart';
 import 'package:balamandian/data/services/session_credential_store.dart';
+import 'package:balamandian/data/services/onboarding_store.dart';
+import 'package:balamandian/data/repositories/onboarding_repository.dart';
 import 'package:balamandian/domain/models/auth_session.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 const registrationId = '0b3b97c7-c8fd-44b0-b013-cdbd9cf735f0';
+
+class MemoryOnboardingStore implements OnboardingStore {
+  bool completed = false, fail = false;
+  int reads = 0, writes = 0;
+  @override
+  Future<bool> readCompleted() async {
+    reads++;
+    if (fail) throw StateError('Store unavailable');
+    return completed;
+  }
+
+  @override
+  Future<void> markCompleted() async {
+    writes++;
+    if (fail) throw StateError('Store unavailable');
+    completed = true;
+  }
+}
+
+OnboardingRepository testOnboardingRepository({bool completed = false}) =>
+    OnboardingRepository(store: MemoryOnboardingStore()..completed = completed);
 
 Map<String, Object> pendingData({
   DateTime? now,

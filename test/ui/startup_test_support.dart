@@ -6,6 +6,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../auth_test_support.dart';
+export '../auth_test_support.dart' show testOnboardingRepository;
+
+Future<void> prepareAppSplash(WidgetTester tester) async {
+  await tester.pump();
+  await tester.runAsync(
+    () => Future<void>.delayed(const Duration(milliseconds: 80)),
+  );
+  await tester.pump();
+  await tester.pump();
+}
 
 AuthRepository noSessionRepository() {
   final harness = AuthTestHarness((request) async {
@@ -70,7 +80,8 @@ Future<void> pumpStartup(
     MainApp(
       key: UniqueKey(),
       initialLocation: '/welcome/$screen',
-      holdSplash: true,
+      holdSplash: screen == 'splash',
+      onboardingRepository: testOnboardingRepository(),
       onOnboardingCompleted: onOnboardingCompleted,
       authUi: host,
       authRepository: authRepository ?? noSessionRepository(),
@@ -84,6 +95,7 @@ Future<void> pumpStartup(
   await tester.pump();
   await tester.pump(const Duration(seconds: 3));
   await tester.pump();
+  if (screen != 'splash') await advanceTransition(tester);
 }
 
 Future<void> advanceTransition(WidgetTester tester) async {

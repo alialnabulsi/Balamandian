@@ -1,5 +1,8 @@
 # Authentication startup regression
 
+The later [universal splash implementation](universal-splash.md) preserves this
+native release fix while requiring the full existing animation before routing.
+
 Corrected on the existing `feature/auth-session-lifecycle` branch. All earlier
 uncommitted session work is preserved. No commits, resets, merges, pushes,
 application-data clearing, backend changes or API-contract changes were used.

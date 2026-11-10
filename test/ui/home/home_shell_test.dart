@@ -53,9 +53,11 @@ Future<void> pumpHome(
     MainApp(
       initialLocation: location,
       authRepository: harness.repository,
+      onboardingRepository: testOnboardingRepository(),
       themeMode: dark ? ThemeMode.dark : ThemeMode.light,
     ),
   );
+  await prepareAppSplash(tester);
   await tester.pumpAndSettle();
 }
 

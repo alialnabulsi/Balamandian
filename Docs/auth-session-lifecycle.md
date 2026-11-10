@@ -1,5 +1,8 @@
 # Authentication session lifecycle
 
+The [universal animated entry](universal-splash.md) now coordinates full splash
+completion with restoration and persists onboarding/re-entry behavior.
+
 The subsequent [startup regression correction](auth-startup-regression.md)
 replaces the initial alternate loading view with the existing splash, fixes the
 native-overlay handoff, and adds storage deadlines and restart regression tests.

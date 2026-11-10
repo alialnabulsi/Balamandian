@@ -56,7 +56,12 @@ void main() {
     tester.platformDispatcher.accessibilityFeaturesTestValue =
         const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAllTestValues);
-    await tester.pumpWidget(MainApp(authRepository: noSessionRepository()));
+    await tester.pumpWidget(
+      MainApp(
+        authRepository: noSessionRepository(),
+        onboardingRepository: testOnboardingRepository(),
+      ),
+    );
     await tester.pump();
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 80)),

@@ -4,23 +4,30 @@ import '../../core/ui/action_button.dart';
 import '../../core/ui/backgrounds/app_branded_background.dart';
 import '../../core/ui/brand.dart';
 import '../../core/ui/form_message.dart';
-import '../../onboarding/widgets/splash_screen.dart';
+import 'session_loading_state.dart';
 import '../../onboarding/widgets/native_splash_reveal.dart';
 import '../view_models/session_view_model.dart';
 
 /// Protected content is never built while saved credentials are unvalidated.
 class SessionGateScreen extends StatelessWidget {
-  const SessionGateScreen({super.key, required this.model});
+  const SessionGateScreen({
+    super.key,
+    required this.model,
+    this.entryError,
+    this.onRetry,
+    this.allowLocalSignOut = true,
+  });
   final SessionViewModel model;
+  final String? entryError;
+  final VoidCallback? onRetry;
+  final bool allowLocalSignOut;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: model,
     builder: (context, _) => model.busy
-        ? Semantics(
-            label: model.activityLabel,
-            liveRegion: true,
-            child: const SplashScreen(hold: true),
+        ? NativeSplashReveal(
+            child: SessionLoadingState(label: model.activityLabel),
           )
         : NativeSplashReveal(
             child: Scaffold(
@@ -43,25 +50,28 @@ class SessionGateScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 16),
                             FormMessage(
-                              model.error ??
+                              entryError ??
+                                  model.error ??
                                   'Please check your connection and try again.',
                             ),
                             const SizedBox(height: 24),
                             ActionButton(
                               label: 'Retry',
-                              onPressed: model.retry,
+                              onPressed: onRetry ?? model.retry,
                               icon: null,
                             ),
-                            const SizedBox(height: 12),
-                            TextButton(
-                              onPressed: () => model.logout(localOnly: true),
-                              child: const Text('Sign out on this device'),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Device-only sign-out removes saved credentials. Server-side revocation cannot be confirmed.',
-                              textAlign: TextAlign.center,
-                            ),
+                            if (allowLocalSignOut) ...[
+                              const SizedBox(height: 12),
+                              TextButton(
+                                onPressed: () => model.logout(localOnly: true),
+                                child: const Text('Sign out on this device'),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Device-only sign-out removes saved credentials. Server-side revocation cannot be confirmed.',
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ],
                         ),
                       ),

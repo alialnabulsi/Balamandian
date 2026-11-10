@@ -1,5 +1,5 @@
 import 'package:go_router/go_router.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 import '../data/repositories/auth_repository.dart';
 import '../domain/models/pending_registration.dart';
@@ -15,6 +15,7 @@ import '../ui/auth/view_models/session_view_model.dart';
 import '../ui/auth/widgets/session_gate_screen.dart';
 import '../ui/onboarding/widgets/splash_screen.dart';
 import '../ui/onboarding/widgets/native_splash_reveal.dart';
+import '../ui/onboarding/view_models/app_entry_view_model.dart';
 import '../ui/onboarding/widgets/startup_flow.dart';
 import '../ui/onboarding/widgets/tour_screen.dart';
 import 'startup_destination.dart';
@@ -23,17 +24,22 @@ import 'shell_destination.dart';
 GoRouter createAppRouter({
   required AuthRepository authRepository,
   required SessionViewModel session,
-  String initialLocation = '/welcome/splash',
+  required AppEntryViewModel entry,
   bool holdSplash = false,
-  StartupDestination afterSplash = StartupDestination.campus,
-  VoidCallback? onOnboardingCompleted,
+  Future<bool> Function()? onOnboardingCompleted,
 }) {
-  String waitingLocation = initialLocation;
   return GoRouter(
-    initialLocation: initialLocation,
-    refreshListenable: authRepository,
+    initialLocation: StartupDestination.splash.path,
+    refreshListenable: Listenable.merge([authRepository, entry]),
     redirect: (context, state) {
       final path = state.uri.path;
+      if (!entry.startupCompleted) {
+        if (path == StartupDestination.splash.path) return null;
+        if (!entry.startupReady) return StartupDestination.splash.path;
+      } else if (path == StartupDestination.splash.path) {
+        return entry.destination ?? StartupDestination.gettingStarted.path;
+      }
+      if (entry.error != null) return path == '/session' ? null : '/session';
       final public = StartupDestination.values.any(
         (destination) => destination.path == path,
       );
@@ -47,23 +53,30 @@ GoRouter createAppRouter({
           (authRepository.status == SessionStatus.signingOut &&
               authRepository.user == null);
       if (blocked) {
-        if (path != '/session') waitingLocation = state.uri.toString();
         return path == '/session' ? null : '/session';
       }
       if (authenticated) return public || path == '/session' ? '/' : null;
       if (path == '/session') {
-        final waitingPath = Uri.parse(waitingLocation).path;
-        return authRepository.sessionNotice == null &&
-                StartupDestination.values.any((d) => d.path == waitingPath)
-            ? waitingLocation
-            : StartupDestination.signIn.path;
+        return StartupDestination.signIn.path;
       }
       return public ? null : StartupDestination.signIn.path;
     },
     routes: [
       GoRoute(
         path: '/session',
-        builder: (context, state) => SessionGateScreen(model: session),
+        builder: (context, state) => SessionGateScreen(
+          model: session,
+          entryError: entry.error,
+          onRetry: entry.error == null
+              ? null
+              : () async {
+                  await entry.retryPreferences();
+                  if (context.mounted && entry.error == null) {
+                    context.go(entry.destination!);
+                  }
+                },
+          allowLocalSignOut: entry.error == null,
+        ),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) => NativeSplashReveal(
@@ -114,12 +127,17 @@ GoRouter createAppRouter({
         ],
       ),
       ShellRoute(
-        builder: (context, state, child) => StartupFlow(
-          screen: StartupDestination.fromPath(state.uri.path),
-          onOnboardingCompleted: onOnboardingCompleted,
-          child: state.uri.path == StartupDestination.splash.path
-              ? child
-              : NativeSplashReveal(child: child),
+        builder: (context, state, child) => ListenableBuilder(
+          listenable: entry,
+          builder: (context, _) => StartupFlow(
+            screen: StartupDestination.fromPath(state.uri.path),
+            onOnboardingCompleted: onOnboardingCompleted,
+            onStartupCompleted: entry.completeStartup,
+            onboardingError: entry.onboardingError,
+            child: state.uri.path == StartupDestination.splash.path
+                ? child
+                : NativeSplashReveal(child: child),
+          ),
         ),
         routes: [
           for (final destination in StartupDestination.values)
@@ -128,9 +146,13 @@ GoRouter createAppRouter({
               pageBuilder: (context, state) => NoTransitionPage(
                 key: state.pageKey,
                 child: switch (destination) {
-                  StartupDestination.splash => SplashScreen(
-                    hold: holdSplash,
-                    nextDestination: afterSplash,
+                  StartupDestination.splash => ListenableBuilder(
+                    listenable: entry,
+                    builder: (context, _) => SplashScreen(
+                      hold: holdSplash || !entry.startupReady,
+                      nextPath: entry.destination,
+                      onAnimationCompleted: entry.animationCompleted,
+                    ),
                   ),
                   StartupDestination.campus => const TourScreen(index: 0),
                   StartupDestination.community => const TourScreen(index: 1),

@@ -27,7 +27,7 @@ lib/
         home_screen.dart          # Branded future-feed empty state.
     onboarding/
       widgets/                    # Splash, three tour screens, artwork and startup flow.
-      view_models/                # Prepared: presentation state and actions.
+      view_models/                # App entry coordination and foreground re-entry.
     auth/
       widgets/                    # Entry choices, sign-in/up and account setup.
       view_models/                # Credentials/OTP state, deferred profile UI state.
@@ -65,6 +65,8 @@ logout. See [the session lifecycle report](Docs/auth-session-lifecycle.md) for
 state transitions, recovery behavior, verification, and Android test steps.
 The [startup regression report](Docs/auth-startup-regression.md) documents native
 splash release during saved-session restoration and restart/device verification.
+The [universal splash report](Docs/universal-splash.md) records full animation
+coordination, persisted onboarding completion, and retained-navigation re-entry.
 See [the API integration report](Docs/auth-api-integration.md) for configuration,
 scope and verification, and [the initial UI report](Docs/onboarding-auth-implementation.md)
 for the initial screen map and integration contract. The
@@ -84,7 +86,7 @@ create other future paths only alongside code needed by a real feature.
 | Location | Responsibility | Current status |
 | --- | --- | --- |
 | `lib/ui/<feature>/widgets/` | Feature screen and its local widgets. | Implemented for `home`, `onboarding` and `auth`. |
-| `lib/ui/<feature>/view_models/` | Presentation logic, UI state, and user-action methods. | Auth presentation, credential validation and photo state; onboarding remains prepared because its current state is navigation/animation only. |
+| `lib/ui/<feature>/view_models/` | Presentation logic, UI state, and user-action methods. | Auth presentation, credential validation, photo state, and app-entry/re-entry coordination. |
 | `lib/ui/core/ui/` | Reusable, configurable widget classes shared across features. | Shared branding, buttons, fields feedback, body copy, crest and decorative motion. |
 | `lib/ui/core/themes/` | Shared theme configuration. | Exists. |
 | `lib/data/repositories/` | Sources of truth organized by application data type; contracts and implementations, including authentication and session state. | Authentication contract and API implementation; persistence completes before authentication succeeds. |
@@ -179,9 +181,10 @@ and screen access policies are specified. Client routing will not replace
 server-side authorization.
 
 Authentication redirects and session restoration consume the shared repository's
-notifications. `/session` reuses the existing Flutter splash during validation
-and shows recoverable errors while credentials
-are unvalidated. Shell destinations require an authenticated session; login,
+notifications. Every actual launch first plays the original Flutter splash at
+`/welcome/splash`, concurrently with session restoration. The existing transition
+opens the resolved destination after both complete. `/session` provides Retry
+for recoverable validation errors. Shell destinations require an authenticated session; login,
 registration, OTP and onboarding remain public. Successful restoration opens
 Home; invalid sessions and logout lead to Login with protected history removed.
 Refresh tokens, roles and additional access rules remain deferred. The Home shell uses
@@ -191,8 +194,11 @@ Unmatched locations use go_router's built-in error handling; a custom not-found
 experience awaits an approved design. Shell feature placeholders are explicit;
 no role policies or route code generation are included. Registration opens `/welcome/verify-email`;
 successful verification/login opens Home after secure session persistence.
-Account setup and guest actions remain unconnected. Without a saved session,
-the existing splash and onboarding behavior is preserved. Validated sessions skip onboarding.
+Account setup and guest actions remain unconnected. Onboarding completion is
+persisted separately from credentials: first-time users see the tour, returning
+unauthenticated users see the existing auth entry, and validated sessions open
+Home after the full splash. Genuine background returns replay the same splash
+over the retained router without resetting navigation or calling `/me` again.
 
 See [Home Shell implementation notes](Docs/home-shell.md) for the component tree,
 destination behavior, identity handoff, theme decisions and focused checks.

@@ -16,6 +16,7 @@ import 'package:http/testing.dart';
 import 'package:go_router/go_router.dart';
 
 import '../auth_test_support.dart';
+import '../ui/startup_test_support.dart' show prepareAppSplash;
 
 void main() {
   testWidgets(
@@ -85,12 +86,15 @@ void main() {
       await tester.pumpWidget(
         MainApp(
           authRepository: repository,
+          onboardingRepository: testOnboardingRepository(),
           initialLocation: '/welcome/sign-in',
         ),
       );
+      await prepareAppSplash(tester);
       await tester.pumpAndSettle();
       expect(find.byType(CredentialsScreen), findsOneWidget);
       await repository.login('FICTION001', 'test');
+      await prepareAppSplash(tester);
       await tester.pumpAndSettle();
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(records.keys, [SecureSessionCredentialStore.storageKey]);
@@ -110,7 +114,13 @@ void main() {
       for (var launch = 0; launch < 2; launch++) {
         await tester.pumpWidget(const SizedBox.shrink());
         repository = freshRepository();
-        await tester.pumpWidget(MainApp(authRepository: repository));
+        await tester.pumpWidget(
+          MainApp(
+            authRepository: repository,
+            onboardingRepository: testOnboardingRepository(),
+          ),
+        );
+        await prepareAppSplash(tester);
         await tester.pumpAndSettle();
         expect(find.byType(HomeScreen), findsOneWidget);
         expect(paths.where((path) => path.endsWith('/me')).length, launch + 1);
@@ -122,7 +132,11 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       repository = freshRepository();
       await tester.pumpWidget(
-        MainApp(authRepository: repository, holdSplash: true),
+        MainApp(
+          authRepository: repository,
+          onboardingRepository: testOnboardingRepository(),
+          holdSplash: true,
+        ),
       );
       await tester.pump();
       await tester.runAsync(
@@ -161,8 +175,14 @@ void main() {
           null,
         ),
       );
-      await tester.pumpWidget(MainApp(authRepository: harness.repository));
+      await tester.pumpWidget(
+        MainApp(
+          authRepository: harness.repository,
+          onboardingRepository: testOnboardingRepository(),
+        ),
+      );
       await tester.pump();
+      await prepareAppSplash(tester);
       await tester.pump(const Duration(seconds: 2));
       await tester.pumpAndSettle();
       expect(revealed, isTrue);
@@ -170,6 +190,7 @@ void main() {
       expect(harness.store.session, isNotNull);
       expect(harness.store.deletes, 0);
       await tester.tap(find.text('Retry'));
+      await prepareAppSplash(tester);
       await tester.pumpAndSettle();
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(calls, 2);
@@ -199,7 +220,12 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MainApp(authRepository: harness.repository));
+      await tester.pumpWidget(
+        MainApp(
+          authRepository: harness.repository,
+          onboardingRepository: testOnboardingRepository(),
+        ),
+      );
       await tester.pump();
       await tester.pump();
       await tester.runAsync(
@@ -215,6 +241,7 @@ void main() {
       expect(calls, contains('reveal'));
 
       reply.complete(success(sessionData(), 200));
+      await prepareAppSplash(tester);
       await tester.pumpAndSettle();
       expect(find.byType(HomeScreen), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
@@ -241,7 +268,13 @@ void main() {
           null,
         ),
       );
-      await tester.pumpWidget(MainApp(authRepository: harness.repository));
+      await tester.pumpWidget(
+        MainApp(
+          authRepository: harness.repository,
+          onboardingRepository: testOnboardingRepository(),
+        ),
+      );
+      await prepareAppSplash(tester);
       await tester.pumpAndSettle();
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(calls, contains('reveal'));
