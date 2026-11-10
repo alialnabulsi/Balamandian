@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'startup_tokens.dart';
+import 'shell_tokens.dart';
 
 final ThemeData appTheme = _theme(false);
 final ThemeData appDarkTheme = _theme(true);
@@ -16,12 +17,16 @@ ThemeData _theme(bool dark) {
         : const Color(0xff14263b),
     secondary: StartupTokens.green,
     onSecondary: Colors.white,
+    tertiary: StartupTokens.yellow,
+    onTertiary: StartupTokens.navy,
     error: dark ? const Color(0xffffadb6) : const Color(0xffb42332),
     onError: dark ? const Color(0xff102841) : Colors.white,
     errorContainer: dark ? const Color(0xff422b35) : const Color(0xfffff0f2),
     surface: dark ? const Color(0xff101821) : Colors.white,
     onSurface: dark ? const Color(0xffeaf3fc) : const Color(0xff14263b),
+    onSurfaceVariant: dark ? const Color(0xffa2b3c6) : const Color(0xff526579),
     outline: dark ? const Color(0xff35495f) : const Color(0xffd5dde5),
+    outlineVariant: dark ? const Color(0xff35495f) : const Color(0xffd5dde5),
   );
   final palette = StartupPalette(
     canvas: dark ? scheme.surface : const Color(0xfff7fafc),
@@ -33,11 +38,50 @@ ThemeData _theme(bool dark) {
     warningBg: dark ? const Color(0xff423820) : const Color(0xfffff6da),
   );
   return ThemeData(
+    useMaterial3: true,
     visualDensity: VisualDensity.standard,
     colorScheme: scheme,
     fontFamily: 'Inter',
     scaffoldBackgroundColor: scheme.surface,
-    extensions: [palette],
+    extensions: [
+      palette,
+      const ShellPalette(action: StartupTokens.blue, onAction: Colors.white),
+    ],
+    appBarTheme: AppBarThemeData(
+      backgroundColor: scheme.surface,
+      foregroundColor: scheme.onSurface,
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+    ),
+    bottomAppBarTheme: BottomAppBarThemeData(
+      color: scheme.surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 3,
+      shadowColor: scheme.shadow.withValues(alpha: .12),
+    ),
+    navigationDrawerTheme: NavigationDrawerThemeData(
+      backgroundColor: scheme.surface,
+      surfaceTintColor: Colors.transparent,
+      indicatorColor: scheme.primaryContainer,
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(
+          color: states.contains(WidgetState.selected)
+              ? scheme.primary
+              : scheme.onSurfaceVariant,
+          size: 24,
+        ),
+      ),
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (states) => StartupTokens.text(
+          14,
+          20,
+          weight: FontWeight.w600,
+          color: states.contains(WidgetState.selected)
+              ? scheme.onPrimaryContainer
+              : scheme.onSurfaceVariant,
+        ),
+      ),
+    ),
     textTheme: TextTheme(
       headlineLarge: StartupTokens.text(
         38,

@@ -164,6 +164,10 @@ void main() {
         GoRouter.of(tester.element(find.byType(HomeScreen))).canPop(),
         isFalse,
       );
+      await tester.tap(find.byTooltip('Open account menu'));
+      await tester.pumpAndSettle();
+      expect(find.text('member@example.edu'), findsOneWidget);
+      expect(find.text('SIS ID: FICTION001'), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
@@ -182,6 +186,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(harness.store.writes, 1);
+    await tester.tap(find.byTooltip('Open account menu'));
+    await tester.pumpAndSettle();
+    expect(find.text('member@example.edu'), findsOneWidget);
+    expect(find.text('SIS ID: FICTION001'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 

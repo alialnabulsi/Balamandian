@@ -23,7 +23,8 @@ lib/
       ui/                         # Shared branding, controls, copy, artwork and motion.
     home/
       widgets/
-        home_screen.dart          # Existing starter screen.
+        app_shell.dart            # Persistent Home navigation and composition.
+        home_screen.dart          # Branded future-feed empty state.
     onboarding/
       widgets/                    # Splash, three tour screens, artwork and startup flow.
       view_models/                # Prepared: presentation state and actions.
@@ -53,7 +54,8 @@ repository tree. The text tree above records the actual prepared structure.
 
 `main.dart` launches `MainApp`; `app.dart` owns the root `MaterialApp.router`
 and router lifecycle. Startup opens `/welcome/splash`; the approved startup
-destinations and email OTP verification live under `/welcome`. The existing static Home stays at `/`.
+destinations and email OTP verification live under `/welcome`. Home stays at `/`
+inside the persistent application shell, alongside Map, Market and Profile.
 Inter typography and the handoff's exact light/dark palette are shared themes.
 Registration, email OTP verification/resend and SIS login connect to Balamandian-API.
 Successful verification/login securely saves the newly issued session before opening Home.
@@ -154,7 +156,9 @@ Navigation (current foundation and future conventions):
 
 Navigation uses Flutter's recommended `go_router` package with
 `MaterialApp.router`. The route table lives in `lib/routing/app_router.dart`.
-`/` displays the existing Home; `/welcome/*` contains the startup screens and OTP verification.
+`/` displays Home; `/map`, `/market` and `/profile` are persistent shell branches.
+`/guide`, `/ai`, `/tools` and `/settings` are lightweight placeholders nested under Home.
+`/welcome/*` contains the startup screens and OTP verification outside this shell.
 Their persistent shell owns the approved curved wipe and prevents duplicate navigation.
 `MainApp` owns one router for its widget lifecycle, retains it across rebuilds,
 and disposes it when removed. `main.dart` remains only an entry point. Light/dark
@@ -169,14 +173,17 @@ and screen access policies are specified. Client routing will not replace
 server-side authorization.
 
 Authentication redirects, session refresh behavior, roles and access rules,
-tab shells, nested navigators, and state restoration
-are deferred until their requirements exist. Native app-link configuration is
+and state restoration remain deferred. The Home shell uses
+`StatefulShellRoute.indexedStack` for its four tab navigators. Native app-link configuration is
 also deferred; adopting a declarative router alone does not configure it.
 Unmatched locations use go_router's built-in error handling; a custom not-found
-experience awaits an approved design. No placeholder routes, access policies or
-route code generation are included. Registration opens `/welcome/verify-email`;
+experience awaits an approved design. Shell feature placeholders are explicit;
+no access policies or route code generation are included. Registration opens `/welcome/verify-email`;
 successful verification/login opens Home after secure session persistence.
 Account setup and guest actions remain unconnected. Onboarding still appears on every launch.
+
+See [Home Shell implementation notes](Docs/home-shell.md) for the component tree,
+destination behavior, identity handoff, theme decisions and focused checks.
 
 Local authentication development:
 
@@ -220,6 +227,9 @@ component themes centrally; use specified roles directly when exact colors exist
 Custom widgets should read semantic values from `Theme.of(context).colorScheme`
 and `Theme.of(context).textTheme`. Standard Material widgets already inherit
 the app theme. The app follows system appearance; `MainApp.themeMode` supports host control and review.
+The Home shell adds gold `tertiary` actions, themed navigation surfaces, and a
+`ShellPalette` for filled blue quick actions. Its static vector background is
+opt-in through `AppBrandedBackground`; authentication keeps its existing artwork.
 
 Theming references:
 

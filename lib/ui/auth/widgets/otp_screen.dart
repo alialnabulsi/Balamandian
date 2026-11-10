@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../data/repositories/auth_repository.dart';
+import '../../../domain/models/auth_session.dart';
 import '../../../domain/models/pending_registration.dart';
 import '../../../routing/startup_destination.dart';
 import '../../core/ui/action_button.dart';
@@ -14,10 +15,16 @@ import 'otp_code_field.dart';
 import 'otp_delivery_status.dart';
 
 class OtpScreen extends StatefulWidget {
-  const OtpScreen({super.key, required this.repository, this.registration});
+  const OtpScreen({
+    super.key,
+    required this.repository,
+    this.registration,
+    this.onAuthenticated,
+  });
 
   final AuthRepository repository;
   final PendingRegistration? registration;
+  final ValueChanged<AuthUser>? onAuthenticated;
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -45,6 +52,9 @@ class _OtpScreenState extends State<OtpScreen> {
     if (!mounted) return;
     if (success) {
       _code.clear();
+      if (_model.authenticatedUser case final user?) {
+        widget.onAuthenticated?.call(user);
+      }
       context.go('/');
     } else if (_model.codeError != null) {
       _focus.requestFocus();

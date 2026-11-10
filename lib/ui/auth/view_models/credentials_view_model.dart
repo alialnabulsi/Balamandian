@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../data/repositories/auth_repository.dart';
 import '../../../domain/models/auth_failure.dart';
+import '../../../domain/models/auth_session.dart';
 import '../../../domain/models/pending_registration.dart';
 
 class CredentialsViewModel extends ChangeNotifier {
@@ -12,6 +13,7 @@ class CredentialsViewModel extends ChangeNotifier {
   String? identifierError, passwordError;
   String? formError;
   PendingRegistration? pendingRegistration;
+  AuthUser? authenticatedUser;
   bool passwordVisible = false;
   bool pending = false, _disposed = false;
   DateTime? _retryAt;
@@ -39,6 +41,7 @@ class CredentialsViewModel extends ChangeNotifier {
     pending = true;
     formError = null;
     pendingRegistration = null;
+    authenticatedUser = null;
     notifyListeners();
     try {
       if (signingUp) {
@@ -47,7 +50,10 @@ class CredentialsViewModel extends ChangeNotifier {
           password,
         );
       } else {
-        await _repository.login(identifier.trim(), password);
+        authenticatedUser = await _repository.login(
+          identifier.trim(),
+          password,
+        );
       }
       return true;
     } on AuthFailure catch (error) {
