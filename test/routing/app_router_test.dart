@@ -33,7 +33,7 @@ void main() {
     final home = find.byType(HomeScreen);
     expect(home, findsOneWidget);
     expect(splashCalls, ['reveal']);
-    expect(find.text('Hello Worldd!'), findsOneWidget);
+    expect(find.text('Community feed coming soon'), findsOneWidget);
     expect(Theme.of(tester.element(home)).colorScheme, appTheme.colorScheme);
 
     final router = GoRouter.of(tester.element(home));

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../data/repositories/auth_repository.dart';
+import '../../../domain/models/auth_session.dart';
 import '../../../routing/startup_destination.dart';
 import '../../core/themes/startup_tokens.dart';
 import '../../core/ui/action_button.dart';
@@ -18,9 +19,11 @@ class CredentialsScreen extends StatefulWidget {
     super.key,
     required this.signingUp,
     required this.repository,
+    this.onAuthenticated,
   });
   final bool signingUp;
   final AuthRepository repository;
+  final ValueChanged<AuthUser>? onAuthenticated;
   @override
   State<CredentialsScreen> createState() => _CredentialsScreenState();
 }
@@ -62,6 +65,9 @@ class _CredentialsScreenState extends State<CredentialsScreen> {
         extra: _model.pendingRegistration,
       );
     } else {
+      if (_model.authenticatedUser case final user?) {
+        widget.onAuthenticated?.call(user);
+      }
       context.go('/');
     }
   }

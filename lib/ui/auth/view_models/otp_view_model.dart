@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../data/repositories/auth_repository.dart';
 import '../../../domain/models/auth_failure.dart';
+import '../../../domain/models/auth_session.dart';
 import '../../../domain/models/pending_registration.dart';
 
 class OtpViewModel extends ChangeNotifier {
@@ -30,6 +31,7 @@ class OtpViewModel extends ChangeNotifier {
   bool _codeExpired = false, _codeLocked = false;
   bool verifying = false, resending = false, requiresLogin = false;
   String? formError, codeError, notice;
+  AuthUser? authenticatedUser;
 
   bool get pending => verifying || resending;
   bool get requiresRestart => _registration == null || _invalidRegistration;
@@ -72,10 +74,11 @@ class OtpViewModel extends ChangeNotifier {
       return false;
     }
     verifying = true;
+    authenticatedUser = null;
     formError = codeError = notice = null;
     notifyListeners();
     try {
-      await _repository.verify(_registration!.id, code);
+      authenticatedUser = await _repository.verify(_registration!.id, code);
       return true;
     } on AuthFailure catch (error) {
       _handleFailure(error);
