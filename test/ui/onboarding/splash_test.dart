@@ -1,3 +1,5 @@
+import '../../marketplace_test_support.dart';
+
 import 'dart:async';
 import 'dart:ui' as ui;
 
@@ -21,6 +23,8 @@ void main() {
     mockNativeSplash(tester);
     await tester.pumpWidget(
       MainApp(
+        marketplaceRepository: FakeMarketplaceRepository(),
+        externalUrls: FakeExternalUrlService(),
         holdSplash: true,
         authRepository: noSessionRepository(),
         onboardingRepository: testOnboardingRepository(),
@@ -73,6 +77,8 @@ void main() {
       );
       await tester.pumpWidget(
         MainApp(
+          marketplaceRepository: FakeMarketplaceRepository(),
+          externalUrls: FakeExternalUrlService(),
           authRepository: noSessionRepository(),
           onboardingRepository: testOnboardingRepository(),
         ),

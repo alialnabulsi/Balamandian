@@ -1,3 +1,5 @@
+import '../../marketplace_test_support.dart';
+
 import 'package:balamandian/app.dart';
 import 'package:balamandian/ui/onboarding/widgets/startup_flow.dart';
 import 'package:balamandian/ui/onboarding/widgets/tour_screen.dart';
@@ -58,6 +60,8 @@ void main() {
     addTearDown(tester.platformDispatcher.clearAllTestValues);
     await tester.pumpWidget(
       MainApp(
+        marketplaceRepository: FakeMarketplaceRepository(),
+        externalUrls: FakeExternalUrlService(),
         authRepository: noSessionRepository(),
         onboardingRepository: testOnboardingRepository(),
       ),

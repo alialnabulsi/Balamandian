@@ -10,6 +10,10 @@ import 'data/repositories/onboarding_repository.dart';
 import 'data/services/onboarding_store.dart';
 import 'data/services/auth_api_service.dart';
 import 'data/services/session_credential_store.dart';
+import 'data/repositories/marketplace_repository.dart';
+import 'data/repositories/api_marketplace_repository.dart';
+import 'data/services/marketplace_api_service.dart';
+import 'data/services/external_url_service.dart';
 import 'routing/app_router.dart';
 import 'routing/startup_destination.dart';
 import 'ui/core/themes/app_theme.dart';
@@ -23,6 +27,8 @@ class MainApp extends StatefulWidget {
     super.key,
     this.authUi,
     this.authRepository,
+    this.marketplaceRepository,
+    this.externalUrls,
     this.onboardingRepository,
     this.themeMode = ThemeMode.system,
     this.initialLocation = '/welcome/splash',
@@ -32,6 +38,8 @@ class MainApp extends StatefulWidget {
   });
   final AuthUiController? authUi;
   final AuthRepository? authRepository;
+  final MarketplaceRepository? marketplaceRepository;
+  final ExternalUrlService? externalUrls;
   final OnboardingRepository? onboardingRepository;
   final ThemeMode themeMode;
   final String initialLocation;
@@ -45,6 +53,16 @@ class MainApp extends StatefulWidget {
 
 class _MainAppState extends State<MainApp> {
   AuthApiService? _api;
+  MarketplaceApiService? _marketplaceApi;
+  late final MarketplaceRepository _marketplaceRepository =
+      widget.marketplaceRepository ??
+      ApiMarketplaceRepository(
+        api: _marketplaceApi = MarketplaceApiService(
+          client: http.Client(),
+          baseUrl: Uri.parse(AuthApiService.configuredBaseUrl),
+        ),
+        withSession: _authRepository.withSession,
+      );
   late final AuthRepository _authRepository =
       widget.authRepository ??
       ApiAuthRepository(
@@ -56,6 +74,8 @@ class _MainAppState extends State<MainApp> {
       );
   late final GoRouter _router = createAppRouter(
     authRepository: _authRepository,
+    marketplaceRepository: _marketplaceRepository,
+    externalUrls: widget.externalUrls ?? const PlatformExternalUrlService(),
     session: _session,
     entry: _entry,
     holdSplash: widget.holdSplash,
@@ -91,6 +111,7 @@ class _MainAppState extends State<MainApp> {
     _session.dispose();
     if (widget.authRepository == null) _authRepository.dispose();
     _api?.close();
+    _marketplaceApi?.close();
     _defaultAuthUi.dispose();
     super.dispose();
   }

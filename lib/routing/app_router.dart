@@ -2,6 +2,10 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/widgets.dart';
 
 import '../data/repositories/auth_repository.dart';
+import '../data/repositories/marketplace_repository.dart';
+import '../data/services/external_url_service.dart';
+import '../ui/marketplace/widgets/marketplace_screen.dart';
+import '../ui/marketplace/widgets/place_detail_screen.dart';
 import '../domain/models/pending_registration.dart';
 import '../domain/models/auth_session.dart';
 import '../ui/core/ui/app_feature_placeholder.dart';
@@ -23,6 +27,8 @@ import 'shell_destination.dart';
 
 GoRouter createAppRouter({
   required AuthRepository authRepository,
+  required MarketplaceRepository marketplaceRepository,
+  required ExternalUrlService externalUrls,
   required SessionViewModel session,
   required AppEntryViewModel entry,
   bool holdSplash = false,
@@ -95,17 +101,30 @@ GoRouter createAppRouter({
                   builder: (context, state) =>
                       destination == ShellDestination.home
                       ? const HomeScreen()
+                      : destination == ShellDestination.market
+                      ? MarketplaceScreen(repository: marketplaceRepository)
                       : AppFeaturePlaceholder(
                           title: '${destination.label} coming soon',
                           description: switch (destination) {
                             ShellDestination.map =>
                               'Your campus map will live here.',
-                            ShellDestination.market => 'The campus marketplace is planned for a future update.',
                             _ => 'Your profile will live here.',
                           },
                           icon: destination.icon,
                         ),
-                  routes: destination != ShellDestination.home
+                  routes: destination == ShellDestination.market
+                      ? [
+                          GoRoute(
+                            path: ':placeId',
+                            builder: (context, state) => PlaceDetailScreen(
+                              key: state.pageKey,
+                              placeId: state.pathParameters['placeId']!,
+                              repository: marketplaceRepository,
+                              externalUrls: externalUrls,
+                            ),
+                          ),
+                        ]
+                      : destination != ShellDestination.home
                       ? []
                       : [
                           for (final auxiliary in ShellDestination.auxiliary)

@@ -1,3 +1,5 @@
+import '../marketplace_test_support.dart';
+
 import 'package:balamandian/app.dart';
 import 'package:balamandian/ui/core/themes/app_theme.dart';
 import 'package:balamandian/ui/home/widgets/home_screen.dart';
@@ -33,6 +35,8 @@ void main() {
     await harness.repository.login('FICTION001', 'test');
     await tester.pumpWidget(
       MainApp(
+        marketplaceRepository: FakeMarketplaceRepository(),
+        externalUrls: FakeExternalUrlService(),
         key: appKey,
         initialLocation: '/',
         themeMode: ThemeMode.light,
@@ -57,6 +61,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.pumpWidget(
       MainApp(
+        marketplaceRepository: FakeMarketplaceRepository(),
+        externalUrls: FakeExternalUrlService(),
         key: appKey,
         initialLocation: '/',
         themeMode: ThemeMode.light,

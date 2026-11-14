@@ -1,3 +1,5 @@
+import '../marketplace_test_support.dart';
+
 import 'dart:async';
 
 import 'package:balamandian/app.dart';
@@ -85,6 +87,8 @@ void main() {
       var repository = freshRepository();
       await tester.pumpWidget(
         MainApp(
+          marketplaceRepository: FakeMarketplaceRepository(),
+          externalUrls: FakeExternalUrlService(),
           authRepository: repository,
           onboardingRepository: testOnboardingRepository(),
           initialLocation: '/welcome/sign-in',
@@ -116,6 +120,8 @@ void main() {
         repository = freshRepository();
         await tester.pumpWidget(
           MainApp(
+            marketplaceRepository: FakeMarketplaceRepository(),
+            externalUrls: FakeExternalUrlService(),
             authRepository: repository,
             onboardingRepository: testOnboardingRepository(),
           ),
@@ -133,6 +139,8 @@ void main() {
       repository = freshRepository();
       await tester.pumpWidget(
         MainApp(
+          marketplaceRepository: FakeMarketplaceRepository(),
+          externalUrls: FakeExternalUrlService(),
           authRepository: repository,
           onboardingRepository: testOnboardingRepository(),
           holdSplash: true,
@@ -177,6 +185,8 @@ void main() {
       );
       await tester.pumpWidget(
         MainApp(
+          marketplaceRepository: FakeMarketplaceRepository(),
+          externalUrls: FakeExternalUrlService(),
           authRepository: harness.repository,
           onboardingRepository: testOnboardingRepository(),
         ),
@@ -222,6 +232,8 @@ void main() {
 
       await tester.pumpWidget(
         MainApp(
+          marketplaceRepository: FakeMarketplaceRepository(),
+          externalUrls: FakeExternalUrlService(),
           authRepository: harness.repository,
           onboardingRepository: testOnboardingRepository(),
         ),
@@ -270,6 +282,8 @@ void main() {
       );
       await tester.pumpWidget(
         MainApp(
+          marketplaceRepository: FakeMarketplaceRepository(),
+          externalUrls: FakeExternalUrlService(),
           authRepository: harness.repository,
           onboardingRepository: testOnboardingRepository(),
         ),

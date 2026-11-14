@@ -1,3 +1,5 @@
+import '../marketplace_test_support.dart';
+
 import 'package:balamandian/app.dart';
 import 'package:balamandian/data/repositories/auth_repository.dart';
 import 'package:balamandian/ui/auth/view_models/auth_ui_controller.dart';
@@ -78,6 +80,8 @@ Future<void> pumpStartup(
   });
   await tester.pumpWidget(
     MainApp(
+      marketplaceRepository: FakeMarketplaceRepository(),
+      externalUrls: FakeExternalUrlService(),
       key: UniqueKey(),
       initialLocation: '/welcome/$screen',
       holdSplash: screen == 'splash',

@@ -1,3 +1,5 @@
+import '../../marketplace_test_support.dart';
+
 import 'dart:async';
 
 import 'package:balamandian/app.dart';
@@ -31,6 +33,8 @@ Future<void> startEntry(
   mockNativeSplash(tester);
   await tester.pumpWidget(
     MainApp(
+      marketplaceRepository: FakeMarketplaceRepository(),
+      externalUrls: FakeExternalUrlService(),
       authRepository: h.repository,
       onboardingRepository: onboarding ?? testOnboardingRepository(),
     ),
@@ -248,7 +252,7 @@ void main() {
       expect(router.routeInformationProvider.value.uri.path, '/market');
       await tester.pumpAndSettle();
       expect(find.byType(SplashScreen), findsNothing);
-      expect(find.text('Market coming soon'), findsOneWidget);
+      expect(find.text('Marketplace'), findsOneWidget);
       expect(calls, 1);
       router.go('/');
       await tester.pumpAndSettle();

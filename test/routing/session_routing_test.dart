@@ -1,3 +1,5 @@
+import '../marketplace_test_support.dart';
+
 import 'dart:async';
 
 import 'package:balamandian/app.dart';
@@ -29,6 +31,8 @@ Future<void> pumpSession(
   addTearDown(tester.platformDispatcher.clearAllTestValues);
   await tester.pumpWidget(
     MainApp(
+      marketplaceRepository: FakeMarketplaceRepository(),
+      externalUrls: FakeExternalUrlService(),
       authRepository: h.repository,
       initialLocation: location,
       onboardingRepository: testOnboardingRepository(),
@@ -163,6 +167,8 @@ void main() {
       mockNativeSplash(tester);
       await tester.pumpWidget(
         MainApp(
+          marketplaceRepository: FakeMarketplaceRepository(),
+          externalUrls: FakeExternalUrlService(),
           key: key,
           authRepository: h.repository,
           onboardingRepository: testOnboardingRepository(),
@@ -180,6 +186,8 @@ void main() {
       await tester.pumpAndSettle();
       await tester.pumpWidget(
         MainApp(
+          marketplaceRepository: FakeMarketplaceRepository(),
+          externalUrls: FakeExternalUrlService(),
           key: key,
           authRepository: h.repository,
           themeMode: ThemeMode.dark,

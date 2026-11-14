@@ -1,3 +1,5 @@
+import '../../marketplace_test_support.dart';
+
 import 'dart:ui' as ui;
 
 import 'package:balamandian/app.dart';
@@ -51,6 +53,8 @@ Future<void> pumpHome(
   await harness.repository.login('FICTION001', 'test');
   await tester.pumpWidget(
     MainApp(
+      marketplaceRepository: FakeMarketplaceRepository(),
+      externalUrls: FakeExternalUrlService(),
       initialLocation: location,
       authRepository: harness.repository,
       onboardingRepository: testOnboardingRepository(),
@@ -89,7 +93,10 @@ void main() {
         router.routeInformationProvider.value.uri.path,
         '/${label.toLowerCase()}',
       );
-      expect(find.text('$label coming soon'), findsOneWidget);
+      expect(
+        find.text(label == 'Market' ? 'Marketplace' : '$label coming soon'),
+        findsOneWidget,
+      );
       expect(tester.widget<AppNavigationItem>(tab(label)).selected, isTrue);
       expect(tester.element(find.byType(AppShell)), same(shellElement));
     }
@@ -205,7 +212,10 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(quick(label));
         await tester.pumpAndSettle();
-        expect(find.text('$label coming soon'), findsOneWidget);
+        expect(
+          find.text(label == 'Market' ? 'Marketplace' : '$label coming soon'),
+          findsOneWidget,
+        );
         expect(quick(label), findsNothing);
         expect(
           shellRouter(tester).routeInformationProvider.value.uri.path,
@@ -216,7 +226,10 @@ void main() {
         await tester.binding.handlePopRoute();
         await tester.pumpAndSettle();
         expect(quick(label), findsNothing);
-        expect(find.text('$label coming soon'), findsOneWidget);
+        expect(
+          find.text(label == 'Market' ? 'Marketplace' : '$label coming soon'),
+          findsOneWidget,
+        );
         await tester.binding.handlePopRoute();
         await tester.pumpAndSettle();
         expect(

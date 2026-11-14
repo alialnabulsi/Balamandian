@@ -11,6 +11,7 @@ Directories marked `prepared` contain only a `.gitkeep` file so Git can track
 them. They do not contain feature implementations or tests.
 
 ```text
+assets/marketplace/images/         # Approved local photos and generic fallback.
 lib/
   main.dart                       # Entry point: launches the app.
   app.dart                        # Root widget and MaterialApp configuration.
@@ -25,6 +26,9 @@ lib/
       widgets/
         app_shell.dart            # Persistent Home navigation and composition.
         home_screen.dart          # Branded future-feed empty state.
+    marketplace/
+      widgets/                    # Live marketplace and nested place detail components.
+      view_models/                # Search, filters, pagination, favorites and ratings.
     onboarding/
       widgets/                    # Splash, three tour screens, artwork and startup flow.
       view_models/                # App entry coordination and foreground re-entry.
@@ -32,19 +36,21 @@ lib/
       widgets/                    # Entry choices, sign-in/up and account setup.
       view_models/                # Credentials/OTP state, deferred profile UI state.
   data/
-    repositories/                 # Authentication contract and API implementation.
-    services/                     # Authentication HTTP and secure session storage.
+    repositories/                 # Auth and marketplace contracts/API implementations.
+    services/                     # Auth/marketplace HTTP, secure session storage, external links.
   domain/
-    models/                       # Pending registration, issued session/user and errors.
+    models/                       # Auth types and immutable marketplace DTOs/pages/errors.
 test/
+  domain/models/                  # Marketplace response and immutable-model tests.
   routing/
     app_router_test.dart          # Router wiring and lifecycle checks.
   ui/
     onboarding/                   # Tour, navigation, transitions and reduced motion.
     auth/                         # Form, pending, photo and callback tests.
+    marketplace/                  # ViewModels, widgets, layout, accessibility and screenshots.
     startup_visual_test.dart      # Native screenshots and constrained-layout checks.
   data/
-    repositories/                 # Authentication orchestration/persistence tests.
+    repositories/                 # Auth orchestration and protected marketplace boundary tests.
     services/                     # Mocked HTTP contract and secure-storage tests.
 ```
 
@@ -85,14 +91,14 @@ create other future paths only alongside code needed by a real feature.
 
 | Location | Responsibility | Current status |
 | --- | --- | --- |
-| `lib/ui/<feature>/widgets/` | Feature screen and its local widgets. | Implemented for `home`, `onboarding` and `auth`. |
+| `lib/ui/<feature>/widgets/` | Feature screen and its local widgets. | Implemented for `home`, `onboarding`, `auth` and `marketplace`. |
 | `lib/ui/<feature>/view_models/` | Presentation logic, UI state, and user-action methods. | Auth presentation, credential validation, photo state, and app-entry/re-entry coordination. |
 | `lib/ui/core/ui/` | Reusable, configurable widget classes shared across features. | Shared branding, buttons, fields feedback, body copy, crest and decorative motion. |
 | `lib/ui/core/themes/` | Shared theme configuration. | Exists. |
-| `lib/data/repositories/` | Sources of truth organized by application data type; contracts and implementations, including authentication and session state. | Authentication contract and API implementation; persistence completes before authentication succeeds. |
-| `lib/data/services/` | External API access, response decoding, local storage, and other data-source adapters; no presentation logic or application data state. | Authentication HTTP service and secure credential store. |
+| `lib/data/repositories/` | Sources of truth organized by application data type; contracts and implementations, including authentication and session state. | Authentication and marketplace contracts/API implementations; auth persistence completes before authentication succeeds. |
+| `lib/data/services/` | External API access, response decoding, local storage, and other data-source adapters; no presentation logic or application data state. | Auth/marketplace HTTP, secure credential store and injectable external URL launching. |
 | `lib/data/model/` | API-specific response/request models when a separate representation is needed. | Conditional future path, using Compass's singular `model/` name. |
-| `lib/domain/models/` | Immutable application data types consumed by repositories and view models. | Pending registration, authenticated user/session and safe failures. |
+| `lib/domain/models/` | Immutable application data types consumed by repositories and view models. | Auth models and immutable marketplace categories, places, posts, pages, mutation results and failures. |
 | `lib/routing/` | Application route configuration. | Exists. |
 
 Onboarding screens, page components, and local UI belong in
@@ -191,7 +197,7 @@ Refresh tokens, roles and additional access rules remain deferred. The Home shel
 `StatefulShellRoute.indexedStack` for its four tab navigators. Native app-link configuration is
 also deferred; adopting a declarative router alone does not configure it.
 Unmatched locations use go_router's built-in error handling; a custom not-found
-experience awaits an approved design. Shell feature placeholders are explicit;
+experience awaits an approved design. Map and Profile placeholders are explicit;
 no role policies or route code generation are included. Registration opens `/welcome/verify-email`;
 successful verification/login opens Home after secure session persistence.
 Account setup and guest actions remain unconnected. Onboarding completion is
@@ -199,6 +205,15 @@ persisted separately from credentials: first-time users see the tour, returning
 unauthenticated users see the existing auth entry, and validated sessions open
 Home after the full splash. Genuine background returns replay the same splash
 over the retained router without resetting navigation or calling `/me` again.
+
+The authenticated marketplace now implements `/market` and nested `/market/:placeId`
+inside the retained Market branch. Search, categories, news/advertisements, place
+details, favorites and personal star ratings use the real marketplace API through
+`AuthRepository.withSession`. Local placeholder photos match the approved reference;
+external directions/contact links use `url_launcher`. No marketplace data is
+hardcoded in Dart. See [marketplace implementation](Docs/marketplace.md) for
+architecture, assets, endpoint usage and verification. Map/Profile and all shared
+shell controls retain their existing behavior.
 
 See [Home Shell implementation notes](Docs/home-shell.md) for the component tree,
 destination behavior, identity handoff, theme decisions and focused checks.
