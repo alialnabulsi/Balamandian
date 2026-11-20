@@ -1,3 +1,4 @@
+import '../profile_test_support.dart';
 import '../marketplace_test_support.dart';
 
 import 'package:balamandian/app.dart';
@@ -78,8 +79,16 @@ Future<void> pumpStartup(
     tester.view.reset();
     tester.platformDispatcher.clearAllTestValues();
   });
+  var effectiveAuth = authRepository;
+  if (effectiveAuth == null && screen == 'account-setup') {
+    final harness = AuthTestHarness((_) async => success(sessionData(), 201));
+    addTearDown(harness.close);
+    await harness.repository.verify(registrationId, '123456');
+    effectiveAuth = harness.repository;
+  }
   await tester.pumpWidget(
     MainApp(
+      profileRepository: FakeProfileRepository(),
       marketplaceRepository: FakeMarketplaceRepository(),
       externalUrls: FakeExternalUrlService(),
       key: UniqueKey(),
@@ -88,7 +97,7 @@ Future<void> pumpStartup(
       onboardingRepository: testOnboardingRepository(),
       onOnboardingCompleted: onOnboardingCompleted,
       authUi: host,
-      authRepository: authRepository ?? noSessionRepository(),
+      authRepository: effectiveAuth ?? noSessionRepository(),
       themeMode: dark ? ThemeMode.dark : ThemeMode.light,
     ),
   );

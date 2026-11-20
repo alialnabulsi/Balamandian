@@ -5,6 +5,10 @@ organization, adapted from Flutter's [Compass architecture case study](https://d
 architecture guide, and recommendations. These are principles to apply as the
 app grows, rather than a requirement to reproduce every Compass directory.
 
+The [profile implementation report](Docs/profile.md) records the connected social
+identity feature, routes, reusable components, official identity ownership,
+avatar/follow contracts, database synchronization and manual device checks.
+
 Current architecture-related structure, including prepared directories:
 
 Directories marked `prepared` contain only a `.gitkeep` file so Git can track
@@ -34,10 +38,13 @@ lib/
       view_models/                # App entry coordination and foreground re-entry.
     auth/
       widgets/                    # Entry choices, sign-in/up and account setup.
-      view_models/                # Credentials/OTP state, deferred profile UI state.
+      view_models/                # Credentials/OTP state and shared photo selection.
+    profile/
+      widgets/                    # Profile, editor, account sheet, member lists and badges.
+      view_models/                # Profile/edit/member commands and shared identity.
   data/
-    repositories/                 # Auth and marketplace contracts/API implementations.
-    services/                     # Auth/marketplace HTTP, secure session storage, external links.
+    repositories/                 # Auth, marketplace and profile contracts/API implementations.
+    services/                     # Auth/marketplace/profile HTTP, secure storage, external links.
   domain/
     models/                       # Auth types and immutable marketplace DTOs/pages/errors.
 test/
@@ -64,7 +71,8 @@ destinations and email OTP verification live under `/welcome`. Home stays at `/`
 inside the persistent application shell, alongside Map, Market and Profile.
 Inter typography and the handoff's exact light/dark palette are shared themes.
 Registration, email OTP verification/resend and SIS login connect to Balamandian-API.
-Successful verification/login securely saves the newly issued session before opening Home.
+Successful authentication securely saves the issued session before navigation.
+OTP verification opens optional profile personalization; login opens Home.
 The shared authentication repository restores saved sessions through `/me`, owns
 the current account identity, protects shell routes, and coordinates current-session
 logout. See [the session lifecycle report](Docs/auth-session-lifecycle.md) for
@@ -91,12 +99,12 @@ create other future paths only alongside code needed by a real feature.
 
 | Location | Responsibility | Current status |
 | --- | --- | --- |
-| `lib/ui/<feature>/widgets/` | Feature screen and its local widgets. | Implemented for `home`, `onboarding`, `auth` and `marketplace`. |
+| `lib/ui/<feature>/widgets/` | Feature screen and its local widgets. | Implemented for `home`, `onboarding`, `auth`, `marketplace` and `profile`. |
 | `lib/ui/<feature>/view_models/` | Presentation logic, UI state, and user-action methods. | Auth presentation, credential validation, photo state, and app-entry/re-entry coordination. |
 | `lib/ui/core/ui/` | Reusable, configurable widget classes shared across features. | Shared branding, buttons, fields feedback, body copy, crest and decorative motion. |
 | `lib/ui/core/themes/` | Shared theme configuration. | Exists. |
-| `lib/data/repositories/` | Sources of truth organized by application data type; contracts and implementations, including authentication and session state. | Authentication and marketplace contracts/API implementations; auth persistence completes before authentication succeeds. |
-| `lib/data/services/` | External API access, response decoding, local storage, and other data-source adapters; no presentation logic or application data state. | Auth/marketplace HTTP, secure credential store and injectable external URL launching. |
+| `lib/data/repositories/` | Sources of truth organized by application data type; contracts and implementations, including authentication and session state. | Authentication, marketplace and profile contracts/API implementations; auth persistence completes before authentication succeeds. |
+| `lib/data/services/` | External API access, response decoding, local storage, and other data-source adapters; no presentation logic or application data state. | Auth/marketplace/profile HTTP, secure credential store and injectable external URL launching. |
 | `lib/data/model/` | API-specific response/request models when a separate representation is needed. | Conditional future path, using Compass's singular `model/` name. |
 | `lib/domain/models/` | Immutable application data types consumed by repositories and view models. | Auth models and immutable marketplace categories, places, posts, pages, mutation results and failures. |
 | `lib/routing/` | Application route configuration. | Exists. |
@@ -193,14 +201,15 @@ opens the resolved destination after both complete. `/session` provides Retry
 for recoverable validation errors. Shell destinations require an authenticated session; login,
 registration, OTP and onboarding remain public. Successful restoration opens
 Home; invalid sessions and logout lead to Login with protected history removed.
-Refresh tokens, roles and additional access rules remain deferred. The Home shell uses
+Refresh tokens and application permission policies remain deferred. The Home shell uses
 `StatefulShellRoute.indexedStack` for its four tab navigators. Native app-link configuration is
 also deferred; adopting a declarative router alone does not configure it.
 Unmatched locations use go_router's built-in error handling; a custom not-found
-experience awaits an approved design. Map and Profile placeholders are explicit;
+experience awaits an approved design. Map remains a placeholder; Profile is connected;
 no role policies or route code generation are included. Registration opens `/welcome/verify-email`;
-successful verification/login opens Home after secure session persistence.
-Account setup and guest actions remain unconnected. Onboarding completion is
+successful authentication saves sessions securely before its destination opens.
+OTP success now opens optional, persistent profile personalization; guest actions
+remain deferred. Normal login/restoration still open Home. Onboarding completion is
 persisted separately from credentials: first-time users see the tour, returning
 unauthenticated users see the existing auth entry, and validated sessions open
 Home after the full splash. Genuine background returns replay the same splash
@@ -212,8 +221,9 @@ details, favorites and personal star ratings use the real marketplace API throug
 `AuthRepository.withSession`. Local placeholder photos match the approved reference;
 external directions/contact links use `url_launcher`. No marketplace data is
 hardcoded in Dart. See [marketplace implementation](Docs/marketplace.md) for
-architecture, assets, endpoint usage and verification. Map/Profile and all shared
-shell controls retain their existing behavior.
+architecture, assets, endpoint usage and verification. Profile and the shell's
+shared identity are documented in [profiles](Docs/profile.md); Home search opens
+authenticated member discovery. Map remains a future feature.
 
 See [Home Shell implementation notes](Docs/home-shell.md) for the component tree,
 destination behavior, identity handoff, theme decisions and focused checks.

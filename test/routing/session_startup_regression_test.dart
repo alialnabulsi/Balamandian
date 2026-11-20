@@ -1,3 +1,4 @@
+import '../profile_test_support.dart';
 import '../marketplace_test_support.dart';
 
 import 'dart:async';
@@ -87,6 +88,7 @@ void main() {
       var repository = freshRepository();
       await tester.pumpWidget(
         MainApp(
+          profileRepository: FakeProfileRepository(),
           marketplaceRepository: FakeMarketplaceRepository(),
           externalUrls: FakeExternalUrlService(),
           authRepository: repository,
@@ -120,6 +122,7 @@ void main() {
         repository = freshRepository();
         await tester.pumpWidget(
           MainApp(
+            profileRepository: FakeProfileRepository(),
             marketplaceRepository: FakeMarketplaceRepository(),
             externalUrls: FakeExternalUrlService(),
             authRepository: repository,
@@ -139,6 +142,7 @@ void main() {
       repository = freshRepository();
       await tester.pumpWidget(
         MainApp(
+          profileRepository: FakeProfileRepository(),
           marketplaceRepository: FakeMarketplaceRepository(),
           externalUrls: FakeExternalUrlService(),
           authRepository: repository,
@@ -185,6 +189,7 @@ void main() {
       );
       await tester.pumpWidget(
         MainApp(
+          profileRepository: FakeProfileRepository(),
           marketplaceRepository: FakeMarketplaceRepository(),
           externalUrls: FakeExternalUrlService(),
           authRepository: harness.repository,
@@ -232,6 +237,7 @@ void main() {
 
       await tester.pumpWidget(
         MainApp(
+          profileRepository: FakeProfileRepository(),
           marketplaceRepository: FakeMarketplaceRepository(),
           externalUrls: FakeExternalUrlService(),
           authRepository: harness.repository,
@@ -282,6 +288,7 @@ void main() {
       );
       await tester.pumpWidget(
         MainApp(
+          profileRepository: FakeProfileRepository(),
           marketplaceRepository: FakeMarketplaceRepository(),
           externalUrls: FakeExternalUrlService(),
           authRepository: harness.repository,

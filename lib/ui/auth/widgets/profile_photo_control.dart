@@ -11,10 +11,14 @@ class ProfilePhotoControl extends StatelessWidget {
     required this.model,
     required this.disabled,
     this.identity,
+    this.existingPhoto,
+    this.onRemove,
   });
   final ProfileViewModel model;
   final bool disabled;
   final UniversityIdentity? identity;
+  final Widget? existingPhoto;
+  final VoidCallback? onRemove;
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -63,17 +67,22 @@ class ProfilePhotoControl extends StatelessWidget {
                               cacheWidth: 256,
                               semanticLabel: 'Your selected profile photo',
                             )
-                          : initials.isNotEmpty
-                          ? Text(
-                              initials,
-                              style: StartupTokens.text(
-                                24,
-                                30,
-                                weight: FontWeight.w600,
-                                color: scheme.primary,
-                              ),
-                            )
-                          : AssetIcon('users', size: 32, color: scheme.primary),
+                          : existingPhoto ??
+                                (initials.isNotEmpty
+                                    ? Text(
+                                        initials,
+                                        style: StartupTokens.text(
+                                          24,
+                                          30,
+                                          weight: FontWeight.w600,
+                                          color: scheme.primary,
+                                        ),
+                                      )
+                                    : AssetIcon(
+                                        'users',
+                                        size: 32,
+                                        color: scheme.primary,
+                                      )),
                     ),
                     Positioned(
                       right: -2,
@@ -123,7 +132,7 @@ class ProfilePhotoControl extends StatelessWidget {
                       child: Text(
                         model.readingPhoto
                             ? 'Reading photo…'
-                            : model.preview == null
+                            : model.preview == null && existingPhoto == null
                             ? 'Add a photo'
                             : 'Change photo',
                         style: const TextStyle(
@@ -131,9 +140,11 @@ class ProfilePhotoControl extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (model.preview != null)
+                    if (model.preview != null || existingPhoto != null)
                       TextButton(
-                        onPressed: blocked ? null : model.removePhoto,
+                        onPressed: blocked
+                            ? null
+                            : onRemove ?? model.removePhoto,
                         style: TextButton.styleFrom(padding: EdgeInsets.zero),
                         child: const Text('Remove photo'),
                       ),

@@ -4,6 +4,12 @@ import 'package:flutter/widgets.dart';
 import '../data/repositories/auth_repository.dart';
 import '../data/repositories/marketplace_repository.dart';
 import '../data/services/external_url_service.dart';
+import '../data/repositories/profile_repository.dart';
+import '../domain/models/profile_models.dart';
+import '../ui/profile/view_models/current_identity_view_model.dart';
+import '../ui/profile/widgets/profile_screen.dart';
+import '../ui/profile/widgets/edit_profile_screen.dart';
+import '../ui/profile/widgets/member_list_screen.dart';
 import '../ui/marketplace/widgets/marketplace_screen.dart';
 import '../ui/marketplace/widgets/place_detail_screen.dart';
 import '../domain/models/pending_registration.dart';
@@ -28,6 +34,8 @@ import 'shell_destination.dart';
 GoRouter createAppRouter({
   required AuthRepository authRepository,
   required MarketplaceRepository marketplaceRepository,
+  required ProfileRepository profileRepository,
+  required CurrentIdentityViewModel identity,
   required ExternalUrlService externalUrls,
   required SessionViewModel session,
   required AppEntryViewModel entry,
@@ -46,9 +54,11 @@ GoRouter createAppRouter({
         return entry.destination ?? StartupDestination.gettingStarted.path;
       }
       if (entry.error != null) return path == '/session' ? null : '/session';
-      final public = StartupDestination.values.any(
-        (destination) => destination.path == path,
-      );
+      final public =
+          StartupDestination.values.any(
+            (destination) => destination.path == path,
+          ) &&
+          path != StartupDestination.accountSetup.path;
       final authenticated =
           authRepository.status == SessionStatus.authenticated ||
           (authRepository.status == SessionStatus.signingOut &&
@@ -61,13 +71,61 @@ GoRouter createAppRouter({
       if (blocked) {
         return path == '/session' ? null : '/session';
       }
-      if (authenticated) return public || path == '/session' ? '/' : null;
+      if (authenticated) {
+        if (authRepository.needsProfilePersonalization) {
+          return path == StartupDestination.accountSetup.path
+              ? null
+              : StartupDestination.accountSetup.path;
+        }
+        return public ||
+                path == '/session' ||
+                path == StartupDestination.accountSetup.path
+            ? '/'
+            : null;
+      }
       if (path == '/session') {
         return StartupDestination.signIn.path;
       }
       return public ? null : StartupDestination.signIn.path;
     },
     routes: [
+      GoRoute(
+        path: '/profile/edit',
+        builder: (context, state) =>
+            EditProfileScreen(repository: profileRepository),
+      ),
+      GoRoute(
+        path: '/members',
+        builder: (context, state) => MemberListScreen(
+          repository: profileRepository,
+          kind: MemberListKind.discover,
+        ),
+        routes: [
+          GoRoute(
+            path: ':userId',
+            builder: (context, state) => ProfileScreen(
+              key: state.pageKey,
+              repository: profileRepository,
+              userId: state.pathParameters['userId']!,
+            ),
+            routes: [
+              for (final kind in [
+                MemberListKind.followers,
+                MemberListKind.following,
+              ])
+                GoRoute(
+                  path: kind.name,
+                  builder: (context, state) => MemberListScreen(
+                    key: state.pageKey,
+                    repository: profileRepository,
+                    kind: kind,
+                    userId: state.pathParameters['userId']!,
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
       GoRoute(
         path: '/session',
         builder: (context, state) => SessionGateScreen(
@@ -90,6 +148,7 @@ GoRouter createAppRouter({
             navigationShell: navigationShell,
             location: state.uri.path,
             session: session,
+            identity: identity,
           ),
         ),
         branches: [
@@ -103,6 +162,8 @@ GoRouter createAppRouter({
                       ? const HomeScreen()
                       : destination == ShellDestination.market
                       ? MarketplaceScreen(repository: marketplaceRepository)
+                      : destination == ShellDestination.profile
+                      ? ProfileScreen(repository: profileRepository)
                       : AppFeaturePlaceholder(
                           title: '${destination.label} coming soon',
                           description: switch (destination) {
@@ -187,7 +248,13 @@ GoRouter createAppRouter({
                     signingUp: true,
                     repository: authRepository,
                   ),
-                  StartupDestination.accountSetup => const AccountSetupScreen(),
+                  StartupDestination.accountSetup => AccountSetupScreen(
+                    repository: profileRepository,
+                    onCompleted: () {
+                      authRepository.completeProfilePersonalization();
+                      context.go('/');
+                    },
+                  ),
                   StartupDestination.verifyEmail => OtpScreen(
                     repository: authRepository,
                     registration: state.extra is PendingRegistration

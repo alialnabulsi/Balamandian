@@ -8,6 +8,8 @@ abstract class AuthRepository extends ChangeNotifier {
   AuthUser? get user;
   String? get sessionError;
   String? get sessionNotice;
+  bool get needsProfilePersonalization => false;
+  void completeProfilePersonalization() {}
   Future<void> restoreSession();
   Future<void> retrySession();
   Future<void> logout({bool localOnly = false});

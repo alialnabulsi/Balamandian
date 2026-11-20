@@ -26,6 +26,15 @@ class ApiAuthRepository extends AuthRepository {
   Future<void>? _restoring, _signingOut, _deleting;
   bool _initialized = false, _mustDelete = false, _disposed = false;
   int _generation = 0;
+  bool _personalizing = false;
+  @override
+  bool get needsProfilePersonalization => _personalizing;
+  @override
+  void completeProfilePersonalization() {
+    if (!_personalizing) return;
+    _personalizing = false;
+    if (!_disposed) notifyListeners();
+  }
 
   bool _isCurrent(int generation) => !_disposed && generation == _generation;
 
@@ -138,13 +147,13 @@ class ApiAuthRepository extends AuthRepository {
 
   @override
   Future<AuthUser> verify(String pendingRegistrationId, String otp) async =>
-      _save(await _api.verify(pendingRegistrationId, otp));
+      _save(await _api.verify(pendingRegistrationId, otp), personalize: true);
 
   @override
   Future<AuthUser> login(String identifier, String password) async =>
       _save(await _api.login(identifier, password));
 
-  Future<AuthUser> _save(AuthSession result) async {
+  Future<AuthUser> _save(AuthSession result, {bool personalize = false}) async {
     try {
       await _credentials.save(result.session);
     } catch (_) {
@@ -154,6 +163,7 @@ class ApiAuthRepository extends AuthRepository {
       );
     }
     _generation++;
+    _personalizing = personalize;
     _initialized = true;
     _session = result.session;
     _user = result.user;
@@ -202,6 +212,7 @@ class ApiAuthRepository extends AuthRepository {
     final generation = ++_generation;
     _initialized = true;
     _session = null;
+    _personalizing = false;
     _user = null;
     _mustDelete = true;
     _publish(SessionStatus.signingOut);

@@ -1,3 +1,5 @@
+import '../profile_test_support.dart';
+
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -113,7 +115,12 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        expect(find.text('$label coming soon'), findsOneWidget);
+        expect(
+          find.text(
+            label == 'Profile' ? 'Ali Al Nabulsi' : '$label coming soon',
+          ),
+          findsOneWidget,
+        );
       }
       await Scrollable.ensureVisible(
         tester.element(
@@ -162,6 +169,7 @@ void main() {
       );
       await tester.pumpWidget(
         MainApp(
+          profileRepository: FakeProfileRepository(),
           authRepository: auth.repository,
           marketplaceRepository: repo,
           externalUrls: FakeExternalUrlService(),

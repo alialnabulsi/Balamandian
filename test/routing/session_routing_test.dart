@@ -1,3 +1,4 @@
+import '../profile_test_support.dart';
 import '../marketplace_test_support.dart';
 
 import 'dart:async';
@@ -31,6 +32,7 @@ Future<void> pumpSession(
   addTearDown(tester.platformDispatcher.clearAllTestValues);
   await tester.pumpWidget(
     MainApp(
+      profileRepository: FakeProfileRepository(),
       marketplaceRepository: FakeMarketplaceRepository(),
       externalUrls: FakeExternalUrlService(),
       authRepository: h.repository,
@@ -167,6 +169,7 @@ void main() {
       mockNativeSplash(tester);
       await tester.pumpWidget(
         MainApp(
+          profileRepository: FakeProfileRepository(),
           marketplaceRepository: FakeMarketplaceRepository(),
           externalUrls: FakeExternalUrlService(),
           key: key,
@@ -186,6 +189,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.pumpWidget(
         MainApp(
+          profileRepository: FakeProfileRepository(),
           marketplaceRepository: FakeMarketplaceRepository(),
           externalUrls: FakeExternalUrlService(),
           key: key,

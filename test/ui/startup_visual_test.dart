@@ -81,7 +81,7 @@ void main() {
               : screen == StartupDestination.gettingStarted
               ? 'Log in with SIS'
               : screen == StartupDestination.accountSetup
-              ? 'Finish setup'
+              ? 'Save changes'
               : screen == StartupDestination.signUp
               ? 'Continue'
               : screen == StartupDestination.verifyEmail

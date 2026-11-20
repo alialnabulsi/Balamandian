@@ -3,6 +3,8 @@
 Session ownership, identity handoff, route access and logout have since been
 completed in [the session lifecycle implementation](auth-session-lifecycle.md).
 The notes below describe the original shell implementation.
+Persistent official identity, initials/avatar loading, profile navigation and
+member discovery are now documented in [the profile report](profile.md).
 
 Implemented on `feature/home-shell`, based on the clean, fetched and up-to-date
 `dev` branch. No commits, merges into other branches, or pushes are part of this task.

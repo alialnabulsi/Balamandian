@@ -14,6 +14,11 @@ import 'data/repositories/marketplace_repository.dart';
 import 'data/repositories/api_marketplace_repository.dart';
 import 'data/services/marketplace_api_service.dart';
 import 'data/services/external_url_service.dart';
+import 'data/repositories/profile_repository.dart';
+import 'data/repositories/api_profile_repository.dart';
+import 'data/services/profile_api_service.dart';
+import 'domain/models/auth_session.dart';
+import 'ui/profile/view_models/current_identity_view_model.dart';
 import 'routing/app_router.dart';
 import 'routing/startup_destination.dart';
 import 'ui/core/themes/app_theme.dart';
@@ -28,6 +33,7 @@ class MainApp extends StatefulWidget {
     this.authUi,
     this.authRepository,
     this.marketplaceRepository,
+    this.profileRepository,
     this.externalUrls,
     this.onboardingRepository,
     this.themeMode = ThemeMode.system,
@@ -39,6 +45,7 @@ class MainApp extends StatefulWidget {
   final AuthUiController? authUi;
   final AuthRepository? authRepository;
   final MarketplaceRepository? marketplaceRepository;
+  final ProfileRepository? profileRepository;
   final ExternalUrlService? externalUrls;
   final OnboardingRepository? onboardingRepository;
   final ThemeMode themeMode;
@@ -54,6 +61,19 @@ class MainApp extends StatefulWidget {
 class _MainAppState extends State<MainApp> {
   AuthApiService? _api;
   MarketplaceApiService? _marketplaceApi;
+  ProfileApiService? _profileApi;
+  late final ProfileRepository _profileRepository =
+      widget.profileRepository ??
+      ApiProfileRepository(
+        api: _profileApi = ProfileApiService(
+          client: http.Client(),
+          baseUrl: Uri.parse(AuthApiService.configuredBaseUrl),
+        ),
+        withSession: _authRepository.withSession,
+      );
+  late final _identity = CurrentIdentityViewModel(
+    repository: _profileRepository,
+  );
   late final MarketplaceRepository _marketplaceRepository =
       widget.marketplaceRepository ??
       ApiMarketplaceRepository(
@@ -75,6 +95,8 @@ class _MainAppState extends State<MainApp> {
   late final GoRouter _router = createAppRouter(
     authRepository: _authRepository,
     marketplaceRepository: _marketplaceRepository,
+    profileRepository: _profileRepository,
+    identity: _identity,
     externalUrls: widget.externalUrls ?? const PlatformExternalUrlService(),
     session: _session,
     entry: _entry,
@@ -101,7 +123,29 @@ class _MainAppState extends State<MainApp> {
   @override
   void initState() {
     super.initState();
+    _authRepository.addListener(_syncProfile);
+    _syncProfile();
     unawaited(_entry.initialize());
+  }
+
+  void _syncProfile() {
+    final user = _authRepository.status == SessionStatus.authenticated
+        ? _authRepository.user
+        : null;
+    _profileRepository.bindSession(user?.id, user);
+    if (user != null &&
+        _profileRepository.currentUser == null &&
+        !_profileRepository.loading) {
+      unawaited(_loadProfile());
+    }
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      await _profileRepository.loadOwn();
+    } on Object {
+      /* A profile error never invalidates a valid session. */
+    }
   }
 
   @override
@@ -109,6 +153,10 @@ class _MainAppState extends State<MainApp> {
     _router.dispose();
     _entry.dispose();
     _session.dispose();
+    _authRepository.removeListener(_syncProfile);
+    _identity.dispose();
+    if (widget.profileRepository == null) _profileRepository.dispose();
+    _profileApi?.close();
     if (widget.authRepository == null) _authRepository.dispose();
     _api?.close();
     _marketplaceApi?.close();

@@ -12,12 +12,14 @@ class BalamandianTopBar extends StatelessWidget implements PreferredSizeWidget {
     required this.onNotifications,
     required this.onMessages,
     this.avatar,
+    this.avatarWidget,
     this.notificationBadge,
     this.messageBadge,
   });
 
   final VoidCallback onAccount, onSearch, onNotifications, onMessages;
   final ImageProvider? avatar;
+  final Widget? avatarWidget;
   final String? notificationBadge, messageBadge;
 
   @override
@@ -33,7 +35,7 @@ class BalamandianTopBar extends StatelessWidget implements PreferredSizeWidget {
         AppIconButton(
           tooltip: 'Open account menu',
           onPressed: onAccount,
-          child: AppAvatar(image: avatar, size: 32),
+          child: avatarWidget ?? AppAvatar(image: avatar, size: 32),
         ),
         const SizedBox(width: 4),
         Expanded(

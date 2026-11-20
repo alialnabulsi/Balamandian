@@ -30,7 +30,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Search'));
       await tester.pump();
-      expect(find.text('Search is coming soon.'), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(find.text('Discover members'), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'No match');
       await tester.pump(const Duration(milliseconds: 351));
       await tester.pumpAndSettle();

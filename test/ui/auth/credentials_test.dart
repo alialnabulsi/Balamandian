@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:balamandian/ui/auth/view_models/auth_ui_controller.dart';
 import 'package:balamandian/ui/auth/widgets/credentials_screen.dart';
 import 'package:balamandian/ui/auth/widgets/otp_screen.dart';
+import 'package:balamandian/ui/auth/widgets/account_setup_screen.dart';
 import 'package:balamandian/ui/core/ui/action_button.dart';
 import 'package:balamandian/ui/home/widgets/home_screen.dart';
 import 'package:flutter/material.dart';
@@ -158,6 +159,10 @@ void main() {
       write.complete();
       await tester.pumpAndSettle();
       expect(harness.store.writes, 1);
+      expect(find.byType(AccountSetupScreen), findsOneWidget);
+      await tester.ensureVisible(find.text('Skip for now'));
+      await tester.tap(find.text('Skip for now'));
+      await tester.pumpAndSettle();
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(paths, ['/api/v1/auth/register', '/api/v1/auth/register/verify']);
       expect(

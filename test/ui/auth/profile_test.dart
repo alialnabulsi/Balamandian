@@ -66,7 +66,7 @@ void main() {
       expect(find.text('Remove photo'), findsNothing);
       await tester.enterText(find.byType(TextField), '  A personal bio  ');
       await tester.pump();
-      expect(find.text('18 / 240'), findsOneWidget);
+      expect(find.text('18 / 250'), findsOneWidget);
       await tester.ensureVisible(find.text('Finish setup'));
       await tester.tap(find.text('Finish setup'));
       await tester.pump();

@@ -1,3 +1,4 @@
+import '../../profile_test_support.dart';
 import '../../marketplace_test_support.dart';
 
 import 'package:balamandian/app.dart';
@@ -60,6 +61,7 @@ void main() {
     addTearDown(tester.platformDispatcher.clearAllTestValues);
     await tester.pumpWidget(
       MainApp(
+        profileRepository: FakeProfileRepository(),
         marketplaceRepository: FakeMarketplaceRepository(),
         externalUrls: FakeExternalUrlService(),
         authRepository: noSessionRepository(),

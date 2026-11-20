@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'dart:async';
+
+import '../../../data/repositories/profile_repository.dart';
+import '../../profile/view_models/edit_profile_view_model.dart';
+import '../../profile/widgets/profile_editor_form.dart';
+
 import '../../core/themes/startup_tokens.dart';
 import '../../core/ui/action_button.dart';
 import '../../core/ui/form_message.dart';
@@ -12,8 +18,15 @@ import 'profile_photo_control.dart';
 import 'university_details_card.dart';
 
 class AccountSetupScreen extends StatefulWidget {
-  const AccountSetupScreen({super.key, this.pickPhoto});
+  const AccountSetupScreen({
+    super.key,
+    this.pickPhoto,
+    this.repository,
+    this.onCompleted,
+  });
   final PhotoPicker? pickPhoto;
+  final ProfileRepository? repository;
+  final VoidCallback? onCompleted;
   @override
   State<AccountSetupScreen> createState() => _AccountSetupScreenState();
 }
@@ -22,10 +35,26 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> {
   final _bio = TextEditingController();
   late final _model = ProfileViewModel(pickPhoto: widget.pickPhoto);
   bool _submitting = false;
+  EditProfileViewModel? _editor;
+  @override
+  void initState() {
+    super.initState();
+    if (widget.repository case final repository?) {
+      _editor = EditProfileViewModel(
+        repository: repository,
+        pickPhoto: widget.pickPhoto,
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_editor!.initialize());
+      });
+    }
+  }
+
   @override
   void dispose() {
     _bio.dispose();
     _model.dispose();
+    _editor?.dispose();
     super.dispose();
   }
 
@@ -48,6 +77,29 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_editor case final editor?) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop && !editor.saving) widget.onCompleted?.call();
+        },
+        child: AccessFrame(
+          title: 'A little about you',
+          description:
+              'Add a photo and bio, or jump straight into campus life.',
+          label: 'Personalize your profile',
+          expandChild: false,
+          onBack: () {
+            if (!editor.saving) widget.onCompleted?.call();
+          },
+          child: ProfileEditorForm(
+            model: editor,
+            onSaved: widget.onCompleted!,
+            onSkip: widget.onCompleted,
+          ),
+        ),
+      );
+    }
     final host = AuthUiScope.of(context), nav = StartupNavigation.of(context);
     return AccessFrame(
       title: 'A little about you',
@@ -80,14 +132,14 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> {
               controller: _bio,
               enabled: !nav.busy,
               multiline: true,
-              maxLength: 240,
+              maxLength: 250,
               optional: true,
             ),
             const SizedBox(height: 8),
             ValueListenableBuilder(
               valueListenable: _bio,
               builder: (context, value, child) => Text(
-                '${value.text.characters.length} / 240',
+                '${value.text.runes.length} / 250',
                 textAlign: TextAlign.right,
                 style: StartupTokens.text(
                   11,

@@ -1,3 +1,4 @@
+import '../profile_test_support.dart';
 import '../marketplace_test_support.dart';
 
 import 'package:balamandian/app.dart';
@@ -35,6 +36,7 @@ void main() {
     await harness.repository.login('FICTION001', 'test');
     await tester.pumpWidget(
       MainApp(
+        profileRepository: FakeProfileRepository(),
         marketplaceRepository: FakeMarketplaceRepository(),
         externalUrls: FakeExternalUrlService(),
         key: appKey,
@@ -61,6 +63,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.pumpWidget(
       MainApp(
+        profileRepository: FakeProfileRepository(),
         marketplaceRepository: FakeMarketplaceRepository(),
         externalUrls: FakeExternalUrlService(),
         key: appKey,

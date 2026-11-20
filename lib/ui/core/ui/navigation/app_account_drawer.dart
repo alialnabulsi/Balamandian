@@ -14,6 +14,9 @@ class AppAccountDrawer extends StatelessWidget {
     this.email,
     this.sisId,
     this.avatar,
+    this.avatarWidget,
+    this.displayName,
+    this.username,
   });
 
   final ShellDestination selected;
@@ -22,6 +25,8 @@ class AppAccountDrawer extends StatelessWidget {
   final List<ShellDestination> destinations;
   final String? email, sisId;
   final ImageProvider? avatar;
+  final Widget? avatarWidget;
+  final String? displayName, username;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +49,14 @@ class AppAccountDrawer extends StatelessWidget {
         ),
       ),
       children: [
-        AccountHeader(email: email, sisId: sisId, avatar: avatar),
+        AccountHeader(
+          email: email,
+          sisId: sisId,
+          avatar: avatar,
+          avatarWidget: avatarWidget,
+          displayName: displayName,
+          username: username,
+        ),
         const Divider(indent: 28, endIndent: 28),
         for (final destination in destinations)
           NavigationDrawerDestination(

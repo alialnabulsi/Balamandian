@@ -1,3 +1,5 @@
+import '../../profile_test_support.dart';
+
 import 'package:balamandian/app.dart';
 import 'package:balamandian/domain/models/auth_session.dart';
 import 'package:balamandian/ui/home/widgets/app_shell.dart';
@@ -37,6 +39,7 @@ Future<void> pumpMarketplace(
   expect(auth.repository.status, SessionStatus.authenticated);
   await tester.pumpWidget(
     MainApp(
+      profileRepository: FakeProfileRepository(),
       authRepository: auth.repository,
       marketplaceRepository: repository,
       externalUrls: external ?? FakeExternalUrlService(),

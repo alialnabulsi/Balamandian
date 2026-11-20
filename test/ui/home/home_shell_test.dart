@@ -1,3 +1,4 @@
+import '../../profile_test_support.dart';
 import '../../marketplace_test_support.dart';
 
 import 'dart:ui' as ui;
@@ -53,6 +54,7 @@ Future<void> pumpHome(
   await harness.repository.login('FICTION001', 'test');
   await tester.pumpWidget(
     MainApp(
+      profileRepository: FakeProfileRepository(),
       marketplaceRepository: FakeMarketplaceRepository(),
       externalUrls: FakeExternalUrlService(),
       initialLocation: location,
@@ -94,7 +96,13 @@ void main() {
         '/${label.toLowerCase()}',
       );
       expect(
-        find.text(label == 'Market' ? 'Marketplace' : '$label coming soon'),
+        find.text(
+          label == 'Market'
+              ? 'Marketplace'
+              : label == 'Profile'
+              ? 'Ali Al Nabulsi'
+              : '$label coming soon',
+        ),
         findsOneWidget,
       );
       expect(tester.widget<AppNavigationItem>(tab(label)).selected, isTrue);
@@ -119,16 +127,16 @@ void main() {
     expect(find.byTooltip('Open navigation menu'), findsNothing);
     await tester.tap(find.byTooltip('Open account menu'));
     await tester.pumpAndSettle();
-    expect(find.text('Your account'), findsOneWidget);
+    expect(find.text('Ali Al Nabulsi'), findsOneWidget);
     expect(find.text('SIS ID: FICTION001'), findsOneWidget);
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
-    expect(find.text('Your account'), findsNothing);
+    expect(find.text('Ali Al Nabulsi'), findsNothing);
     await tester.tap(find.byTooltip('Open account menu'));
     await tester.pumpAndSettle();
     await tester.tapAt(const Offset(380, 300));
     await tester.pumpAndSettle();
-    expect(find.text('Your account'), findsNothing);
+    expect(find.text('Ali Al Nabulsi'), findsNothing);
     await tester.tap(find.byTooltip('Open account menu'));
     await tester.pumpAndSettle();
     await tester.tap(
@@ -139,7 +147,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Settings coming soon'), findsOneWidget);
-    expect(find.text('Your account'), findsNothing);
+    expect(find.text('Ali Al Nabulsi'), findsNothing);
     expect(find.byType(AppBottomBar), findsOneWidget);
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
@@ -149,7 +157,12 @@ void main() {
 
   testWidgets('Top actions show explicit coming-soon feedback', (tester) async {
     await pumpHome(tester);
-    for (final label in ['Search', 'Notifications', 'Messages']) {
+    await tester.tap(find.byTooltip('Search'));
+    await tester.pumpAndSettle();
+    expect(find.text('Discover members'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    for (final label in ['Notifications', 'Messages']) {
       await tester.tap(find.byTooltip(label));
       await tester.pumpAndSettle();
       expect(find.text('$label is coming soon.'), findsOneWidget);
