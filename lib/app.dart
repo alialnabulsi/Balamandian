@@ -22,6 +22,7 @@ import 'ui/profile/view_models/current_identity_view_model.dart';
 import 'routing/app_router.dart';
 import 'routing/startup_destination.dart';
 import 'ui/core/themes/app_theme.dart';
+import 'ui/core/ui/backgrounds/app_branded_background.dart';
 import 'ui/auth/view_models/auth_ui_controller.dart';
 import 'ui/auth/view_models/session_view_model.dart';
 import 'ui/onboarding/view_models/app_entry_view_model.dart';
@@ -175,8 +176,10 @@ class _MainAppState extends State<MainApp> {
         darkTheme: appDarkTheme,
         themeMode: widget.themeMode,
         routerConfig: _router,
-        builder: (context, child) =>
-            AppEntryOverlay(model: _entry, child: child!),
+        builder: (context, child) => AppEntryOverlay(
+          model: _entry,
+          child: AppBrandedBackground(child: child!),
+        ),
       ),
     );
   }

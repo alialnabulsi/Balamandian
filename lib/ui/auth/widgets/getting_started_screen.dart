@@ -7,6 +7,7 @@ import '../../core/themes/startup_tokens.dart';
 import '../../core/ui/action_button.dart';
 import '../../core/ui/asset_icon.dart';
 import '../../core/ui/brand.dart';
+import '../../core/ui/backgrounds/app_branded_background.dart';
 import '../../core/ui/crest_coin.dart';
 import '../../core/ui/decorative_art.dart';
 import '../../onboarding/widgets/startup_flow.dart';
@@ -60,6 +61,18 @@ class GettingStartedScreen extends StatelessWidget {
                       ],
                       stops: const [.24, .29, .40, .47, 1],
                     ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: h * .49,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: const IgnorePointer(
+                  child: AppBrandedBackground(
+                    variant: AppBackgroundVariant.card,
+                    child: SizedBox.expand(),
                   ),
                 ),
               ),

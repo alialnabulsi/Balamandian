@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import '../../auth/view_models/auth_ui_controller.dart';
 import '../../auth/widgets/profile_photo_control.dart';
 import '../../core/ui/avatars/member_avatar.dart';
+import '../../core/ui/buttons/async_action_button.dart';
 import '../../core/ui/form_message.dart';
 import '../view_models/edit_profile_view_model.dart';
-import 'profile_biography_field.dart';
+import 'profile_biography_section.dart';
 import 'profile_load_state.dart';
+import 'profile_locked_identity.dart';
 
 class ProfileEditorForm extends StatefulWidget {
   const ProfileEditorForm({
@@ -14,10 +16,12 @@ class ProfileEditorForm extends StatefulWidget {
     required this.model,
     required this.onSaved,
     this.onSkip,
+    this.showSave = true,
   });
   final EditProfileViewModel model;
   final VoidCallback onSaved;
   final VoidCallback? onSkip;
+  final bool showSave;
   @override
   State<ProfileEditorForm> createState() => _ProfileEditorFormState();
 }
@@ -49,9 +53,14 @@ class _ProfileEditorFormState extends State<ProfileEditorForm> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (model.loading)
-            const ProfileLoadState(loading: true)
+            const ProfileLoadState(loading: true, editor: true)
           else if (profile == null)
-            ProfileLoadState(error: model.error, onRetry: model.initialize)
+            ProfileLoadState(
+              loading: model.error == null,
+              editor: true,
+              error: model.error,
+              onRetry: model.initialize,
+            )
           else ...[
             ProfilePhotoControl(
               model: model.photo,
@@ -62,7 +71,7 @@ class _ProfileEditorFormState extends State<ProfileEditorForm> {
                   ? MemberAvatar(
                       identity: profile.identity,
                       loadAvatar: model.avatar,
-                      size: 76,
+                      size: 96,
                     )
                   : null,
               onRemove: model.removePhoto,
@@ -72,27 +81,31 @@ class _ProfileEditorFormState extends State<ProfileEditorForm> {
                 padding: const EdgeInsets.only(top: 12),
                 child: FormMessage(model.photo.photoError!),
               ),
-            const SizedBox(height: 24),
-            ProfileBiographyField(
+            const SizedBox(height: 20),
+            const Divider(height: 32),
+            ProfileBiographySection(
               controller: _bio,
               enabled: !model.busy,
-              onChanged: (v) => model.biography = v,
+              onChanged: (value) => model.biography = value,
             ),
-            const SizedBox(height: 24),
+            const Divider(height: 32),
             ProfileLockedIdentity(
               displayName: profile.identity.displayName,
               username: profile.identity.username,
             ),
-            const SizedBox(height: 24),
-            if (model.error != null)
+            const SizedBox(height: 20),
+            if (widget.showSave && model.error != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: FormMessage(model.error!),
               ),
-            FilledButton(
-              onPressed: model.busy ? null : _save,
-              child: Text(model.saving ? 'Saving…' : 'Save changes'),
-            ),
+            if (widget.showSave)
+              AsyncActionButton(
+                label: 'Save changes',
+                running: model.saving,
+                runningLabel: model.savingLabel,
+                onPressed: model.busy ? null : _save,
+              ),
           ],
           if (widget.onSkip != null)
             Padding(
@@ -105,46 +118,5 @@ class _ProfileEditorFormState extends State<ProfileEditorForm> {
         ],
       );
     },
-  );
-}
-
-class ProfileLockedIdentity extends StatelessWidget {
-  const ProfileLockedIdentity({
-    super.key,
-    required this.displayName,
-    required this.username,
-  });
-  final String displayName, username;
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          Icon(
-            Icons.lock_outline_rounded,
-            size: 18,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'University identity',
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-        ],
-      ),
-      const SizedBox(height: 12),
-      Text(displayName),
-      const SizedBox(height: 4),
-      Text(
-        '@$username',
-        style: Theme.of(context).textTheme.bodyMedium
-            ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-      ),
-      const SizedBox(height: 12),
-      const Text(
-        'Your official name and username are managed by Balamandian using verified university details.',
-      ),
-    ],
   );
 }

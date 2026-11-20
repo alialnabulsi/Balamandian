@@ -15,6 +15,12 @@ class ApiProfileRepository extends ProfileRepository {
   final AuthenticatedProfileRequest _withSession;
   final _profiles = <String, UserProfile>{};
   final _avatars = <String, Uint8List>{};
+  final _profileRequests = <String, Future<UserProfile>>{};
+  final _avatarRequests = <String, Future<Uint8List>>{};
+  final _memberRequests =
+      <(MemberListKind, String?, String, int), Future<MemberPage>>{};
+  final _revisions = <String, int>{};
+  int _pendingRevision = 0;
   String? _userId, _error;
   Object? _sessionIdentity;
   UserProfile? _own;
@@ -46,6 +52,10 @@ class ApiProfileRepository extends ProfileRepository {
     _error = null;
     _profiles.clear();
     _avatars.clear();
+    _profileRequests.clear();
+    _avatarRequests.clear();
+    _memberRequests.clear();
+    _revisions.clear();
     _publish();
   }
 
@@ -66,7 +76,14 @@ class ApiProfileRepository extends ProfileRepository {
     }
   }
 
-  UserProfile _store(UserProfile value, {bool own = false}) {
+  UserProfile _store(
+    UserProfile value, {
+    bool own = false,
+    bool mutation = false,
+  }) {
+    if (mutation) {
+      _revisions[value.identity.id] = (_revisions[value.identity.id] ?? 0) + 1;
+    }
     if (_profiles.length >= 100) _profiles.clear();
     _profiles[value.identity.id] = value;
     if (own) _own = value;
@@ -78,11 +95,21 @@ class ApiProfileRepository extends ProfileRepository {
   UserProfile? cached(String id) => id == _userId ? _own : _profiles[id];
   @override
   Future<UserProfile> loadOwn({bool refresh = false}) {
-    if (_pending != null) return _pending!;
+    if (_pending != null) {
+      if (refresh && _pendingRevision != (_revisions[_userId] ?? 0)) {
+        return _pending!.then(
+          (_) => loadOwn(refresh: true),
+          onError: (Object _) => loadOwn(refresh: true),
+        );
+      }
+      return _pending!;
+    }
     if (!refresh && _own != null) return Future.value(_own);
     final generation = _generation;
+    final revision = _pendingRevision = _revisions[_userId] ?? 0;
     final pending = _run(_api.own)
         .then((v) {
+          if (revision != (_revisions[_userId] ?? 0)) return _own ?? v;
           _error = null;
           return _store(v, own: true);
         })
@@ -109,30 +136,49 @@ class ApiProfileRepository extends ProfileRepository {
   Future<UserProfile> profile(String id, {bool refresh = false}) async {
     if (id == _userId) return loadOwn(refresh: refresh);
     if (!refresh && _profiles[id] != null) return _profiles[id]!;
-    return _store(await _run((token) => _api.profile(token, id)));
+    if (_profileRequests[id] case final pending?) return pending;
+    final generation = _generation;
+    final revision = _revisions[id] ?? 0;
+    final pending = _run((token) => _api.profile(token, id))
+        .then(
+          (value) => revision == (_revisions[id] ?? 0)
+              ? _store(value)
+              : cached(id) ?? value,
+        )
+        .whenComplete(() {
+          if (generation == _generation) _profileRequests.remove(id);
+        });
+    _profileRequests[id] = pending;
+    return pending;
   }
 
   @override
-  Future<UserProfile> saveBiography(String value) async =>
-      _store(await _run((t) => _api.biography(t, value)), own: true);
+  Future<UserProfile> saveBiography(String value) async => _store(
+    await _run((t) => _api.biography(t, value)),
+    own: true,
+    mutation: true,
+  );
   @override
   Future<UserProfile> uploadAvatar(Uint8List bytes) async {
     final result = await _run((t) => _api.upload(t, bytes));
     _avatars.clear();
-    return _store(result, own: true);
+    return _store(result, own: true, mutation: true);
   }
 
   @override
   Future<UserProfile> removeAvatar() async {
     final result = await _run(_api.removeAvatar);
     _avatars.clear();
-    return _store(result, own: true);
+    return _store(result, own: true, mutation: true);
   }
 
   @override
   Future<UserProfile> follow(String id, bool value) async {
     final result = await _run((t) => _api.follow(t, id, value));
-    _store(result);
+    _store(result, mutation: true);
+    if (_userId case final ownerId?) {
+      _revisions[ownerId] = (_revisions[ownerId] ?? 0) + 1;
+    }
     // Refresh the current user's authoritative following count, without turning a confirmed follow into a failure.
     try {
       await loadOwn(refresh: true);
@@ -148,17 +194,42 @@ class ApiProfileRepository extends ProfileRepository {
     String? userId,
     String search = '',
     int page = 1,
-  }) => _run(
-    (t) =>
-        _api.members(t, kind: kind, userId: userId, search: search, page: page),
-  );
+  }) {
+    final key = (kind, userId, search, page);
+    if (_memberRequests[key] case final pending?) return pending;
+    final generation = _generation;
+    final pending =
+        _run(
+          (t) => _api.members(
+            t,
+            kind: kind,
+            userId: userId,
+            search: search,
+            page: page,
+          ),
+        ).whenComplete(() {
+          if (generation == _generation) _memberRequests.remove(key);
+        });
+    _memberRequests[key] = pending;
+    return pending;
+  }
+
   @override
   Future<Uint8List> avatar(String path) async {
     if (_avatars[path] != null) return _avatars[path]!;
-    final bytes = await _run((t) => _api.avatar(t, path));
-    if (_avatars.length >= 100) _avatars.clear();
-    _avatars[path] = bytes;
-    return bytes;
+    if (_avatarRequests[path] case final pending?) return pending;
+    final generation = _generation;
+    final pending = _run((t) => _api.avatar(t, path))
+        .then((bytes) {
+          if (_avatars.length >= 100) _avatars.clear();
+          _avatars[path] = bytes;
+          return bytes;
+        })
+        .whenComplete(() {
+          if (generation == _generation) _avatarRequests.remove(path);
+        });
+    _avatarRequests[path] = pending;
+    return pending;
   }
 
   @override
@@ -167,6 +238,9 @@ class ApiProfileRepository extends ProfileRepository {
     _generation++;
     _profiles.clear();
     _avatars.clear();
+    _profileRequests.clear();
+    _avatarRequests.clear();
+    _memberRequests.clear();
     super.dispose();
   }
 }

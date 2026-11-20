@@ -12,7 +12,23 @@ class EditProfileViewModel extends ChangeNotifier {
   final ProfileRepository _repository;
   final ProfileViewModel photo;
   UserProfile? profile;
-  String biography = '';
+  String _biography = '';
+  String get biography => _biography;
+  set biography(String value) {
+    _biography = value;
+    _changed();
+  }
+
+  bool get hasChanges =>
+      profile != null &&
+      (biography.trim() != profile!.biography ||
+          photo.preview != null ||
+          removeExisting);
+  String get savingLabel => photo.preview != null
+      ? 'Uploading photo…'
+      : removeExisting
+      ? 'Removing photo…'
+      : 'Saving…';
   bool loading = false,
       saving = false,
       removeExisting = false,
@@ -29,8 +45,10 @@ class EditProfileViewModel extends ChangeNotifier {
     error = null;
     _changed();
     try {
-      profile = await _repository.loadOwn();
-      biography = profile!.biography;
+      final loaded = await _repository.loadOwn();
+      if (_disposed) return;
+      profile = loaded;
+      _biography = loaded.biography;
     } on ProfileFailure catch (e) {
       error = e.message;
     } catch (_) {
@@ -62,18 +80,27 @@ class EditProfileViewModel extends ChangeNotifier {
       if (photo.preview != null) {
         profile = await _repository.uploadAvatar(photo.preview!);
         avatarSaved = true;
+        if (_disposed) return false;
+        photo.removePhoto();
+        removeExisting = false;
       } else if (removeExisting) {
         profile = await _repository.removeAvatar();
         avatarSaved = true;
+        removeExisting = false;
       }
+      if (_disposed) return false;
       profile = await _repository.saveBiography(biography.trim());
+      if (_disposed) return false;
+      _biography = profile!.biography;
       return true;
     } on ProfileFailure catch (e) {
-      error = avatarSaved ? 'Your picture was saved. ${e.message}' : e.message;
+      error = avatarSaved
+          ? 'Your photo change was saved. ${e.message}'
+          : e.message;
       return false;
     } catch (_) {
       error = avatarSaved
-          ? 'Your picture was saved. The biography could not be saved. Retry to finish.'
+          ? 'Your photo change was saved. The biography could not be saved. Retry to finish.'
           : 'Changes could not be saved. Please retry.';
       return false;
     } finally {

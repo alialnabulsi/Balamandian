@@ -1,6 +1,7 @@
-import 'dart:ui' as ui;
+import '../../../data/services/profile_photo_service.dart';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 typedef PhotoPicker = Future<XFile?> Function();
@@ -17,6 +18,9 @@ class ProfileViewModel extends ChangeNotifier {
   static Future<XFile?> _pick() => ImagePicker().pickImage(
     source: ImageSource.gallery,
     requestFullMetadata: false,
+    maxWidth: 1024,
+    maxHeight: 1024,
+    imageQuality: 82,
   );
 
   Future<void> selectPhoto() async {
@@ -28,42 +32,17 @@ class ProfileViewModel extends ChangeNotifier {
     try {
       final file = await _pickPhoto();
       if (_disposed || selection != _selection || file == null) return;
-      if (await file.length() > 1000000) {
-        throw const FormatException(
-          'Choose a JPG, PNG or WebP smaller than 1 MB.',
-        );
-      }
-      final bytes = await file.readAsBytes();
-      final png =
-          bytes.length >= 8 &&
-          bytes[0] == 137 &&
-          bytes[1] == 80 &&
-          bytes[2] == 78 &&
-          bytes[3] == 71;
-      final jpg =
-          bytes.length >= 3 &&
-          bytes[0] == 255 &&
-          bytes[1] == 216 &&
-          bytes[2] == 255;
-      final webp =
-          bytes.length >= 12 &&
-          String.fromCharCodes(bytes.sublist(0, 4)) == 'RIFF' &&
-          String.fromCharCodes(bytes.sublist(8, 12)) == 'WEBP';
-      if (bytes.length > 1000000 || !(png || jpg || webp)) {
-        throw const FormatException(
-          'Choose a JPG, PNG or WebP smaller than 1 MB.',
-        );
-      }
-      final codec = await ui.instantiateImageCodec(bytes, targetWidth: 256);
-      try {
-        final frame = await codec.getNextFrame();
-        frame.image.dispose();
-      } finally {
-        codec.dispose();
-      }
+      final bytes = await const ProfilePhotoService().prepare(file);
       if (_disposed || selection != _selection) return;
       photo = file;
       preview = bytes;
+    } on PlatformException catch (error) {
+      if (!_disposed) {
+        photoError =
+            error.code.contains('denied') || error.code.contains('restricted')
+            ? 'Photo access is unavailable. Allow photo access in Android settings and try again.'
+            : 'This photo could not be prepared. Please choose another.';
+      }
     } on FormatException catch (error) {
       if (!_disposed) photoError = error.message;
     } catch (_) {

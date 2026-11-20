@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/themes/startup_tokens.dart';
 import '../../core/ui/asset_icon.dart';
+import '../../core/ui/backgrounds/app_branded_background.dart';
 import 'access_heading.dart';
 import '../../onboarding/widgets/startup_flow.dart';
 
@@ -29,7 +30,7 @@ class AccessFrame extends StatelessWidget {
     final nav = StartupNavigation.of(context),
         palette = StartupPalette.of(context);
     return Scaffold(
-      backgroundColor: palette.canvas,
+      backgroundColor: Colors.transparent,
       resizeToAvoidBottomInset: true,
       body: LayoutBuilder(
         builder: (context, box) {
@@ -113,59 +114,19 @@ class AccessFrame extends StatelessWidget {
               ],
             ),
           );
-          return Stack(
-            children: [
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: CustomPaint(
-                    painter: _AccessArcs(
-                      Theme.of(context).colorScheme.primary
-                          .withValues(alpha: .1),
-                    ),
-                  ),
-                ),
-              ),
-              SingleChildScrollView(
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                child: expandChild
-                    ? ConstrainedBox(
-                        constraints: BoxConstraints(minHeight: h),
-                        child: IntrinsicHeight(child: content),
-                      )
-                    : content,
-              ),
-            ],
+          return AppBrandedBackground(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              child: expandChild
+                  ? ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: h),
+                      child: IntrinsicHeight(child: content),
+                    )
+                  : content,
+            ),
           );
         },
       ),
     );
   }
-}
-
-class _AccessArcs extends CustomPainter {
-  const _AccessArcs(this.color);
-  final Color color;
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.save();
-    canvas.scale(size.width / 440, size.height / 900);
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = .6
-      ..style = PaintingStyle.stroke;
-    for (final offset in [0.0, 20.0, 40.0]) {
-      canvas.drawPath(
-        Path()
-          ..moveTo(340 + offset, -50)
-          ..cubicTo(240 + offset, 90, 600 + offset, 200, 390 + offset, 450)
-          ..cubicTo(180 + offset, 700, 210 + offset, 730, 510 + offset, 940),
-        paint,
-      );
-    }
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(_AccessArcs oldDelegate) => color != oldDelegate.color;
 }

@@ -10,9 +10,25 @@ class ProfileBadges extends StatelessWidget {
     spacing: 8,
     runSpacing: 6,
     children: [
-      if (identity.verified) const InstitutionalBadge(role: 'verified'),
       for (final role in identity.roles) InstitutionalBadge(role: role),
     ],
+  );
+}
+
+class VerificationMark extends StatelessWidget {
+  const VerificationMark({super.key, this.size = 22});
+  final double size;
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: 'Identity verified through university SIS',
+    child: Semantics(
+      label: 'University verified',
+      child: Icon(
+        Icons.verified_rounded,
+        size: size,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+    ),
   );
 }
 
@@ -49,7 +65,9 @@ class InstitutionalBadge extends StatelessWidget {
         ),
         label: Text(title),
         labelStyle: Theme.of(context).textTheme.labelMedium,
-        backgroundColor: scheme.surfaceContainerLow,
+        backgroundColor: role == 'verified'
+            ? scheme.primaryContainer
+            : scheme.tertiary.withValues(alpha: .18),
         side: BorderSide.none,
         onPressed: () => showModalBottomSheet<void>(
           context: context,

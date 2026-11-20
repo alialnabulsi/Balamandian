@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../data/repositories/profile_repository.dart';
+import '../../core/themes/app_tokens.dart';
+import '../../core/ui/backgrounds/app_branded_background.dart';
 import '../../core/ui/form_message.dart';
 import '../view_models/user_profile_view_model.dart';
 import 'profile_header.dart';
@@ -48,105 +50,147 @@ class _ProfileScreenState extends State<ProfileScreen> {
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,
-    builder: (_) => AccountInformationSheet(profile: _model.profile!),
+    builder: (_) => AccountInformationSheet(
+      profile: _model.profile!,
+      loadAvatar: _model.avatar,
+    ),
   );
   void _share() => showModalBottomSheet<void>(
     context: context,
     useRootNavigator: true,
+    isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,
-    builder: (_) =>
-        ProfileShareSheet(username: _model.profile!.identity.username),
+    builder: (_) => ProfileShareSheet(
+      username: _model.profile!.identity.username,
+      identity: _model.profile!.identity,
+      loadAvatar: _model.avatar,
+    ),
   );
   @override
-  Widget build(BuildContext context) => ListenableBuilder(
-    listenable: _model,
-    builder: (context, _) {
-      final profile = _model.profile;
-      return Scaffold(
-        appBar: ProfileHeader(
-          username: profile?.identity.username,
-          canGoBack: widget.userId != null,
-          onMenu: () => Scaffold.maybeOf(context)?.openDrawer(),
-          onAccount: profile == null ? null : _account,
-          onShare: profile == null ? null : _share,
-        ),
-        body: RefreshIndicator(
-          onRefresh: () => _model.load(refresh: true),
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: ProfileTokens.maxWidth,
+  Widget build(BuildContext context) => AppBrandedBackground(
+    variant: AppBackgroundVariant.architecture,
+    child: ListenableBuilder(
+      listenable: _model,
+      builder: (context, _) {
+        final profile = _model.profile;
+        return Scaffold(
+          appBar: ProfileHeader(
+            username: profile?.identity.username,
+            canGoBack: widget.userId != null,
+            onMenu: () => Scaffold.maybeOf(context)?.openDrawer(),
+            onAccount: profile == null ? null : _account,
+            onShare: profile == null ? null : _share,
+            onDiscover: widget.userId == null || profile?.isSelf == true
+                ? () => context.push('/members')
+                : null,
+          ),
+          body: SafeArea(
+            top: false,
+            child: Padding(
+              key: const ValueKey('profile-scroll-clearance'),
+              padding: EdgeInsets.only(
+                bottom: widget.userId == null
+                    ? ProfileTokens.quickActionViewportInset
+                    : 0,
               ),
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.zero,
-                children: [
-                  if (profile == null)
-                    ProfileLoadState(
-                      loading: _model.loading,
-                      error: _model.error,
-                      onRetry: () => _model.load(refresh: true),
-                    )
-                  else ...[
-                    Padding(
+              child: RefreshIndicator(
+                onRefresh: () => _model.load(refresh: true),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: ProfileTokens.maxWidth,
+                    ),
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(
                         ProfileTokens.gutter,
-                        20,
+                        32,
                         ProfileTokens.gutter,
-                        24,
+                        ProfileTokens.contentBottomPadding,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          ProfileIdentitySection(
-                            profile: profile,
-                            loadAvatar: _model.avatar,
-                            onFollowers: () => context.push(
-                              '/members/${profile.identity.id}/followers',
+                      children: [
+                        if (profile == null)
+                          ProfileLoadState(
+                            loading: _model.loading || _model.error == null,
+                            error: _model.error,
+                            onRetry: () => _model.load(refresh: true),
+                          )
+                        else ...[
+                          if (_model.loading)
+                            const LinearProgressIndicator(
+                              semanticsLabel: 'Refreshing profile',
+                              minHeight: 2,
                             ),
-                            onFollowing: () => context.push(
-                              '/members/${profile.identity.id}/following',
+                          TweenAnimationBuilder<double>(
+                            key: ValueKey(profile.identity.id),
+                            tween: Tween(begin: 0, end: 1),
+                            curve: AppTokens.curve,
+                            duration: AppTokens.motion(context),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                ProfileIdentitySection(
+                                  profile: profile,
+                                  loadAvatar: _model.avatar,
+                                  onEdit: () => context.push('/profile/edit'),
+                                  onFollowers: () => context.push(
+                                    '/members/${profile.identity.id}/followers',
+                                  ),
+                                  onFollowing: () => context.push(
+                                    '/members/${profile.identity.id}/following',
+                                  ),
+                                ),
+                                const SizedBox(
+                                  height: ProfileTokens.actionsGap,
+                                ),
+                                ProfileActions(
+                                  isSelf: profile.isSelf,
+                                  isFollowing: profile.isFollowing,
+                                  pending: _model.following,
+                                  onEdit: () => context.push('/profile/edit'),
+                                  onFollow: _model.toggleFollow,
+                                  onShare: _share,
+                                ),
+                                if (_model.error != null) ...[
+                                  const SizedBox(height: 12),
+                                  FormMessage(_model.error!),
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: TextButton.icon(
+                                      onPressed: () =>
+                                          _model.load(refresh: true),
+                                      icon: const Icon(Icons.refresh_rounded),
+                                      label: const Text('Retry'),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            builder: (context, value, child) => Opacity(
+                              opacity: value,
+                              child: Transform.translate(
+                                offset: Offset(0, (1 - value) * 8),
+                                child: child,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 20),
-                          ProfileActions(
+                          ProfilePostsSection(
+                            count: profile.postsCount,
                             isSelf: profile.isSelf,
-                            isFollowing: profile.isFollowing,
-                            pending: _model.following,
-                            onEdit: () => context.push('/profile/edit'),
-                            onFollow: () => _model.toggleFollow(),
-                            onShare: _share,
                           ),
-                          if (profile.isSelf)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 12),
-                              child: TextButton.icon(
-                                onPressed: () => context.push('/members'),
-                                icon: const Icon(Icons.person_search_outlined),
-                                label: const Text('Discover members'),
-                              ),
-                            ),
-                          if (_model.error != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 12),
-                              child: FormMessage(_model.error!),
-                            ),
                         ],
-                      ),
+                      ],
                     ),
-                    ProfilePostsSection(
-                      count: profile.postsCount,
-                      isSelf: profile.isSelf,
-                    ),
-                  ],
-                ],
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      );
-    },
+        );
+      },
+    ),
   );
 }

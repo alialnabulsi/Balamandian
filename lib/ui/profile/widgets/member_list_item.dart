@@ -3,7 +3,10 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../../../domain/models/profile_models.dart';
+import '../../core/themes/app_tokens.dart';
 import '../../core/ui/avatars/member_avatar.dart';
+import 'profile_badges.dart';
+import 'follow_button.dart';
 
 class MemberListItem extends StatelessWidget {
   const MemberListItem({
@@ -19,47 +22,107 @@ class MemberListItem extends StatelessWidget {
   final VoidCallback onOpen, onFollow;
   final bool pending;
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-    child: Row(
-      children: [
-        Expanded(
-          child: ListTile(
-            contentPadding: const EdgeInsets.only(right: 8),
-            onTap: onOpen,
-            leading: MemberAvatar(
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final identity = InkWell(
+      onTap: onOpen,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            MemberAvatar(
               identity: member.identity,
               loadAvatar: loadAvatar,
-              size: 48,
+              size: AppTokens.avatarSmall,
             ),
-            title: Text(
-              member.identity.displayName,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            subtitle: Text(
-              '@${member.identity.username}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ),
-        if (!member.isSelf)
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 120),
-            child: OutlinedButton(
-              onPressed: pending ? null : onFollow,
-              child: Text(
-                pending
-                    ? 'Updating…'
-                    : member.isFollowing
-                    ? 'Following'
-                    : 'Follow',
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          member.identity.displayName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      if (member.identity.verified)
+                        const Padding(
+                          padding: EdgeInsets.only(left: 4),
+                          child: VerificationMark(size: 16),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '@${member.identity.username}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-      ],
-    ),
-  );
+          ],
+        ),
+      ),
+    );
+    final action = FollowButton(
+      following: member.isFollowing,
+      pending: pending,
+      name: member.identity.displayName,
+      onPressed: onFollow,
+    );
+    return ColoredBox(
+      color: theme.colorScheme.surface.withValues(alpha: .94),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final stacked =
+                constraints.maxWidth < 290 ||
+                MediaQuery.textScalerOf(context).scale(14) > 19;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (stacked) ...[
+                  identity,
+                  if (!member.isSelf)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: action,
+                      ),
+                    ),
+                ] else
+                  Row(
+                    children: [
+                      Expanded(child: identity),
+                      if (!member.isSelf) ...[
+                        const SizedBox(width: 10),
+                        action,
+                      ],
+                    ],
+                  ),
+                Divider(
+                  height: 1,
+                  color: theme.colorScheme.outlineVariant.withValues(alpha: .5),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
 }

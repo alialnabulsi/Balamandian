@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// The community feature can supply its real grid and count here later.
+import '../../core/ui/illustrations/campus_line_art.dart';
+
+/// Community can supply a real grid/count without changing the profile layout.
 class ProfilePostsSection extends StatelessWidget {
   const ProfilePostsSection({
     super.key,
@@ -12,59 +14,60 @@ class ProfilePostsSection extends StatelessWidget {
   final int count;
   final bool isSelf;
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      const Divider(height: 1),
-      Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
           children: [
             Icon(
-              Icons.grid_on_rounded,
-              color: Theme.of(context).colorScheme.primary,
-              size: 22,
+              Icons.grid_view_rounded,
+              size: 20,
+              color: theme.colorScheme.primary,
             ),
-            const SizedBox(width: 8),
-            Text('Posts', style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(width: 9),
+            Text('Posts', style: theme.textTheme.titleMedium),
           ],
         ),
-      ),
-      const Divider(height: 1),
-      if (grid != null)
-        grid!
-      else
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                  ),
-                ),
-                child: const Icon(Icons.photo_camera_outlined, size: 32),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'No posts yet',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                isSelf
-                    ? 'Your campus stories will appear here when community posts arrive.'
-                    : 'Campus stories will appear here when community posts arrive.',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ],
+        const Divider(height: 24),
+        if (grid != null) grid! else const ProfilePostsEmptyState(),
+      ],
+    );
+  }
+}
+
+class ProfilePostsEmptyState extends StatelessWidget {
+  const ProfilePostsEmptyState({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
+      child: Column(
+        children: [
+          CampusLineArt(
+            color: theme.brightness == Brightness.dark
+                ? theme.colorScheme.primary
+                : null,
           ),
-        ),
-    ],
-  );
+          const SizedBox(height: 8),
+          Text(
+            'No posts yet',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Campus posts are coming soon.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

@@ -5,22 +5,30 @@ import '../../../domain/models/profile_models.dart';
 
 class UserProfileViewModel extends ChangeNotifier {
   UserProfileViewModel({required this._repository, this.userId}) {
+    _sessionUserId = _repository.currentUserId;
     _repository.addListener(_changed);
   }
   final ProfileRepository _repository;
   final String? userId;
   bool loading = false, following = false, _disposed = false;
-  String? error;
+  String? _error, _sessionUserId;
+  String? get error =>
+      _error ??
+      (userId == null || userId == _repository.currentUserId
+          ? _repository.error
+          : null);
   UserProfile? _loaded;
   UserProfile? get profile => userId == null
       ? _repository.currentUser
       : _repository.cached(userId!) ?? _loaded;
   void _changed() {
-    if (_repository.currentUserId == null) {
+    final id = _repository.currentUserId;
+    if (id == null || id != _sessionUserId) {
       _loaded = null;
     } else if (userId != null) {
       _loaded = _repository.cached(userId!) ?? _loaded;
     }
+    _sessionUserId = id;
     if (!_disposed) notifyListeners();
   }
 
@@ -28,7 +36,7 @@ class UserProfileViewModel extends ChangeNotifier {
   Future<void> load({bool refresh = false}) async {
     if (loading || _disposed) return;
     loading = true;
-    error = null;
+    _error = null;
     notifyListeners();
     try {
       if (userId == null) {
@@ -37,9 +45,9 @@ class UserProfileViewModel extends ChangeNotifier {
         _loaded = await _repository.profile(userId!, refresh: refresh);
       }
     } on ProfileFailure catch (e) {
-      error = e.message;
+      _error = e.message;
     } catch (_) {
-      error = 'Your profile could not be loaded. Please retry.';
+      _error = 'Your profile could not be loaded. Please retry.';
     } finally {
       loading = false;
       _changed();
@@ -50,14 +58,14 @@ class UserProfileViewModel extends ChangeNotifier {
     final value = profile;
     if (value == null || value.isSelf || following || _disposed) return;
     following = true;
-    error = null;
+    _error = null;
     notifyListeners();
     try {
       await _repository.follow(value.identity.id, !value.isFollowing);
     } on ProfileFailure catch (e) {
-      error = e.message;
+      _error = e.message;
     } catch (_) {
-      error = 'Could not update following. Please retry.';
+      _error = 'Could not update following. Please retry.';
     } finally {
       following = false;
       _changed();

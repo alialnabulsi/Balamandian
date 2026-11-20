@@ -1,17 +1,15 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../data/repositories/profile_repository.dart';
 import '../../../domain/models/profile_models.dart';
-import '../../core/ui/form_message.dart';
-import '../view_models/member_list_view_model.dart';
-import 'member_list_item.dart';
-import 'member_search_field.dart';
-import 'profile_load_state.dart';
+import '../../core/themes/app_tokens.dart';
+import '../../core/ui/backgrounds/app_branded_background.dart';
+import '../view_models/user_profile_view_model.dart';
+import 'member_list_panel.dart';
+import 'member_list_header.dart';
 import 'profile_tokens.dart';
 
+/// Tabs retain independent searches, pagination and scroll positions.
 class MemberListScreen extends StatefulWidget {
   const MemberListScreen({
     super.key,
@@ -26,114 +24,97 @@ class MemberListScreen extends StatefulWidget {
   State<MemberListScreen> createState() => _MemberListScreenState();
 }
 
-class _MemberListScreenState extends State<MemberListScreen> {
-  late final _model = MemberListViewModel(
+class _MemberListScreenState extends State<MemberListScreen>
+    with TickerProviderStateMixin {
+  late final _profile = UserProfileViewModel(
     repository: widget.repository,
-    kind: widget.kind,
     userId: widget.userId,
   );
-  final _search = TextEditingController();
+  TabController? _controller;
+  TabController get _tabs => _controller!;
   @override
-  void initState() {
-    super.initState();
-    unawaited(_model.load(refresh: true));
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final duration = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : AppTokens.sheet;
+    if (_controller == null || _tabs.animationDuration != duration) {
+      final index =
+          _controller?.index ??
+          (widget.kind == MemberListKind.following ? 1 : 0);
+      _controller?.removeListener(_changed);
+      _controller?.dispose();
+      _controller = TabController(
+        length: 2,
+        initialIndex: index,
+        animationDuration: duration,
+        vsync: this,
+      )..addListener(_changed);
+    }
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    _search.dispose();
-    _model.dispose();
+    _controller?.dispose();
+    _profile.dispose();
     super.dispose();
   }
 
-  Future<void> _open(String id) async {
-    await context.push<void>('/members/$id');
-    if (mounted) await _model.load(refresh: true);
-  }
-
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text(switch (widget.kind) {
-        MemberListKind.discover => 'Discover members',
-        MemberListKind.followers => 'Followers',
-        MemberListKind.following => 'Following',
-      }),
-    ),
-    body: Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: ProfileTokens.maxWidth),
-        child: Column(
-          children: [
-            MemberSearchField(
-              controller: _search,
-              onChanged: _model.searchChanged,
-            ),
-            Expanded(
-              child: ListenableBuilder(
-                listenable: _model,
-                builder: (context, _) => RefreshIndicator(
-                  onRefresh: () => _model.load(refresh: true),
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    keyboardDismissBehavior:
-                        ScrollViewKeyboardDismissBehavior.onDrag,
-                    children: [
-                      if (_model.items.isEmpty)
-                        ProfileLoadState(
-                          loading: _model.loading,
-                          error: _model.error,
-                          onRetry: () => _model.load(refresh: true),
-                          emptyTitle: _search.text.trim().isEmpty
-                              ? 'No members yet'
-                              : 'No matching members',
-                          emptyMessage: _search.text.trim().isEmpty
-                              ? 'Find university members in Discover and start connecting.'
-                              : 'Try a different name or username.',
-                        ),
-                      for (final member in _model.items)
-                        MemberListItem(
-                          member: member,
-                          loadAvatar: _model.avatar,
-                          onOpen: () => _open(member.identity.id),
-                          onFollow: () => _model.toggle(member),
-                          pending: _model.pending.contains(member.identity.id),
-                        ),
-                      if (_model.items.isNotEmpty && _model.error != null)
-                        Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            children: [
-                              FormMessage(_model.error!),
-                              TextButton(
-                                onPressed: () => _model.load(),
-                                child: const Text('Retry'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      if (_model.items.isNotEmpty && _model.hasMore)
-                        Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: OutlinedButton(
-                            onPressed: _model.loading
-                                ? null
-                                : () => _model.load(),
-                            child: Text(
-                              _model.loading ? 'Loading…' : 'Load more',
-                            ),
-                          ),
-                        ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: _profile,
+    builder: (context, _) {
+      final discover = widget.kind == MemberListKind.discover;
+      final profile = _profile.profile;
+      return AppBrandedBackground(
+        variant: AppBackgroundVariant.architecture,
+        child: Scaffold(
+          appBar: MemberListHeader(
+            discover: discover,
+            tabs: _tabs,
+            username: profile?.identity.username,
+            followers: profile?.followersCount,
+            following: profile?.followingCount,
+          ),
+          body: SafeArea(
+            top: false,
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: ProfileTokens.maxWidth,
                 ),
+                child: discover
+                    ? MemberListPanel(
+                        repository: widget.repository,
+                        kind: MemberListKind.discover,
+                      )
+                    : TabBarView(
+                        controller: _tabs,
+                        children: [
+                          MemberListPanel(
+                            repository: widget.repository,
+                            kind: MemberListKind.followers,
+                            userId: widget.userId,
+                            active: _tabs.index == 0,
+                          ),
+                          MemberListPanel(
+                            repository: widget.repository,
+                            kind: MemberListKind.following,
+                            userId: widget.userId,
+                            active: _tabs.index == 1,
+                          ),
+                        ],
+                      ),
               ),
             ),
-          ],
+          ),
         ),
-      ),
-    ),
+      );
+    },
   );
 }

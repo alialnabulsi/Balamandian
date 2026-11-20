@@ -7,24 +7,18 @@ class ProfileHeader extends StatelessWidget implements PreferredSizeWidget {
     required this.onAccount,
     required this.onShare,
     this.onMenu,
+    this.onDiscover,
     this.canGoBack = false,
   });
   final String? username;
-  final VoidCallback? onAccount, onShare, onMenu;
+  final VoidCallback? onAccount, onShare, onMenu, onDiscover;
   final bool canGoBack;
   @override
   Size get preferredSize => const Size.fromHeight(64);
   @override
   Widget build(BuildContext context) => AppBar(
     automaticallyImplyLeading: canGoBack,
-    leading: canGoBack
-        ? null
-        : IconButton(
-            tooltip: 'Open account menu',
-            onPressed: onMenu,
-            icon: const Icon(Icons.menu_rounded),
-          ),
-    titleSpacing: 0,
+    titleSpacing: canGoBack ? 0 : 20,
     title: Semantics(
       button: true,
       label: 'About this account',
@@ -41,22 +35,36 @@ class ProfileHeader extends StatelessWidget implements PreferredSizeWidget {
                   username ?? 'Your profile',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium
+                  style: Theme.of(context).textTheme.titleLarge
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
-              const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+              const SizedBox(width: 4),
+              const Icon(Icons.keyboard_arrow_down_rounded, size: 22),
             ],
           ),
         ),
       ),
     ),
     actions: [
-      IconButton(
-        tooltip: 'Share profile',
-        onPressed: onShare,
-        icon: const Icon(Icons.ios_share_rounded),
-      ),
+      if (onDiscover != null)
+        IconButton(
+          tooltip: 'Discover members',
+          onPressed: onDiscover,
+          icon: const Icon(Icons.person_search_outlined),
+        ),
+      if (canGoBack)
+        IconButton(
+          tooltip: 'Share profile',
+          onPressed: onShare,
+          icon: const Icon(Icons.ios_share_rounded),
+        )
+      else
+        IconButton(
+          tooltip: 'Open account menu',
+          onPressed: onMenu,
+          icon: const Icon(Icons.menu_rounded),
+        ),
       const SizedBox(width: 8),
     ],
   );

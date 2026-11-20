@@ -11,6 +11,33 @@ import '../../profile_test_support.dart';
 
 void main() {
   test(
+    'failed pagination retries the same page and retains earlier rows',
+    () async {
+      final repo = FakeProfileRepository()..moreMembers = true;
+      addTearDown(repo.dispose);
+      final model = MemberListViewModel(
+        repository: repo,
+        kind: MemberListKind.discover,
+      );
+      addTearDown(model.dispose);
+      await model.load(refresh: true);
+      repo.failure = 'Offline';
+      await model.load();
+      expect(model.paginationFailed, true);
+      expect(model.items, hasLength(1));
+      int? requestedPage;
+      repo.failure = null;
+      repo.memberRequest = (page, query) async {
+        requestedPage = page;
+        return MemberPage(items: [], page: page, total: 1, hasMore: false);
+      };
+      await model.load();
+      expect(requestedPage, 2);
+      expect(model.items, hasLength(1));
+      expect(model.paginationFailed, false);
+    },
+  );
+  test(
     'own/public loading, retry and follow reflect authoritative identity state',
     () async {
       final repo = FakeProfileRepository();

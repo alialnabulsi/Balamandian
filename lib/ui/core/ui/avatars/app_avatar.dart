@@ -46,7 +46,13 @@ class AppAvatar extends StatelessWidget {
           child: image == null
               ? fallback
               : Image(
-                  image: image!,
+                  image: ResizeImage.resizeIfNeeded(
+                    (size * MediaQuery.devicePixelRatioOf(context))
+                        .ceil()
+                        .clamp(1, 512),
+                    null,
+                    image!,
+                  ),
                   fit: BoxFit.cover,
                   excludeFromSemantics: true,
                   errorBuilder: (context, error, stack) => fallback,

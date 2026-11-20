@@ -29,6 +29,8 @@ flutter:
   assets:
     - assets/marketplace/images/
     - assets/branding/splash_logo.png
+    - assets/branding/campus-pattern.jpg
+    - assets/branding/campus-stories.png
     - assets/onboarding/images/
     - assets/onboarding/icons/
     - assets/onboarding/illustrations/

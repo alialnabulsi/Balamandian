@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'startup_tokens.dart';
 import 'shell_tokens.dart';
+import 'app_tokens.dart';
 
 final ThemeData appTheme = _theme(false);
 final ThemeData appDarkTheme = _theme(true);
@@ -23,6 +24,13 @@ ThemeData _theme(bool dark) {
     onError: dark ? const Color(0xff102841) : Colors.white,
     errorContainer: dark ? const Color(0xff422b35) : const Color(0xfffff0f2),
     surface: dark ? const Color(0xff101821) : Colors.white,
+    surfaceContainerLow: dark
+        ? const Color(0xff16222f)
+        : const Color(0xfff4f8fc),
+    surfaceContainer: dark ? const Color(0xff1c2b3a) : const Color(0xffeef4fa),
+    surfaceContainerHighest: dark
+        ? const Color(0xff2b3e50)
+        : const Color(0xffdfe9f3),
     onSurface: dark ? const Color(0xffeaf3fc) : const Color(0xff14263b),
     onSurfaceVariant: dark ? const Color(0xffa2b3c6) : const Color(0xff526579),
     outline: dark ? const Color(0xff35495f) : const Color(0xffd5dde5),
@@ -42,13 +50,13 @@ ThemeData _theme(bool dark) {
     visualDensity: VisualDensity.standard,
     colorScheme: scheme,
     fontFamily: 'Inter',
-    scaffoldBackgroundColor: scheme.surface,
+    scaffoldBackgroundColor: Colors.transparent,
     extensions: [
       palette,
       const ShellPalette(action: StartupTokens.blue, onAction: Colors.white),
     ],
     appBarTheme: AppBarThemeData(
-      backgroundColor: scheme.surface,
+      backgroundColor: scheme.surface.withValues(alpha: .94),
       foregroundColor: scheme.onSurface,
       surfaceTintColor: Colors.transparent,
       scrolledUnderElevation: 0,
@@ -96,6 +104,15 @@ ThemeData _theme(bool dark) {
         spacing: -1,
       ),
       bodyLarge: StartupTokens.text(15, 24),
+      headlineSmall: StartupTokens.text(
+        24,
+        31,
+        weight: FontWeight.w700,
+        spacing: -.6,
+      ),
+      titleLarge: StartupTokens.text(20, 28, weight: FontWeight.w600),
+      titleMedium: StartupTokens.text(16, 23, weight: FontWeight.w600),
+      titleSmall: StartupTokens.text(14, 21, weight: FontWeight.w600),
       bodyMedium: StartupTokens.text(14, 22),
       bodySmall: StartupTokens.text(12, 20),
       labelLarge: StartupTokens.text(15, 22, weight: FontWeight.w600),
@@ -107,15 +124,15 @@ ThemeData _theme(bool dark) {
       contentPadding: const EdgeInsets.all(14),
       hintStyle: StartupTokens.text(15, 24, color: palette.muted),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppTokens.controlRadius),
         borderSide: BorderSide(color: scheme.outline),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppTokens.controlRadius),
         borderSide: BorderSide(color: scheme.outline),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppTokens.controlRadius),
         borderSide: BorderSide(color: scheme.primary, width: 2),
       ),
     ),
@@ -124,6 +141,42 @@ ThemeData _theme(bool dark) {
         minimumSize: const Size(48, 48),
         padding: const EdgeInsets.symmetric(horizontal: 6),
         textStyle: StartupTokens.text(12, 20, weight: FontWeight.w600),
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(48, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTokens.controlRadius),
+        ),
+        textStyle: StartupTokens.text(13, 20, weight: FontWeight.w600),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(48, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        backgroundColor: scheme.surface.withValues(alpha: .8),
+        side: BorderSide(color: scheme.outlineVariant),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTokens.controlRadius),
+        ),
+        textStyle: StartupTokens.text(13, 20, weight: FontWeight.w600),
+      ),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: scheme.surface,
+      surfaceTintColor: Colors.transparent,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTokens.controlRadius),
       ),
     ),
   );

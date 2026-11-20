@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../core/themes/startup_tokens.dart';
-import '../../core/ui/asset_icon.dart';
+import '../../core/themes/app_tokens.dart';
+import '../../core/ui/avatars/app_avatar.dart';
 import '../view_models/auth_ui_controller.dart';
 import '../view_models/profile_view_model.dart';
 
@@ -22,147 +22,102 @@ class ProfilePhotoControl extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final name = identity?.name?.trim() ?? '';
-    final initials = name.isEmpty
-        ? ''
-        : name
-              .split(RegExp(r'\s+'))
-              .take(2)
-              .map((part) => part.characters.first)
-              .join();
     final blocked = disabled || model.readingPhoto;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 5),
-      child: Row(
-        children: [
-          Semantics(
-            button: true,
-            label: model.preview == null
-                ? 'Add profile photo'
-                : 'Change profile photo',
-            child: InkWell(
-              onTap: blocked ? null : model.selectPhoto,
-              customBorder: const CircleBorder(),
-              child: SizedBox.square(
-                dimension: 76,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: 76,
-                      height: 76,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: scheme.primaryContainer,
-                        border: Border.all(color: scheme.outline),
+    final hasPhoto = model.preview != null || existingPhoto != null;
+    return Column(
+      children: [
+        Semantics(
+          button: true,
+          label: hasPhoto ? 'Change profile photo' : 'Add profile photo',
+          child: InkWell(
+            onTap: blocked ? null : model.selectPhoto,
+            customBorder: const CircleBorder(),
+            child: SizedBox.square(
+              dimension: 108,
+              child: Stack(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: scheme.primary.withValues(alpha: .25),
                       ),
-                      alignment: Alignment.center,
-                      child: model.preview != null
-                          ? Image.memory(
+                    ),
+                    child: model.preview != null
+                        ? ClipOval(
+                            child: Image.memory(
                               model.preview!,
-                              width: 76,
-                              height: 76,
+                              width: 96,
+                              height: 96,
                               fit: BoxFit.cover,
                               cacheWidth: 256,
                               semanticLabel: 'Your selected profile photo',
-                            )
-                          : existingPhoto ??
-                                (initials.isNotEmpty
-                                    ? Text(
-                                        initials,
-                                        style: StartupTokens.text(
-                                          24,
-                                          30,
-                                          weight: FontWeight.w600,
-                                          color: scheme.primary,
-                                        ),
-                                      )
-                                    : AssetIcon(
-                                        'users',
-                                        size: 32,
-                                        color: scheme.primary,
-                                      )),
-                    ),
-                    Positioned(
-                      right: -2,
-                      bottom: -2,
-                      child: Container(
-                        width: 27,
-                        height: 27,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: scheme.primary,
-                          border: Border.all(
-                            width: 2,
-                            color: StartupPalette.of(context).canvas,
-                          ),
-                        ),
-                        child: AssetIcon(
-                          'camera',
-                          size: 16,
-                          color: scheme.onPrimary,
-                        ),
+                            ),
+                          )
+                        : existingPhoto ??
+                              AppAvatar(
+                                name: identity?.name,
+                                size: AppTokens.avatarLarge,
+                              ),
+                  ),
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: scheme.primary,
+                        border: Border.all(color: scheme.surface, width: 3),
+                      ),
+                      child: Icon(
+                        Icons.camera_alt_outlined,
+                        size: 17,
+                        color: scheme.onPrimary,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
-          const SizedBox(width: 18),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Your campus face',
-                  style: StartupTokens.text(14, 21, weight: FontWeight.w600),
-                ),
-                Wrap(
-                  spacing: 12,
-                  children: [
-                    TextButton(
-                      onPressed: blocked ? null : model.selectPhoto,
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        alignment: Alignment.centerLeft,
-                      ),
-                      child: Text(
-                        model.readingPhoto
-                            ? 'Reading photo…'
-                            : model.preview == null && existingPhoto == null
-                            ? 'Add a photo'
-                            : 'Change photo',
-                        style: const TextStyle(
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                    if (model.preview != null || existingPhoto != null)
-                      TextButton(
-                        onPressed: blocked
-                            ? null
-                            : onRemove ?? model.removePhoto,
-                        style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                        child: const Text('Remove photo'),
-                      ),
-                  ],
-                ),
-                Text(
-                  'Optional · JPG, PNG or WebP · Up to 1 MB',
-                  style: StartupTokens.text(
-                    11,
-                    18,
-                    color: StartupPalette.of(context).muted,
-                  ),
-                ),
-              ],
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 12,
+          children: [
+            TextButton.icon(
+              onPressed: blocked ? null : model.selectPhoto,
+              icon: model.readingPhoto
+                  ? const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.add_a_photo_outlined, size: 18),
+              label: Text(
+                model.readingPhoto
+                    ? 'Preparing photo…'
+                    : hasPhoto
+                    ? 'Change photo'
+                    : 'Add a photo',
+              ),
             ),
-          ),
-        ],
-      ),
+            if (hasPhoto)
+              TextButton(
+                onPressed: blocked ? null : onRemove ?? model.removePhoto,
+                child: const Text('Remove photo'),
+              ),
+          ],
+        ),
+        Text(
+          'JPG, PNG or WebP · Photos are resized for your profile',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(color: scheme.onSurfaceVariant),
+        ),
+      ],
     );
   }
 }

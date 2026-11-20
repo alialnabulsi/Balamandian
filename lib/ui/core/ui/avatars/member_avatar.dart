@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../../../../domain/models/profile_models.dart';
+import '../../themes/app_tokens.dart';
 import 'app_avatar.dart';
 
 /// Loads only through the authenticated data boundary. Tokens never enter widgets.
@@ -45,10 +46,14 @@ class _MemberAvatarState extends State<MemberAvatar> {
   @override
   Widget build(BuildContext context) => FutureBuilder<Uint8List>(
     future: _image,
-    builder: (context, snapshot) => AppAvatar(
-      size: widget.size,
-      name: widget.identity?.displayName,
-      image: snapshot.hasData ? MemoryImage(snapshot.data!) : null,
+    builder: (context, snapshot) => AnimatedSwitcher(
+      duration: AppTokens.motion(context),
+      child: AppAvatar(
+        key: ValueKey('${widget.identity?.avatarPath}-${snapshot.hasData}'),
+        size: widget.size,
+        name: widget.identity?.displayName,
+        image: snapshot.hasData ? MemoryImage(snapshot.data!) : null,
+      ),
     ),
   );
 }

@@ -65,7 +65,10 @@ void main() {
       await tester.tap(find.text('Save changes'));
       await tester.pumpAndSettle();
       expect(find.text('Saved campus biography'), findsOneWidget);
-      await tester.tap(find.text('Discover members'));
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byTooltip('Discover members'));
+      await tester.tap(find.byTooltip('Discover members'));
       await tester.pumpAndSettle();
       expect(find.byType(MemberListScreen), findsOneWidget);
       await tester.tap(find.text('Maya Haddad'));

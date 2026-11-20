@@ -101,7 +101,7 @@ create other future paths only alongside code needed by a real feature.
 | --- | --- | --- |
 | `lib/ui/<feature>/widgets/` | Feature screen and its local widgets. | Implemented for `home`, `onboarding`, `auth`, `marketplace` and `profile`. |
 | `lib/ui/<feature>/view_models/` | Presentation logic, UI state, and user-action methods. | Auth presentation, credential validation, photo state, and app-entry/re-entry coordination. |
-| `lib/ui/core/ui/` | Reusable, configurable widget classes shared across features. | Shared branding, buttons, fields feedback, body copy, crest and decorative motion. |
+| `lib/ui/core/ui/` | Reusable, configurable widget classes shared across features. | Shared branding, surfaces, avatars, async controls, skeletons, feedback, crest and motion. |
 | `lib/ui/core/themes/` | Shared theme configuration. | Exists. |
 | `lib/data/repositories/` | Sources of truth organized by application data type; contracts and implementations, including authentication and session state. | Authentication, marketplace and profile contracts/API implementations; auth persistence completes before authentication succeeds. |
 | `lib/data/services/` | External API access, response decoding, local storage, and other data-source adapters; no presentation logic or application data state. | Auth/marketplace/profile HTTP, secure credential store and injectable external URL launching. |
@@ -273,8 +273,15 @@ Custom widgets should read semantic values from `Theme.of(context).colorScheme`
 and `Theme.of(context).textTheme`. Standard Material widgets already inherit
 the app theme. The app follows system appearance; `MainApp.themeMode` supports host control and review.
 The Home shell adds gold `tertiary` actions, themed navigation surfaces, and a
-`ShellPalette` for filled blue quick actions. Its static vector background is
-opt-in through `AppBrandedBackground`; authentication keeps its existing artwork.
+`ShellPalette` for filled blue quick actions. MainApp now installs the original illustrated artwork globally through
+`AppBrandedBackground`. Transparent routes inherit it; `AppSurface` provides
+readable content groups when needed. The architecture variant gives profiles
+and related screens their approved flat campus layout; the original tile
+remains the default elsewhere. The blue shell quick-action button keeps its
+original bottom-right anchor, including on Profile.
+See [profile visual-system guidance](Docs/profile.md#premium-profile-and-global-visual-refinement--2026-11-20)
+for loading, mutation, motion, accessibility and future-feature usage. Native and
+animated startup artwork is preserved.
 
 Theming references:
 

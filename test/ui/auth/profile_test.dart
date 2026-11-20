@@ -81,7 +81,7 @@ void main() {
     var selected = XFile.fromData(Uint8List(1000001), name: 'large.png');
     final model = ProfileViewModel(pickPhoto: () async => selected);
     await tester.runAsync(model.selectPhoto);
-    expect(model.photoError, contains('smaller than 1 MB'));
+    expect(model.photoError, contains('Choose a JPG'));
     selected = XFile.fromData(
       Uint8List.fromList([137, 80, 78, 71, 0, 0, 0, 0]),
       name: 'broken.png',

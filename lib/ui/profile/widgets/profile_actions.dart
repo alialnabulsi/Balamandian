@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../core/ui/buttons/async_action_button.dart';
+import 'profile_tokens.dart';
+
 class ProfileActions extends StatelessWidget {
   const ProfileActions({
     super.key,
@@ -13,34 +16,40 @@ class ProfileActions extends StatelessWidget {
   final bool isSelf, isFollowing, pending;
   final VoidCallback onEdit, onFollow, onShare;
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: FilledButton(
-          onPressed: pending
-              ? null
-              : isSelf
-              ? onEdit
-              : onFollow,
-          child: Text(
-            pending
-                ? 'Updating…'
-                : isSelf
-                ? 'Edit profile'
-                : isFollowing
-                ? 'Following'
-                : 'Follow',
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: OutlinedButton(
-          onPressed: onShare,
-          child: const Text('Share profile', textAlign: TextAlign.center),
-        ),
-      ),
-    ],
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      final style = ProfileTokens.actionStyle(context);
+      final primary = isSelf
+          ? FilledButton(
+              onPressed: onEdit,
+              style: style,
+              child: const Text('Edit profile'),
+            )
+          : AsyncActionButton(
+              label: isFollowing ? 'Following' : 'Follow',
+              running: pending,
+              onPressed: onFollow,
+              style: style,
+            );
+      final share = FilledButton(
+        onPressed: onShare,
+        style: style,
+        child: const Text('Share profile'),
+      );
+      if (box.maxWidth < 280 ||
+          MediaQuery.textScalerOf(context).scale(14) > 21) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [primary, const SizedBox(height: 8), share],
+        );
+      }
+      return Row(
+        children: [
+          Expanded(child: primary),
+          const SizedBox(width: 8),
+          Expanded(child: share),
+        ],
+      );
+    },
   );
 }
