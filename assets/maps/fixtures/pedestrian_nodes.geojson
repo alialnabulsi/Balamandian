@@ -1,0 +1,117 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "a",
+        "type": "entrance",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.1264,
+          51.53375
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "b",
+        "type": "intersection",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.126,
+          51.533
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "c",
+        "type": "intersection",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.125,
+          51.533
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "d",
+        "type": "entrance",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.126,
+          51.5342
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "e",
+        "type": "entrance",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.1255,
+          51.5342
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "f",
+        "type": "intersection",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.127,
+          51.534
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "isolated",
+        "type": "entrance",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.1245,
+          51.535
+        ]
+      }
+    }
+  ]
+}

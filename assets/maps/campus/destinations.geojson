@@ -1,0 +1,31 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "uob-campus",
+        "name": "University of Balamand",
+        "code": "UOB",
+        "category": "Campus",
+        "aliases": [
+          "Balamand",
+          "Qalhat",
+          "Al Koura",
+          "Main campus"
+        ],
+        "entrance_ids": [],
+        "source": "https://www.balamand.edu.lb/ContactUs/Pages/ContactUs.aspx",
+        "revision": "2026-11-20-foundation-1",
+        "description": "Main campus in Al Koura. Verified walking entrances and paths are awaiting GIS preparation."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          35.7836648,
+          34.3643747
+        ]
+      }
+    }
+  ]
+}

@@ -17,6 +17,8 @@ import '../domain/models/auth_session.dart';
 import '../ui/core/ui/app_feature_placeholder.dart';
 import '../ui/home/widgets/app_shell.dart';
 import '../ui/home/widgets/home_screen.dart';
+import '../ui/map/view_models/campus_map_view_model.dart';
+import '../ui/map/widgets/campus_map_screen.dart';
 import '../ui/auth/widgets/account_setup_screen.dart';
 import '../ui/auth/widgets/credentials_screen.dart';
 import '../ui/auth/widgets/getting_started_screen.dart';
@@ -39,6 +41,7 @@ GoRouter createAppRouter({
   required ExternalUrlService externalUrls,
   required SessionViewModel session,
   required AppEntryViewModel entry,
+  required CampusMapViewModel campusMap,
   bool holdSplash = false,
   Future<bool> Function()? onOnboardingCompleted,
 }) {
@@ -149,6 +152,7 @@ GoRouter createAppRouter({
             location: state.uri.path,
             session: session,
             identity: identity,
+            mapNavigationFocus: campusMap.navigationFocus,
           ),
         ),
         branches: [
@@ -164,6 +168,8 @@ GoRouter createAppRouter({
                       ? MarketplaceScreen(repository: marketplaceRepository)
                       : destination == ShellDestination.profile
                       ? ProfileScreen(repository: profileRepository)
+                      : destination == ShellDestination.map
+                      ? CampusMapScreen(model: campusMap)
                       : AppFeaturePlaceholder(
                           title: '${destination.label} coming soon',
                           description: switch (destination) {

@@ -5,6 +5,13 @@ organization, adapted from Flutter's [Compass architecture case study](https://d
 architecture guide, and recommendations. These are principles to apply as the
 app grows, rather than a requirement to reproduce every Compass directory.
 
+The [campus map report](Docs/campus-map.md) covers the Mapbox integration,
+outdoor routing and navigation foundation, local simulation, configuration and
+verification. The [geographic data contract](assets/maps/campus/README.md) records
+the sourced campus reference, missing GIS data and QGIS preparation requirements.
+The [map UI refinement report](Docs/campus-map-ui-refinement.md) covers presentation
+states, measured overlays, Galaxy screenshots and focused verification.
+
 The [profile implementation report](Docs/profile.md) records the connected social
 identity feature, routes, reusable components, official identity ownership,
 avatar/follow contracts, database synchronization and manual device checks.

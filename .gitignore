@@ -1,4 +1,7 @@
 # Miscellaneous
+# Local Mapbox build defines (keep runtime credentials outside source control).
+config/*.local.json
+/android/build/
 *.class
 *.log
 *.pyc

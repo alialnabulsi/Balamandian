@@ -1,0 +1,42 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "demo-replacement",
+        "building_id": "demo-building",
+        "approved": true,
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -0.1264,
+              51.53365
+            ],
+            [
+              -0.12565,
+              51.53365
+            ],
+            [
+              -0.12565,
+              51.53425
+            ],
+            [
+              -0.1264,
+              51.53425
+            ],
+            [
+              -0.1264,
+              51.53365
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

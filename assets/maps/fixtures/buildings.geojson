@@ -1,0 +1,47 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "demo-building-main",
+        "building_id": "demo-building",
+        "name": "Synthetic extrusion",
+        "code": "DEMO",
+        "category": "Academic",
+        "height": 16,
+        "base_height": 0,
+        "levels": 4,
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -0.12625,
+              51.5338
+            ],
+            [
+              -0.1258,
+              51.5338
+            ],
+            [
+              -0.1258,
+              51.53415
+            ],
+            [
+              -0.12625,
+              51.53415
+            ],
+            [
+              -0.12625,
+              51.5338
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

@@ -11,6 +11,10 @@ import 'package:balamandian/ui/core/ui/quick_actions/app_quick_action.dart';
 import 'package:balamandian/ui/core/ui/quick_actions/expandable_quick_actions.dart';
 import 'package:balamandian/ui/home/widgets/app_shell.dart';
 import 'package:balamandian/ui/home/widgets/home_screen.dart';
+import 'package:balamandian/ui/map/widgets/campus_map_screen.dart';
+import 'package:balamandian/ui/map/view_models/campus_map_view_model.dart';
+import 'package:balamandian/data/repositories/campus_location_repository.dart';
+import 'package:balamandian/ui/core/ui/navigation/balamandian_top_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +22,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../auth_test_support.dart';
 import '../startup_test_support.dart';
+import '../../campus_test_support.dart';
 
 Future<void> loadHomeFonts() async {
   await loadStartupFonts();
@@ -34,6 +39,7 @@ Future<void> pumpHome(
   double textScale = 1,
   String location = '/',
   FakeViewPadding padding = FakeViewPadding.zero,
+  CampusMapViewModel? campusMap,
 }) async {
   mockNativeSplash(tester);
   tester.view.devicePixelRatio = 1;
@@ -54,6 +60,7 @@ Future<void> pumpHome(
   await harness.repository.login('FICTION001', 'test');
   await tester.pumpWidget(
     MainApp(
+      campusMap: campusMap,
       profileRepository: FakeProfileRepository(),
       marketplaceRepository: FakeMarketplaceRepository(),
       externalUrls: FakeExternalUrlService(),
@@ -79,6 +86,47 @@ GoRouter shellRouter(WidgetTester tester) =>
     GoRouter.of(tester.element(find.byType(AppShell)));
 
 void main() {
+  testWidgets('Map branch is retained and navigation restores shell controls', (
+    tester,
+  ) async {
+    final locationService = FakeCampusLocationService();
+    final model = CampusMapViewModel(
+      repository: FakeCampusRepository(campusFixture()),
+      location: CampusLocationRepository(locationService),
+    );
+    addTearDown(() {
+      model.dispose();
+      locationService.dispose();
+    });
+    await model.load();
+    await pumpHome(tester, campusMap: model, location: '/map');
+    final mapElement = tester.element(find.byType(CampusMapScreen));
+    final router = shellRouter(tester);
+    router.go('/');
+    await tester.pumpAndSettle();
+    router.go('/map');
+    await tester.pumpAndSettle();
+    expect(tester.element(find.byType(CampusMapScreen)), same(mapElement));
+    await model.select(model.data!.destinations['demo-east']!);
+    model.directions();
+    model.startAtEntrance(model.data!.entrances['demo-west-door']!);
+    await tester.runAsync(model.calculate);
+    await model.beginNavigation(simulate: true);
+    model.pauseSimulation();
+    await tester.pumpAndSettle();
+    expect(find.byType(AppBottomBar), findsNothing);
+    expect(find.byType(BalamandianTopBar), findsNothing);
+    model.endNavigation();
+    await tester.pumpAndSettle();
+    expect(find.byType(AppBottomBar), findsOneWidget);
+    expect(find.byType(BalamandianTopBar), findsNothing);
+    expect(quick('Open quick actions'), findsNothing);
+    router.go('/');
+    await tester.pumpAndSettle();
+    expect(find.byType(BalamandianTopBar), findsOneWidget);
+    expect(quick('Open quick actions'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   setUpAll(loadHomeFonts);
 
   testWidgets('Tabs retain Home; Create acts without selecting a tab', (
@@ -96,13 +144,15 @@ void main() {
         '/${label.toLowerCase()}',
       );
       expect(
-        find.text(
-          label == 'Market'
-              ? 'Marketplace'
-              : label == 'Profile'
-              ? 'Ali Al Nabulsi'
-              : '$label coming soon',
-        ),
+        label == 'Map'
+            ? find.byType(CampusMapScreen)
+            : find.text(
+                label == 'Market'
+                    ? 'Marketplace'
+                    : label == 'Profile'
+                    ? 'Ali Al Nabulsi'
+                    : '$label coming soon',
+              ),
         findsOneWidget,
       );
       expect(tester.widget<AppNavigationItem>(tab(label)).selected, isTrue);
@@ -276,7 +326,8 @@ void main() {
       router.go('/map');
       await tester.pumpAndSettle();
       expect(quick('Guide'), findsNothing);
-      expect(find.text('Map coming soon'), findsOneWidget);
+      expect(find.byType(CampusMapScreen), findsOneWidget);
+      expect(quick('Open quick actions'), findsNothing);
       await tester.pumpWidget(const SizedBox.shrink());
       expect(tester.takeException(), isNull);
     },

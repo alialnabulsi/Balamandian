@@ -1,0 +1,229 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "ab",
+        "from": "a",
+        "to": "b",
+        "type": "path",
+        "bidirectional": true,
+        "distance_m": 87.86614667219119,
+        "restricted": false,
+        "accessibility": "unknown",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.1264,
+            51.53375
+          ],
+          [
+            -0.126,
+            51.533
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bc",
+        "from": "b",
+        "to": "c",
+        "type": "path",
+        "bidirectional": true,
+        "distance_m": 69.170432312749,
+        "restricted": false,
+        "accessibility": "unknown",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.126,
+            51.533
+          ],
+          [
+            -0.125,
+            51.533
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "ce",
+        "from": "c",
+        "to": "e",
+        "type": "path",
+        "bidirectional": false,
+        "distance_m": 137.84325770454905,
+        "restricted": false,
+        "accessibility": "unknown",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.125,
+            51.533
+          ],
+          [
+            -0.1255,
+            51.5342
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "af",
+        "from": "a",
+        "to": "f",
+        "type": "path",
+        "bidirectional": true,
+        "distance_m": 49.95140573238424,
+        "restricted": false,
+        "accessibility": "unknown",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.1264,
+            51.53375
+          ],
+          [
+            -0.127,
+            51.534
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "fd",
+        "from": "f",
+        "to": "d",
+        "type": "path",
+        "bidirectional": true,
+        "distance_m": 72.65597917099845,
+        "restricted": false,
+        "accessibility": "unknown",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.127,
+            51.534
+          ],
+          [
+            -0.126,
+            51.5342
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "de",
+        "from": "d",
+        "to": "e",
+        "type": "path",
+        "bidirectional": true,
+        "distance_m": 34.584304437539174,
+        "restricted": false,
+        "accessibility": "unknown",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.126,
+            51.5342
+          ],
+          [
+            -0.1255,
+            51.5342
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bd",
+        "from": "b",
+        "to": "d",
+        "type": "stairs",
+        "bidirectional": true,
+        "distance_m": 133.43409627946727,
+        "restricted": false,
+        "accessibility": "inaccessible",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.126,
+            51.533
+          ],
+          [
+            -0.126,
+            51.5342
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "fe",
+        "from": "f",
+        "to": "e",
+        "type": "path",
+        "bidirectional": true,
+        "distance_m": 106.10979291435636,
+        "restricted": true,
+        "accessibility": "unknown",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.127,
+            51.534
+          ],
+          [
+            -0.1255,
+            51.5342
+          ]
+        ]
+      }
+    }
+  ]
+}

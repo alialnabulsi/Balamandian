@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/models/auth_session.dart';
@@ -11,6 +12,8 @@ import '../../core/ui/navigation/balamandian_top_bar.dart';
 import '../../core/ui/quick_actions/expandable_quick_actions.dart';
 import '../../profile/view_models/current_identity_view_model.dart';
 import '../../core/ui/avatars/member_avatar.dart';
+import '../../core/ui/measure_size.dart';
+import '../../core/ui/navigation/bottom_chrome_scope.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({
@@ -19,12 +22,14 @@ class AppShell extends StatefulWidget {
     required this.location,
     required this.session,
     required this.identity,
+    required this.mapNavigationFocus,
   });
 
   final StatefulNavigationShell navigationShell;
   final String location;
   final SessionViewModel session;
   final CurrentIdentityViewModel identity;
+  final ValueListenable<bool> mapNavigationFocus;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -33,6 +38,7 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _logoutFlow = false;
+  double _bottomHeight = 0;
 
   Future<void> _logout() async {
     if (_logoutFlow || widget.session.busy) return;
@@ -82,7 +88,11 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: Listenable.merge([widget.session, widget.identity]),
+    listenable: Listenable.merge([
+      widget.session,
+      widget.identity,
+      widget.mapNavigationFocus,
+    ]),
     builder: (context, _) {
       if (widget.session.user == null) {
         return ColoredBox(
@@ -96,7 +106,8 @@ class _AppShellState extends State<AppShell> {
           children: [
             Scaffold(
               key: _scaffoldKey,
-              appBar: widget.location == '/profile'
+              resizeToAvoidBottomInset: widget.location != '/map',
+              appBar: widget.location == '/profile' || widget.location == '/map'
                   ? null
                   : BalamandianTopBar(
                       avatarWidget: MemberAvatar(
@@ -126,28 +137,47 @@ class _AppShellState extends State<AppShell> {
               body: SafeArea(
                 top: false,
                 bottom: false,
-                child: widget.navigationShell,
+                child: BottomChromeScope(
+                  height:
+                      widget.location == '/map' &&
+                          widget.mapNavigationFocus.value
+                      ? 0
+                      : _bottomHeight,
+                  child: widget.navigationShell,
+                ),
               ),
-              bottomNavigationBar: AppBottomBar(
-                selected: ShellDestination.fromPath(widget.location),
-                onSelected: _select,
-                onCreate: () => _comingSoon('Create'),
-              ),
-              floatingActionButton: ExpandableQuickActions(
-                navigationId: widget.location,
-                actions: [
-                  for (final destination in [
-                    ShellDestination.guide,
-                    ShellDestination.ai,
-                    ShellDestination.tools,
-                  ])
-                    QuickAction(
-                      label: destination.label,
-                      icon: destination.icon,
-                      onSelected: () => _select(destination),
+              bottomNavigationBar:
+                  widget.location == '/map' && widget.mapNavigationFocus.value
+                  ? null
+                  : MeasureSize(
+                      onChange: (size) {
+                        if (mounted && _bottomHeight != size.height) {
+                          setState(() => _bottomHeight = size.height);
+                        }
+                      },
+                      child: AppBottomBar(
+                        selected: ShellDestination.fromPath(widget.location),
+                        onSelected: _select,
+                        onCreate: () => _comingSoon('Create'),
+                      ),
                     ),
-                ],
-              ),
+              floatingActionButton: widget.location == '/map'
+                  ? null
+                  : ExpandableQuickActions(
+                      navigationId: widget.location,
+                      actions: [
+                        for (final destination in [
+                          ShellDestination.guide,
+                          ShellDestination.ai,
+                          ShellDestination.tools,
+                        ])
+                          QuickAction(
+                            label: destination.label,
+                            icon: destination.icon,
+                            onSelected: () => _select(destination),
+                          ),
+                      ],
+                    ),
             ),
             if (widget.session.busy) ...[
               const Positioned.fill(

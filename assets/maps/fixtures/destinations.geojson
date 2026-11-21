@@ -1,0 +1,106 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "demo-west",
+        "name": "Demo west entrance",
+        "code": "WEST",
+        "category": "Gates",
+        "aliases": [
+          "west"
+        ],
+        "entrance_ids": [
+          "demo-west-door"
+        ],
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2",
+        "description": "Synthetic fixture for development verification. This is not a real campus destination."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.1264,
+          51.53375
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "demo-east",
+        "name": "Demo east destination",
+        "code": "EAST",
+        "category": "Academic",
+        "aliases": [
+          "east"
+        ],
+        "entrance_ids": [
+          "demo-east-door"
+        ],
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2",
+        "description": "Synthetic fixture for development verification. This is not a real campus destination."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.1255,
+          51.5342
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "demo-library",
+        "name": "Demo learning center",
+        "code": "LIB",
+        "category": "Library",
+        "aliases": [
+          "library"
+        ],
+        "entrance_ids": [
+          "demo-library-door"
+        ],
+        "building_id": "demo-building",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2",
+        "description": "Synthetic fixture for development verification. This is not a real campus destination."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.126,
+          51.534
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "demo-island",
+        "name": "Demo disconnected point",
+        "code": "ISO",
+        "category": "Services",
+        "aliases": [
+          "island"
+        ],
+        "entrance_ids": [
+          "demo-island-door"
+        ],
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2",
+        "description": "Synthetic fixture for development verification. This is not a real campus destination."
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.1245,
+          51.535
+        ]
+      }
+    }
+  ]
+}

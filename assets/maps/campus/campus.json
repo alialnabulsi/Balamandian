@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "id": "uob-qalhat",
+  "revision": "2026-11-20-foundation-1",
+  "name": "University of Balamand",
+  "center": [
+    35.7836648,
+    34.3643747
+  ],
+  "camera_bounds": [
+    [
+      35.774,
+      34.356
+    ],
+    [
+      35.794,
+      34.374
+    ]
+  ],
+  "provisional_bounds": true,
+  "fixture": false,
+  "source": "University contact page, Al Koura Campus Google map destination link",
+  "source_url": "https://www.balamand.edu.lb/ContactUs/Pages/ContactUs.aspx",
+  "notes": "Center is a campus reference, not a verified entrance. Bounds are a provisional viewing envelope, not a surveyed campus boundary."
+}

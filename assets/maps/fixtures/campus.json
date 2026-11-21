@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "synthetic-london",
+  "revision": "fixture-2",
+  "name": "Synthetic demonstration · London",
+  "center": [
+    -0.126,
+    51.5337
+  ],
+  "camera_bounds": [
+    [
+      -0.13,
+      51.531
+    ],
+    [
+      -0.122,
+      51.537
+    ]
+  ],
+  "provisional_bounds": true,
+  "fixture": true
+}

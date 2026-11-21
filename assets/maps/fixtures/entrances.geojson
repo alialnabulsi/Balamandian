@@ -1,0 +1,77 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "demo-west-door",
+        "name": "Demo west entrance door",
+        "destination_id": "demo-west",
+        "node_id": "a",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.1264,
+          51.53375
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "demo-east-door",
+        "name": "Demo east destination door",
+        "destination_id": "demo-east",
+        "node_id": "e",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.1255,
+          51.5342
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "demo-library-door",
+        "name": "Demo learning center door",
+        "destination_id": "demo-library",
+        "node_id": "d",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.126,
+          51.5342
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "demo-island-door",
+        "name": "Demo disconnected point door",
+        "destination_id": "demo-island",
+        "node_id": "isolated",
+        "source": "Synthetic London development fixture; not campus geography",
+        "revision": "fixture-2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.1245,
+          51.535
+        ]
+      }
+    }
+  ]
+}

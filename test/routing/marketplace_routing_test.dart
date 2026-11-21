@@ -1,3 +1,5 @@
+import 'package:balamandian/ui/map/widgets/campus_map_screen.dart';
+
 import '../profile_test_support.dart';
 
 import 'dart:convert';
@@ -116,9 +118,11 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(
-          find.text(
-            label == 'Profile' ? 'Ali Al Nabulsi' : '$label coming soon',
-          ),
+          label == 'Map'
+              ? find.byType(CampusMapScreen)
+              : find.text(
+                  label == 'Profile' ? 'Ali Al Nabulsi' : '$label coming soon',
+                ),
           findsOneWidget,
         );
       }
