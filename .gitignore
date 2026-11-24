@@ -14,7 +14,7 @@ config/*.local.json
 .svn/
 .swiftpm/
 migrate_working_dir/
-
+/dev-config.json
 # Android diagnostic reports and heap dumps
 bugreport*.zip
 bugreport*.txt
