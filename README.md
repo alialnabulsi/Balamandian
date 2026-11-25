@@ -237,6 +237,22 @@ destination behavior, identity handoff, theme decisions and focused checks.
 
 Local authentication development:
 
+For a USB-connected Android phone, start Balamandian-API in another terminal,
+then use the launcher below. The ignored `dev-config.json` must contain
+`API_BASE_URL` set to `http://127.0.0.1:<backend-port>` and the public
+`MAPBOX_ACCESS_TOKEN`. The launcher checks backend health, restores USB forwarding
+after a reconnect, and passes the configuration to Flutter on every run.
+
+```powershell
+.\tool\run_phone.ps1
+# Optional: check the connection without rebuilding or launching.
+.\tool\run_phone.ps1 -CheckOnly
+```
+
+Plain `flutter run` does not read `dev-config.json`; it uses the emulator default
+`http://10.0.2.2:3000` and has no Mapbox token unless supplied explicitly.
+After changing build definitions, stop the previous run and launch again.
+
 ```sh
 # Android emulator (also the default debug origin)
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000
