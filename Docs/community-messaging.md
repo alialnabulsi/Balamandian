@@ -2,6 +2,8 @@
 
 Stage 1 establishes the social feed, stories, content creation, community privacy and durable activity notifications. The Flutter and API changes live on `feature/community-messaging`, based on client `2813517` and API `5062ef2`.
 
+Stage 2 adds direct chats and private groups to the same branches. The accepted Stage 1 commits are `13a532e` on Flutter and `3d2a73b` on the API. [Stage 2 implementation and verification](community-stage-2-report.md) · [Messaging API](../../Balamandian-API/docs/messaging.md)
+
 | Stage | Product scope | Foundation and boundaries |
 | --- | --- | --- |
 | 1. Community | For You and Following, image posts, 24-hour stories, comments and one level of replies, saved posts, external sharing, follows and approvals, blocking, muting, reporting and in-app activity. | Community endpoints reuse application UUIDs, opaque bearer sessions and the approved public profile projection. PostgreSQL supplies access rules, durable activity, media metadata and reporting. Private object storage is behind an authenticated API. |
@@ -10,6 +12,12 @@ Stage 1 establishes the social feed, stories, content creation, community privac
 | 4. Calls and demo readiness | Direct, group and study-room audio, integration, performance and native QA. Official channels never accept calls. | Gate calling by verified conversation type, membership, block state and consent. Evaluate transport and OS delivery in that stage. |
 
 Institutional roles carry equal base access. Verified student status is a feature rule for future room creation. SIS roles do not grant platform or conversation administration. Future messages, invite permissions, call policies and background OS push have no Stage 1 controls.
+
+Stage 2 stores direct and private group conversations, member roles, ordered history, pending requests and exact receipt acknowledgements in PostgreSQL. It reuses the Community media upload and authorized download routes. A client retries a failed send with the same UUID and keeps unsent text and attachments in the current composer. The inbox and active conversation synchronize using bounded authenticated HTTP waits and the existing PostgreSQL notification listener. Typing and recent online status use short in-memory leases.
+
+An approved direct chat continues after new-contact preferences change. Blocking hides its history and media until unblocked. Shared group history filters blocked authors and removed members lose all access. Joining a group exposes messages from acceptance onward. Shared posts and story replies carry references and are checked against current Community access.
+
+For development, keep the existing `dev-config.json` and default API port 3000. Run `npm run db:migrate` before starting the updated API, then launch Flutter with `flutter run --dart-define-from-file=dev-config.json`. The isolated demo on port 3101 also seeds a photo-walk group, incoming requests and direct threads with photos, a shared post and reactions.
 
 ## Stage 1 client
 

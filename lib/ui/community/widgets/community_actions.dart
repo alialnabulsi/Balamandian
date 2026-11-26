@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../data/repositories/community_repository.dart';
 import '../../../domain/models/community.dart';
 import '../../core/ui/form_message.dart';
+import '../../messaging/widgets/messaging_scope.dart';
 
 void communityFeedback(BuildContext context, String message) {
   ScaffoldMessenger.of(context)
@@ -164,19 +165,29 @@ Future<void> shareCommunityPost(
       : null;
   final choice = await communityMenu<String>(
     context,
-    child: const CommunityMenuBody(
+    child: CommunityMenuBody(
       title: 'Share post',
       children: [
-        CommunityMenuOption(
+        if (MessagingScope.maybeOf(context, listen: false) != null)
+          const CommunityMenuOption(
+            'Send in Balamandian',
+            Icons.send_outlined,
+            'message',
+          ),
+        const CommunityMenuOption(
           'Share with another app',
           Icons.ios_share_rounded,
           'share',
         ),
-        CommunityMenuOption('Copy link', Icons.link_rounded, 'copy'),
+        const CommunityMenuOption('Copy link', Icons.link_rounded, 'copy'),
       ],
     ),
   );
   if (!context.mounted || choice == null) return;
+  if (choice == 'message') {
+    await context.push<void>('/messages/share/${post.id}');
+    return;
+  }
   await communityCommand(context, () async {
     if (choice == 'copy') {
       await Clipboard.setData(ClipboardData(text: link.toString()));

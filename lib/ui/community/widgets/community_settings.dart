@@ -11,6 +11,7 @@ import '../../core/ui/form_message.dart';
 import '../view_models/community_settings_model.dart';
 import 'community_actions.dart';
 import 'community_author.dart';
+import '../../messaging/widgets/messaging_scope.dart';
 
 class CommunitySettings extends StatefulWidget {
   const CommunitySettings({
@@ -97,6 +98,13 @@ class _CommunitySettingsState extends State<CommunitySettings> {
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => context.push('/community/muted'),
                     ),
+                    if (MessagingScope.maybeOf(context, listen: false) != null)
+                      ListTile(
+                        leading: const Icon(Icons.chat_bubble_outline_rounded),
+                        title: const Text('Messaging privacy'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push('/messages/privacy'),
+                      ),
                     const CommunitySettingsHeading(
                       'Posts and stories',
                       Icons.auto_awesome_outlined,

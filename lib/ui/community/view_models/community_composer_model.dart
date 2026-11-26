@@ -78,7 +78,7 @@ class CommunityComposerModel extends ChangeNotifier {
         }
         final bytes = await file.readAsBytes();
         if (_disposed) break;
-        final type = _type(bytes);
+        final type = imageType(bytes);
         if (type == null) {
           throw const CommunityFailure('Choose a JPEG, PNG or WebP image.');
         }
@@ -94,7 +94,7 @@ class CommunityComposerModel extends ChangeNotifier {
     }
   }
 
-  static String? _type(Uint8List bytes) {
+  static String? imageType(Uint8List bytes) {
     if (bytes.length < 12) return null;
     if (bytes[0] == 255 && bytes[1] == 216 && bytes[2] == 255) {
       return 'image/jpeg';

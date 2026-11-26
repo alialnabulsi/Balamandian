@@ -13,6 +13,8 @@ import 'community_actions.dart';
 import 'community_author.dart';
 import 'community_composer.dart';
 import 'community_media.dart';
+import '../../messaging/widgets/messaging_scope.dart';
+import '../../messaging/widgets/messaging_navigation.dart';
 
 class CommunityProfileStories extends StatefulWidget {
   const CommunityProfileStories({
@@ -609,6 +611,23 @@ class _CommunityStoryViewerState extends State<CommunityStoryViewer>
                           onPressed: () => _report(story),
                           icon: const Icon(Icons.flag_outlined),
                         ),
+                        if (MessagingScope.maybeOf(context, listen: false) !=
+                            null)
+                          IconButton(
+                            color: Colors.white,
+                            tooltip: 'Reply to story',
+                            icon: const Icon(Icons.reply_rounded),
+                            onPressed: () async {
+                              final wasPaused = _paused;
+                              _pause(true);
+                              await openDirectChat(
+                                context,
+                                story.author.id,
+                                story: story.id,
+                              );
+                              if (mounted) _pause(wasPaused);
+                            },
+                          ),
                       ],
                       IconButton(
                         color: Colors.white,

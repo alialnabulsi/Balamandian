@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../messaging/widgets/messaging_scope.dart';
+import '../../messaging/widgets/messaging_navigation.dart';
+
 import '../../../data/repositories/profile_repository.dart';
 import '../../../data/repositories/community_repository.dart';
 import '../../../domain/models/profile_models.dart';
@@ -263,6 +266,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   },
                                   onShare: _share,
                                 ),
+                                if (!profile.isSelf &&
+                                    MessagingScope.maybeOf(
+                                          context,
+                                          listen: false,
+                                        ) !=
+                                        null)
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: TextButton.icon(
+                                      icon: const Icon(
+                                        Icons.chat_bubble_outline_rounded,
+                                        size: 18,
+                                      ),
+                                      label: const Text('Message'),
+                                      onPressed: () => openDirectChat(
+                                        context,
+                                        profile.identity.id,
+                                      ),
+                                    ),
+                                  ),
                                 if (_model.error != null) ...[
                                   const SizedBox(height: 12),
                                   FormMessage(_model.error!),

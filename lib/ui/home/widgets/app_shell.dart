@@ -16,6 +16,7 @@ import '../../community/widgets/community_actions.dart';
 import '../../core/ui/avatars/member_avatar.dart';
 import '../../core/ui/measure_size.dart';
 import '../../core/ui/navigation/bottom_chrome_scope.dart';
+import '../../messaging/widgets/messaging_scope.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({
@@ -130,7 +131,18 @@ class _AppShellState extends State<AppShell> {
                       notificationBadge: (widget.inbox?.unread ?? 0) > 0
                           ? '${widget.inbox!.unread > 99 ? '99+' : widget.inbox!.unread}'
                           : null,
-                      onMessages: () => _comingSoon('Messages'),
+                      onMessages: () =>
+                          MessagingScope.maybeOf(context, listen: false) == null
+                          ? _comingSoon('Messages')
+                          : context.push('/messages'),
+                      messageBadge: switch (MessagingScope.maybeOf(context)
+                              ?.session
+                              .unread ??
+                          0) {
+                        0 => null,
+                        > 99 => '99+',
+                        final count => '$count',
+                      },
                     ),
               drawer: AppAccountDrawer(
                 selected: ShellDestination.fromPath(widget.location),
@@ -177,6 +189,8 @@ class _AppShellState extends State<AppShell> {
                     ),
               floatingActionButton:
                   widget.location == '/map' ||
+                      (widget.communityEnabled &&
+                          widget.location == '/settings') ||
                       (widget.communityEnabled && widget.location == '/')
                   ? null
                   : ExpandableQuickActions(

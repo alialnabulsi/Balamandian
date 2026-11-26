@@ -10,7 +10,7 @@ import '../../domain/models/auth_failure.dart';
 import '../../domain/models/community.dart';
 
 class CommunityApiService {
-  CommunityApiService(this._client, this._origin) {
+  CommunityApiService(this._client, this._origin, {this.area = 'community'}) {
     final local =
         kDebugMode &&
         _origin.scheme == 'http' &&
@@ -26,6 +26,7 @@ class CommunityApiService {
   }
   final http.Client _client;
   final Uri _origin;
+  final String area;
 
   Future<Object?> json(
     String token,
@@ -98,7 +99,7 @@ class CommunityApiService {
   }) async {
     final abort = Completer<void>();
     final uri = _origin.replace(
-      pathSegments: ['api', 'v1', 'community', ...path.split('/')],
+      pathSegments: ['api', 'v1', area, ...path.split('/')],
       queryParameters: query,
     );
     final deadline = Timer(
@@ -154,10 +155,15 @@ class CommunityApiService {
       final output = result.takeBytes();
       if (response.statusCode != 200) {
         String? code;
+        String? detail;
         try {
           code =
               (jsonDecode(utf8.decode(output))
                       as CommunityJson)['error']['code']
+                  as String?;
+          detail =
+              (jsonDecode(utf8.decode(output))
+                      as CommunityJson)['error']['message']
                   as String?;
         } catch (_) {
           /* Proxy error. */
@@ -175,11 +181,16 @@ class CommunityApiService {
           'STORY_LIMIT' => 'You can keep up to 12 active stories.',
           'INTERACTION_DISABLED' =>
             'The author has turned off this interaction.',
+          'MESSAGING_RESTRICTED' =>
+            detail ?? 'This conversation cannot accept that action.',
           'COMMUNITY_NOT_FOUND' ||
           'PROFILE_NOT_FOUND' => 'This content is unavailable.',
           'RATE_LIMITED' => 'Too many actions. Wait a moment and retry.',
           'VALIDATION_ERROR' => 'Check the input or refresh and try again.',
-          _ => 'Community is temporarily unavailable. Try again.',
+          _ =>
+            area == 'messaging'
+                ? 'Messaging is temporarily unavailable. Try again.'
+                : 'Community is temporarily unavailable. Try again.',
         }, unavailable: response.statusCode == 404);
       }
       if (image &&

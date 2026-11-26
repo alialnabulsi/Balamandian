@@ -104,7 +104,9 @@ class CommunityInboxScreen extends StatelessWidget {
                           model: model,
                           loadAvatar: loadAvatar,
                           onOpen: () async {
-                            final path = activity.kind == 'follow_request'
+                            final path = activity.conversationId != null
+                                ? '/messages/${activity.conversationId}'
+                                : activity.kind == 'follow_request'
                                 ? '/community/requests'
                                 : activity.entryId == null
                                 ? '/members/${activity.actor.id}'
@@ -177,6 +179,19 @@ class CommunityActivityRow extends StatelessWidget {
         'accepted your request',
       ),
       'comment_like' => (Icons.favorite_rounded, 'liked your comment'),
+      'message_request' => (Icons.forum_outlined, 'sent a message request'),
+      'group_invite' => (
+        Icons.group_add_outlined,
+        'invited you to a private group',
+      ),
+      'group_membership' => (Icons.groups_outlined, 'updated a private group'),
+      'chat_mention' => (
+        Icons.alternate_email_rounded,
+        'mentioned you in a chat',
+      ),
+      'chat_reply' => (Icons.reply_rounded, 'replied to your message'),
+      'shared_post' => (Icons.photo_library_outlined, 'shared a campus post'),
+      'story_reply' => (Icons.reply_rounded, 'replied to your story'),
       _ => (Icons.notifications_none_rounded, 'interacted with your content'),
     };
     final others = activity.events - 1;

@@ -38,6 +38,11 @@ import '../ui/onboarding/view_models/app_entry_view_model.dart';
 import '../ui/onboarding/widgets/startup_flow.dart';
 import '../ui/onboarding/widgets/tour_screen.dart';
 import 'community_post_link.dart';
+import '../ui/messaging/widgets/chat_thread.dart';
+import '../ui/messaging/widgets/message_search.dart';
+import '../ui/messaging/widgets/messaging_inbox.dart';
+import '../ui/messaging/widgets/messaging_info.dart';
+import '../ui/messaging/widgets/messaging_recipient.dart';
 import 'startup_destination.dart';
 import 'shell_destination.dart';
 
@@ -52,6 +57,7 @@ GoRouter createAppRouter({
   required CampusMapViewModel campusMap,
   CommunityRepository? community,
   CommunityInboxModel? inbox,
+  bool messaging = false,
   bool holdSplash = false,
   Future<bool> Function()? onOnboardingCompleted,
 }) {
@@ -120,6 +126,70 @@ GoRouter createAppRouter({
           : withLinkedPost(StartupDestination.signIn.path, post);
     },
     routes: [
+      if (messaging) ...[
+        GoRoute(
+          path: '/messages',
+          builder: (context, state) =>
+              const NativeSplashReveal(child: MessagingInbox()),
+        ),
+        GoRoute(
+          path: '/messages/new',
+          builder: (context, state) => const MessagingRecipient(),
+        ),
+        GoRoute(
+          path: '/messages/new-group',
+          builder: (context, state) => const MessagingRecipient(group: true),
+        ),
+        GoRoute(
+          path: '/messages/privacy',
+          builder: (context, state) => const MessagingPrivacy(),
+        ),
+        GoRoute(
+          path: '/messages/share/:post',
+          builder: (context, state) =>
+              MessagingRecipient(post: state.pathParameters['post']),
+        ),
+        GoRoute(
+          path: '/messages/forward/:message',
+          builder: (context, state) =>
+              MessagingRecipient(forward: state.pathParameters['message']),
+        ),
+        GoRoute(
+          path: '/messages/:id/info',
+          builder: (context, state) =>
+              ConversationInfo(id: state.pathParameters['id']!),
+        ),
+        GoRoute(
+          path: '/messages/:id/invite',
+          builder: (context, state) =>
+              MessagingRecipient(invitation: state.pathParameters['id']),
+        ),
+        GoRoute(
+          path: '/messages/:id/permissions',
+          builder: (context, state) =>
+              GroupPermissions(id: state.pathParameters['id']!),
+        ),
+        GoRoute(
+          path: '/messages/:id/search',
+          builder: (context, state) => MessageSearch(
+            thread: state.pathParameters['id']!,
+            filter: state.uri.queryParameters['filter'],
+          ),
+        ),
+        GoRoute(
+          path: '/messages/:id',
+          builder: (context, state) => NativeSplashReveal(
+            child: ChatThreadScreen(
+              key: state.pageKey,
+              id: state.pathParameters['id']!,
+              story: state.uri.queryParameters['story'],
+              initialAnchor: int.tryParse(
+                state.uri.queryParameters['anchor'] ?? '',
+              ),
+            ),
+          ),
+        ),
+      ],
       if (community != null) ...[
         GoRoute(
           path: '/posts/:id',

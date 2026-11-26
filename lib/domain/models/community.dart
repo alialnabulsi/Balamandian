@@ -134,6 +134,7 @@ class CommunityActivity {
     : id = json['id'] as String,
       kind = json['kind'] as String,
       entryId = json['entryId'] as String?,
+      conversationId = json['conversationId'] as String?,
       actor = PublicUserIdentity.fromJson(json['actor']),
       preview = switch (json['preview']) {
         final CommunityJson image => CommunityImage.fromJson(image),
@@ -143,7 +144,7 @@ class CommunityActivity {
       read = json['read'] == true,
       events = json['events'] as int;
   final String id, kind;
-  final String? entryId;
+  final String? entryId, conversationId;
   final PublicUserIdentity actor;
   final CommunityImage? preview;
   final DateTime time;
