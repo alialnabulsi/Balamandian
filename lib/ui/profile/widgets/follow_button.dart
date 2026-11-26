@@ -10,8 +10,10 @@ class FollowButton extends StatelessWidget {
     required this.pending,
     required this.name,
     required this.onPressed,
+    this.requested = false,
   });
   final bool following, pending;
+  final bool requested;
   final String name;
   final VoidCallback onPressed;
   @override
@@ -19,6 +21,8 @@ class FollowButton extends StatelessWidget {
     label:
         '${pending
             ? 'Updating'
+            : requested
+            ? 'Cancel follow request for'
             : following
             ? 'Unfollow'
             : 'Follow'} $name',
@@ -49,8 +53,14 @@ class FollowButton extends StatelessWidget {
           ),
           const SizedBox(width: 5),
           StableActionLabel(
-            label: following ? 'Following' : 'Follow',
-            labels: const ['Following', 'Follow'],
+            label: requested
+                ? 'Requested'
+                : following
+                ? 'Following'
+                : 'Follow',
+            labels: requested
+                ? const ['Requested']
+                : const ['Following', 'Follow'],
           ),
         ],
       ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../data/repositories/auth_repository.dart';
 import '../../../domain/models/auth_session.dart';
@@ -70,7 +69,6 @@ class _CredentialsScreenState extends State<CredentialsScreen> {
       if (_model.authenticatedUser case final user?) {
         widget.onAuthenticated?.call(user);
       }
-      context.go('/');
     }
   }
 

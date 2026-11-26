@@ -24,6 +24,8 @@ class ApiAuthRepository extends AuthRepository {
   SessionStatus _status = SessionStatus.initializing;
   String? _error, _notice;
   Future<void>? _restoring, _signingOut, _deleting;
+  Future<void>? _secureWrite;
+  bool _issuing = false;
   bool _initialized = false, _mustDelete = false, _disposed = false;
   int _generation = 0;
   bool _personalizing = false;
@@ -146,22 +148,55 @@ class ApiAuthRepository extends AuthRepository {
       _api.resend(pendingRegistrationId);
 
   @override
-  Future<AuthUser> verify(String pendingRegistrationId, String otp) async =>
-      _save(await _api.verify(pendingRegistrationId, otp), personalize: true);
+  Future<AuthUser> verify(String pendingRegistrationId, String otp) =>
+      _issue(() => _api.verify(pendingRegistrationId, otp), personalize: true);
 
   @override
-  Future<AuthUser> login(String identifier, String password) async =>
-      _save(await _api.login(identifier, password));
+  Future<AuthUser> login(String identifier, String password) =>
+      _issue(() => _api.login(identifier, password));
 
-  Future<AuthUser> _save(AuthSession result, {bool personalize = false}) async {
+  static const _changed = AuthFailure(
+    'SESSION_CHANGED',
+    'Your session changed. Please try again.',
+  );
+
+  Future<AuthUser> _issue(
+    Future<AuthSession> Function() request, {
+    bool personalize = false,
+  }) async {
+    if (_disposed || _issuing || _mustDelete || _signingOut != null) {
+      throw _changed;
+    }
+    final generation = _generation;
+    _issuing = true;
     try {
-      await _credentials.save(result.session);
-    } catch (_) {
+      final result = await request();
+      if (!_isCurrent(generation)) throw _changed;
+      return await _save(result, generation, personalize: personalize);
+    } finally {
+      _issuing = false;
+    }
+  }
+
+  Future<AuthUser> _save(
+    AuthSession result,
+    int generation, {
+    bool personalize = false,
+  }) async {
+    try {
+      final write = _secureWrite = _credentials
+          .save(result.session)
+          .whenComplete(() => _secureWrite = null);
+      await write.timeout(credentialTimeout);
+    } catch (error) {
+      if (!_isCurrent(generation)) throw _changed;
+      if (error is TimeoutException) unawaited(_clearLocal());
       throw const AuthFailure(
         'SESSION_STORAGE_FAILED',
         'Your session could not be saved securely. Please log in again.',
       );
     }
+    if (!_isCurrent(generation)) throw _changed;
     _generation++;
     _personalizing = personalize;
     _initialized = true;
@@ -220,7 +255,7 @@ class ApiAuthRepository extends AuthRepository {
       // Retain the actual mutation after a timeout. Retry waits for the same
       // deletion instead of starting a competing delete that could finish
       // after a subsequent login writes its token.
-      final deleting = _deleting ??= _credentials.delete().whenComplete(
+      final deleting = _deleting ??= _deleteAfterWrite().whenComplete(
         () => _deleting = null,
       );
       await deleting.timeout(credentialTimeout);
@@ -235,6 +270,15 @@ class ApiAuthRepository extends AuthRepository {
     if (!_isCurrent(generation)) return;
     _mustDelete = false;
     _publish(SessionStatus.unauthenticated);
+  }
+
+  Future<void> _deleteAfterWrite() async {
+    try {
+      await _secureWrite;
+    } catch (_) {
+      /* A failed write can still leave an old record. */
+    }
+    await _credentials.delete();
   }
 
   @override

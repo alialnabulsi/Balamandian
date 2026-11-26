@@ -11,6 +11,8 @@ import '../../core/ui/navigation/app_bottom_bar.dart';
 import '../../core/ui/navigation/balamandian_top_bar.dart';
 import '../../core/ui/quick_actions/expandable_quick_actions.dart';
 import '../../profile/view_models/current_identity_view_model.dart';
+import '../../community/view_models/community_inbox_model.dart';
+import '../../community/widgets/community_actions.dart';
 import '../../core/ui/avatars/member_avatar.dart';
 import '../../core/ui/measure_size.dart';
 import '../../core/ui/navigation/bottom_chrome_scope.dart';
@@ -23,6 +25,8 @@ class AppShell extends StatefulWidget {
     required this.session,
     required this.identity,
     required this.mapNavigationFocus,
+    this.inbox,
+    this.communityEnabled = false,
   });
 
   final StatefulNavigationShell navigationShell;
@@ -30,6 +34,8 @@ class AppShell extends StatefulWidget {
   final SessionViewModel session;
   final CurrentIdentityViewModel identity;
   final ValueListenable<bool> mapNavigationFocus;
+  final CommunityInboxModel? inbox;
+  final bool communityEnabled;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -92,6 +98,7 @@ class _AppShellState extends State<AppShell> {
       widget.session,
       widget.identity,
       widget.mapNavigationFocus,
+      widget.inbox,
     ]),
     builder: (context, _) {
       if (widget.session.user == null) {
@@ -117,7 +124,12 @@ class _AppShellState extends State<AppShell> {
                       ),
                       onAccount: () => _scaffoldKey.currentState?.openDrawer(),
                       onSearch: () => context.push('/members'),
-                      onNotifications: () => _comingSoon('Notifications'),
+                      onNotifications: () => widget.inbox == null
+                          ? _comingSoon('Notifications')
+                          : context.push('/community/activity'),
+                      notificationBadge: (widget.inbox?.unread ?? 0) > 0
+                          ? '${widget.inbox!.unread > 99 ? '99+' : widget.inbox!.unread}'
+                          : null,
                       onMessages: () => _comingSoon('Messages'),
                     ),
               drawer: AppAccountDrawer(
@@ -158,10 +170,14 @@ class _AppShellState extends State<AppShell> {
                       child: AppBottomBar(
                         selected: ShellDestination.fromPath(widget.location),
                         onSelected: _select,
-                        onCreate: () => _comingSoon('Create'),
+                        onCreate: () => widget.communityEnabled
+                            ? openCommunityCreate(context)
+                            : _comingSoon('Create'),
                       ),
                     ),
-              floatingActionButton: widget.location == '/map'
+              floatingActionButton:
+                  widget.location == '/map' ||
+                      (widget.communityEnabled && widget.location == '/')
                   ? null
                   : ExpandableQuickActions(
                       navigationId: widget.location,

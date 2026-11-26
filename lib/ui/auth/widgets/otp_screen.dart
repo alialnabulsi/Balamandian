@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../data/repositories/auth_repository.dart';
 import '../../../domain/models/auth_session.dart';
@@ -55,7 +54,6 @@ class _OtpScreenState extends State<OtpScreen> {
       if (_model.authenticatedUser case final user?) {
         widget.onAuthenticated?.call(user);
       }
-      context.go('/');
     } else if (_model.codeError != null) {
       _focus.requestFocus();
     }

@@ -4,6 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../data/repositories/profile_repository.dart';
+import '../../../data/repositories/community_repository.dart';
+import '../../../domain/models/profile_models.dart';
+import '../../community/widgets/community_actions.dart';
+import '../../community/widgets/community_feed.dart';
+import '../../community/widgets/community_stories.dart';
 import '../../core/themes/app_tokens.dart';
 import '../../core/ui/backgrounds/app_branded_background.dart';
 import '../../core/ui/form_message.dart';
@@ -18,8 +23,14 @@ import 'profile_share_sheet.dart';
 import 'profile_tokens.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key, required this.repository, this.userId});
+  const ProfileScreen({
+    super.key,
+    required this.repository,
+    this.userId,
+    this.community,
+  });
   final ProfileRepository repository;
+  final CommunityRepository? community;
   final String? userId;
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -33,15 +44,86 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    widget.community?.addListener(_revalidate);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(_model.load());
+      if (mounted) {
+        unawaited(
+          _model.load(
+            refresh: widget.community != null && widget.userId != null,
+          ),
+        );
+      }
     });
   }
 
   @override
   void dispose() {
+    widget.community?.removeListener(_revalidate);
     _model.dispose();
     super.dispose();
+  }
+
+  void _revalidate() {
+    if (mounted && widget.userId != null) {
+      unawaited(_model.load(refresh: true, revalidate: true));
+    }
+  }
+
+  Future<void> _safety(
+    UserProfile profile,
+    CommunityRepository community,
+  ) async {
+    final id = profile.identity.id;
+    final action = await communityMenu<String>(
+      context,
+      child: CommunityMenuBody(
+        title: profile.identity.displayName,
+        children: const [
+          CommunityMenuOption(
+            'Mute posts or stories',
+            Icons.volume_off_outlined,
+            'mute',
+          ),
+          CommunityMenuOption('Block account', Icons.block_outlined, 'block'),
+          CommunityMenuOption('Report profile', Icons.flag_outlined, 'report'),
+        ],
+      ),
+    );
+    if (!mounted || action == null) return;
+    if (action == 'report') {
+      await communityMenu<void>(
+        context,
+        child: CommunityReportSheet(
+          repository: community,
+          kind: 'profile',
+          id: id,
+        ),
+      );
+      return;
+    }
+    if (action == 'mute') {
+      await communityMenu<void>(
+        context,
+        child: CommunityMuteSheet(
+          repository: community,
+          memberId: id,
+          name: profile.identity.displayName,
+        ),
+      );
+      return;
+    }
+    if (await communityConfirm(
+          context,
+          'Block this account?',
+          'Both accounts lose access to each other’s community content and any follow relationship is removed.',
+        ) &&
+        mounted) {
+      await communityCommand(context, () async {
+        await community.mutate('relationships/$id/block');
+        community.invalidate();
+        if (mounted && context.canPop()) context.pop();
+      });
+    }
   }
 
   void _account() => showModalBottomSheet<void>(
@@ -74,6 +156,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       listenable: _model,
       builder: (context, _) {
         final profile = _model.profile;
+        final community = widget.community;
+        final locked =
+            profile != null &&
+            profile.privateAccount &&
+            !profile.isSelf &&
+            !profile.isFollowing;
         return Scaffold(
           appBar: ProfileHeader(
             username: profile?.identity.username,
@@ -81,6 +169,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onMenu: () => Scaffold.maybeOf(context)?.openDrawer(),
             onAccount: profile == null ? null : _account,
             onShare: profile == null ? null : _share,
+            onSafety: community == null || profile == null || profile.isSelf
+                ? null
+                : () => _safety(profile, community),
             onDiscover: widget.userId == null || profile?.isSelf == true
                 ? () => context.push('/members')
                 : null,
@@ -135,22 +226,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   profile: profile,
                                   loadAvatar: _model.avatar,
                                   onEdit: () => context.push('/profile/edit'),
-                                  onFollowers: () => context.push(
-                                    '/members/${profile.identity.id}/followers',
-                                  ),
-                                  onFollowing: () => context.push(
-                                    '/members/${profile.identity.id}/following',
-                                  ),
+                                  onFollowers: locked
+                                      ? null
+                                      : () => context.push(
+                                          '/members/${profile.identity.id}/followers',
+                                        ),
+                                  onFollowing: locked
+                                      ? null
+                                      : () => context.push(
+                                          '/members/${profile.identity.id}/following',
+                                        ),
                                 ),
+                                if (community != null &&
+                                    !profile.isSelf &&
+                                    !locked)
+                                  CommunityProfileStories(
+                                    key: ValueKey(profile.identity.id),
+                                    repository: community,
+                                    author: profile.identity,
+                                    loadAvatar: _model.avatar,
+                                  ),
                                 const SizedBox(
                                   height: ProfileTokens.actionsGap,
                                 ),
                                 ProfileActions(
                                   isSelf: profile.isSelf,
                                   isFollowing: profile.isFollowing,
+                                  requested: profile.followRequested,
                                   pending: _model.following,
                                   onEdit: () => context.push('/profile/edit'),
-                                  onFollow: _model.toggleFollow,
+                                  onFollow: () async {
+                                    await _model.toggleFollow();
+                                    if (mounted && _model.error == null) {
+                                      community?.invalidate();
+                                    }
+                                  },
                                   onShare: _share,
                                 ),
                                 if (_model.error != null) ...[
@@ -180,6 +290,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ProfilePostsSection(
                             count: profile.postsCount,
                             isSelf: profile.isSelf,
+                            grid: community == null
+                                ? null
+                                : CommunityProfileGrid(
+                                    repository: community,
+                                    userId: profile.identity.id,
+                                    own: profile.isSelf,
+                                    locked: locked,
+                                  ),
                           ),
                         ],
                       ],

@@ -15,6 +15,7 @@ android {
     }
 
     defaultConfig {
+        manifestPlaceholders["communityLinksHost"] = providers.gradleProperty("communityLinksHost").getOrElse("links.balamandian.invalid")
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.balamandian"
         // You can update the following values to match your application needs.
