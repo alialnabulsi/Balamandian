@@ -80,6 +80,8 @@ GoRouter createAppRouter({
   LostFoundRepository? lostFoundRepository,
   CalendarRepository? calendarRepository,
   SchedulerRepository? schedulerRepository,
+  GoRoute? guideRoute,
+  GoRoute? aiRoute,
   ToolSession? calendarSession,
   CalendarReminderCoordinator? calendarCoordinator,
   required NotesSession notesSession,
@@ -98,6 +100,12 @@ GoRouter createAppRouter({
   Future<bool> Function()? onOnboardingCompleted,
 }) {
   final rootNavigator = GlobalKey<NavigatorState>();
+  assert(guideRoute == null || guideRoute.path == 'guide');
+  assert(aiRoute == null || aiRoute.path == 'ai');
+  final replacedRoutes = {
+    if (guideRoute != null) ShellDestination.guide,
+    if (aiRoute != null) ShellDestination.ai,
+  };
   String? linkedPost(Uri uri) => community == null
       ? null
       : communityPostPath(uri.path) ??
@@ -445,7 +453,13 @@ GoRouter createAppRouter({
                       : destination != ShellDestination.home
                       ? []
                       : [
-                          for (final auxiliary in ShellDestination.auxiliary)
+                          ?guideRoute,
+                          ?aiRoute,
+                          for (final auxiliary
+                              in ShellDestination.auxiliary.where(
+                                (destination) =>
+                                    !replacedRoutes.contains(destination),
+                              ))
                             GoRoute(
                               // Children of '/' retain Home beneath them for back.
                               path: auxiliary.path.substring(1),

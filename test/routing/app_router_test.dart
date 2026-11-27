@@ -2,6 +2,8 @@ import '../profile_test_support.dart';
 import '../marketplace_test_support.dart';
 
 import 'package:balamandian/app.dart';
+import 'package:balamandian/domain/models/guide_article_ref.dart';
+import 'package:balamandian/routing/guide_ai_links.dart';
 import 'package:balamandian/ui/core/themes/app_theme.dart';
 import 'package:balamandian/ui/home/widgets/home_screen.dart';
 import 'package:flutter/material.dart';
@@ -83,6 +85,79 @@ void main() {
       'source=route-check',
     );
 
+    router.go('/guide');
+    await tester.pumpAndSettle();
+    expect(find.text('Guide coming soon'), findsOneWidget);
+    router.go('/ai');
+    await tester.pumpAndSettle();
+    expect(find.text('AI coming soon'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('optional Guide and AI routes each replace their own placeholder', (
+    tester,
+  ) async {
+    const channel = MethodChannel('balamandian/splash');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      channel,
+      (_) async => null,
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        channel,
+        null,
+      ),
+    );
+    final harness = AuthTestHarness((_) async => success(sessionData(), 200));
+    addTearDown(harness.close);
+    await harness.repository.login('FICTION001', 'test');
+    const article = GuideArticleRef(
+      articleId: '688cc525-e178-49e7-8bdb-826d272a62ab',
+      version: 4,
+      title: 'Article',
+    );
+    await tester.pumpWidget(
+      MainApp(
+        profileRepository: FakeProfileRepository(),
+        marketplaceRepository: FakeMarketplaceRepository(),
+        authRepository: harness.repository,
+        onboardingRepository: testOnboardingRepository(),
+        initialLocation: '/',
+        guideRoute: GoRoute(
+          path: 'guide',
+          builder: (_, _) => const Text('Guide fixture'),
+          routes: [
+            GoRoute(
+              path: 'articles/:articleId',
+              builder: (_, state) => Text(
+                '${state.pathParameters['articleId']} v${state.uri.queryParameters['rev']}',
+              ),
+            ),
+          ],
+        ),
+        aiRoute: GoRoute(
+          path: 'ai',
+          builder: (_, state) =>
+              Text('Context ${state.uri.queryParameters['articleId']}'),
+        ),
+      ),
+    );
+    await prepareAppSplash(tester);
+    await tester.pumpAndSettle();
+    final router = GoRouter.of(tester.element(find.byType(HomeScreen)));
+    router.go(guideCitationLocation(article));
+    await tester.pumpAndSettle();
+    expect(find.text('${article.articleId} v4'), findsOneWidget);
+    expect(router.canPop(), isTrue);
+    router.pop();
+    await tester.pumpAndSettle();
+    expect(find.text('Guide fixture'), findsOneWidget);
+    router.go(aiLocation(articleId: article.articleId));
+    await tester.pumpAndSettle();
+    expect(find.text('Context ${article.articleId}'), findsOneWidget);
+    expect(router.canPop(), isTrue);
     await tester.pumpWidget(const SizedBox.shrink());
     expect(tester.takeException(), isNull);
   });
