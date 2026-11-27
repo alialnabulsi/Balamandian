@@ -1,5 +1,14 @@
 # feature/tools branch audit and SIS recovery
 
+**Historical report.** The direct SIS database exception described in this earlier
+recovery audit has been revoked. Current code requires Flutter -> Balamandian-API
+-> authenticated SIS-API -> SIS PostgreSQL; Balamandian-API connects only to its
+own database. The original direct reader is removed. Current endpoint requirements
+and pending coordination with Ali are in Balamandian-API/docs/sis-tools-contract.md.
+The historical deployment/readiness claims below do not establish current live
+academic endpoint availability.
+
+
 Audit date: **27 November 2026 (Asia/Beirut)**. This report supersedes earlier
 claims that SIS academic API additions or migration 002 were required.
 
@@ -163,9 +172,9 @@ No manual phone run or live hosted enrollment/grade verification is claimed.
 
 ## Deployment and physical acceptance
 
-1. Deploy the app backend with private SIS_DATABASE_URL pointing to the existing
-   SIS database, preferably a SELECT-only role with verified TLS. Restart the app
-   backend to load the reader. Keep original SIS-API deployed unchanged.
+1. Superseded: configure only SIS_BASE_URL, SIS_SERVICE_API_KEY and SIS_TIMEOUT_MS
+   for authenticated SIS HTTP access. Do not configure or use a direct SIS database
+   reader. Coordinate missing academic endpoints and any shared deployment with Ali.
 2. Run the existing app migration command for a fresh app deployment (through
    0009); do not apply the removed SIS migration 002. Existing local app history
    already reports zero pending migrations.

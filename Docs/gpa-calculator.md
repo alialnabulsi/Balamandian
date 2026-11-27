@@ -33,9 +33,12 @@ remains documented here:
 
 Flutter uses ProfileApiService and its existing authenticated session boundary.
 GET `/api/v1/profile/me/academics` reads the private app cache; explicit Import
-uses POST `/api/v1/profile/me/academics/sync`. The app backend uses the approved
-read-only connection to original SIS enrollments/courses/sections/semesters.
-SIS-API is unchanged; no new SIS endpoint or table is required.
+uses POST `/api/v1/profile/me/academics/sync`. The app backend retrieves owned
+grade records through authenticated SIS-API HTTP endpoints only and caches the
+validated result privately. Direct SIS database access is prohibited. The required
+academic endpoints are proposed in Balamandian-API/docs/sis-tools-contract.md and
+await Ali's confirmation and implementation; missing endpoints preserve existing
+cache/manual entries. SIS infrastructure is unchanged by this client correction.
 
 Imported values are explicitly calculated from completed/failed numeric SIS
 grades using the existing calculator policy. They are not presented as stored

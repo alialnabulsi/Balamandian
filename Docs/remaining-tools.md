@@ -1,28 +1,26 @@
 # Tools implementation status
 
 The branch contains the six Tools destinations, account access gates, shared-shell
-navigation, private persistence and the requested compact UI refinements. Earlier
-work remains uncommitted; the original 20 staged frontend files were preserved.
+navigation, private persistence and the requested compact UI refinements. The feature implementation remains on feature/tools. The architectural correction
+preserves the existing UI and application database persistence.
 
 | Feature | Current behavior |
 | --- | --- |
 | To-do | Owner CRUD, List/Kanban on one collection, progress, long-press dragging/edge scroll/status menu, confirmed server status, centered action labels |
-| GPA | Compact numeric calculator, manual baseline, read-only SIS grade import into private profile cache; derived values labelled accurately |
+| GPA | Compact numeric calculator, manual baseline, authenticated SIS-API grade import into private profile cache; derived values labelled accurately |
 | My Notes | Private folders, text/formatting/drawings/files, local recovery/autosave, directly writable new note, Save returns to browser |
 | Lost & Found | Blue/yellow/green entry choices, private reports/files, My reports, withdrawal/history, durable pending OSA events |
 | Calendar | Official academic dates, protected university/personal events, category filters, distinct month surface, simple editor and native Android reminders |
-| Schedule | Original SIS plan/sections/enrollment via read-only adapter, app-side registration configuration, conflict-free alternatives, selected proposal and actual read-only timetable |
+| Schedule | SIS plan/sections/enrollment via authenticated SIS-API HTTP, app-side registration configuration, conflict-free alternatives, selected proposal and actual read-only timetable |
 
-SIS-API has been restored to its original clean files and 25-table local schema.
-All original table row counts were preserved. Its API still exposes authentication
-and member retrieval only. The user explicitly approved a read-only academic DB
-adapter in Balamandian-API; Flutter continues to call its own backend only.
-No SIS academic migration, new publication/registration table or invented API
-contract is required. App migration 0009 remains unchanged because it was applied
-and its private cache/date/sync fields are reused.
+SIS-API remains unchanged. Flutter calls Balamandian-API only; institutional data
+must pass through authenticated SIS-API endpoints. Direct SIS database access is
+prohibited and the former read-only adapter was removed. Missing academic HTTP
+contracts are coordinated with Ali in SIS-API issue 1; until implemented, imports
+report unavailability while retaining existing application caches and manual GPA.
 
-See the [full branch audit](feature-tools-audit.md) for the final inventory,
-validation, source-capability matrix, open constraints and release checks.
+The [historical branch audit](feature-tools-audit.md) records earlier recovery
+verification; its former direct database exception is superseded by the HTTP contract.
 Backend contracts: [academics](../../Balamandian-API/docs/academics.md),
 [scheduler](../../Balamandian-API/docs/scheduler.md),
 [calendar](../../Balamandian-API/docs/calendar.md),
