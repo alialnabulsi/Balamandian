@@ -15,9 +15,11 @@ class AccountInformationSheet extends StatelessWidget {
     super.key,
     required this.profile,
     this.loadAvatar,
+    this.academicSection,
   });
   final UserProfile profile;
   final Future<Uint8List> Function(String)? loadAvatar;
+  final Widget? academicSection;
   @override
   Widget build(BuildContext context) {
     final account = profile.isSelf ? profile.account : null;
@@ -199,6 +201,10 @@ class AccountInformationSheet extends StatelessWidget {
                       ],
                     ],
                   ),
+                if (account != null &&
+                    account.roles.contains('student') &&
+                    academicSection != null)
+                  academicSection!,
                 const SizedBox(height: 16),
                 Text(
                   account == null

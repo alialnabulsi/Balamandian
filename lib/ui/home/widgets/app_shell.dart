@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import '../../../domain/models/auth_session.dart';
 import '../../auth/view_models/session_view_model.dart';
 import '../../auth/widgets/logout_dialog.dart';
+import '../../auth/widgets/sign_in_prompt.dart';
+import '../../../routing/startup_destination.dart';
 import '../../../routing/shell_destination.dart';
 import '../../core/ui/navigation/app_account_drawer.dart';
 import '../../core/ui/navigation/app_bottom_bar.dart';
@@ -38,7 +42,29 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _logoutFlow = false;
+  bool _signInFlow = false;
   double _bottomHeight = 0;
+
+  bool get _guest => widget.session.status == SessionStatus.unauthenticated;
+
+  void _signIn() {
+    _scaffoldKey.currentState?.closeDrawer();
+    context.go(StartupDestination.signIn.path);
+  }
+
+  Future<void> _promptSignIn(String feature) async {
+    if (_signInFlow) return;
+    _signInFlow = true;
+    try {
+      final signIn = await showDialog<bool>(
+        context: context,
+        builder: (_) => SignInPrompt(feature: feature),
+      );
+      if (mounted && _guest && signIn == true) _signIn();
+    } finally {
+      _signInFlow = false;
+    }
+  }
 
   Future<void> _logout() async {
     if (_logoutFlow || widget.session.busy) return;
@@ -68,6 +94,10 @@ class _AppShellState extends State<AppShell> {
 
   void _select(ShellDestination destination) {
     _scaffoldKey.currentState?.closeDrawer();
+    if (_guest && destination != ShellDestination.tools) {
+      unawaited(_promptSignIn(destination.label));
+      return;
+    }
     if (destination.branchIndex case final index?) {
       widget.navigationShell.goBranch(
         index,
@@ -81,6 +111,10 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _comingSoon(String feature) {
+    if (_guest) {
+      unawaited(_promptSignIn(feature));
+      return;
+    }
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text('$feature is coming soon.')));
@@ -94,7 +128,16 @@ class _AppShellState extends State<AppShell> {
       widget.mapNavigationFocus,
     ]),
     builder: (context, _) {
-      if (widget.session.user == null) {
+      if (widget.session.user == null &&
+          !(_guest &&
+              (widget.location == ShellDestination.tools.path ||
+                  widget.location == '/tools/todo' ||
+                  widget.location == '/tools/gpa' ||
+                  widget.location == '/tools/notes' ||
+                  widget.location == '/tools/lost-found' ||
+                  widget.location == '/tools/scheduler' ||
+                  widget.location.split('?').first == '/tools/calendar' ||
+                  widget.location.startsWith('/tools/notes/')))) {
         return ColoredBox(
           color: Theme.of(context).colorScheme.surface,
           child: const SizedBox.expand(),
@@ -116,7 +159,13 @@ class _AppShellState extends State<AppShell> {
                         size: 32,
                       ),
                       onAccount: () => _scaffoldKey.currentState?.openDrawer(),
-                      onSearch: () => context.push('/members'),
+                      onSearch: () {
+                        if (_guest) {
+                          unawaited(_promptSignIn('member search'));
+                        } else {
+                          context.push('/members');
+                        }
+                      },
                       onNotifications: () => _comingSoon('Notifications'),
                       onMessages: () => _comingSoon('Messages'),
                     ),
@@ -124,9 +173,12 @@ class _AppShellState extends State<AppShell> {
                 selected: ShellDestination.fromPath(widget.location),
                 onSelected: _select,
                 onLogout: widget.session.busy ? null : _logout,
+                onSignIn: _guest ? _signIn : null,
                 email: widget.session.user?.institutionalEmail,
                 sisId: widget.session.user?.sisUserId,
-                displayName: widget.identity.profile?.identity.displayName,
+                displayName: _guest
+                    ? 'Guest'
+                    : widget.identity.profile?.identity.displayName,
                 username: widget.identity.profile?.identity.username,
                 avatarWidget: MemberAvatar(
                   identity: widget.identity.profile?.identity,

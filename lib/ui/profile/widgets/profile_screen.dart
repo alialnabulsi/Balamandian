@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../data/repositories/profile_repository.dart';
+import '../../../data/repositories/auth_repository.dart';
+import '../../../data/repositories/academic_repository.dart';
+import 'academic_results_section.dart';
 import '../../core/themes/app_tokens.dart';
 import '../../core/ui/backgrounds/app_branded_background.dart';
 import '../../core/ui/form_message.dart';
@@ -18,7 +21,15 @@ import 'profile_share_sheet.dart';
 import 'profile_tokens.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key, required this.repository, this.userId});
+  const ProfileScreen({
+    super.key,
+    required this.repository,
+    this.userId,
+    this.auth,
+    this.academics,
+  });
+  final AuthRepository? auth;
+  final AcademicRepository? academics;
   final ProfileRepository repository;
   final String? userId;
   @override
@@ -53,6 +64,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     builder: (_) => AccountInformationSheet(
       profile: _model.profile!,
       loadAvatar: _model.avatar,
+      academicSection: widget.auth != null && widget.academics != null
+          ? AcademicResultsSection(
+              auth: widget.auth!,
+              profiles: widget.repository,
+              repository: widget.academics!,
+            )
+          : null,
     ),
   );
   void _share() => showModalBottomSheet<void>(

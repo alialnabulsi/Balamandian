@@ -1,3 +1,12 @@
+import '../data/repositories/scheduler_repository.dart';
+import '../ui/scheduler/widgets/scheduler_screen.dart';
+import '../data/repositories/calendar_repository.dart';
+import '../ui/tools/view_models/tool_session.dart';
+import '../ui/calendar/view_models/calendar_reminder_coordinator.dart';
+import '../ui/calendar/widgets/campus_calendar_screen.dart';
+import '../data/repositories/lost_found_repository.dart';
+import '../ui/lost_found/widgets/lost_found_screen.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:flutter/widgets.dart';
 
@@ -5,6 +14,17 @@ import '../data/repositories/auth_repository.dart';
 import '../data/repositories/marketplace_repository.dart';
 import '../data/services/external_url_service.dart';
 import '../data/repositories/profile_repository.dart';
+import '../data/repositories/task_repository.dart';
+import '../ui/tasks/widgets/task_planner_screen.dart';
+import '../data/repositories/academic_repository.dart';
+import '../ui/gpa/widgets/gpa_calculator_screen.dart';
+import '../data/repositories/notes_repository.dart';
+import '../data/services/note_draft_store.dart';
+import '../data/services/note_file_service.dart';
+import '../ui/notes/view_models/notes_session.dart';
+import '../ui/notes/view_models/notes_exit_guard.dart';
+import '../ui/notes/widgets/notes_browser_screen.dart';
+import '../ui/notes/widgets/note_editor_screen.dart';
 import '../domain/models/profile_models.dart';
 import '../ui/profile/view_models/current_identity_view_model.dart';
 import '../ui/profile/widgets/profile_screen.dart';
@@ -17,6 +37,7 @@ import '../domain/models/auth_session.dart';
 import '../ui/core/ui/app_feature_placeholder.dart';
 import '../ui/home/widgets/app_shell.dart';
 import '../ui/home/widgets/home_screen.dart';
+import '../ui/tools/widgets/tools_screen.dart';
 import '../ui/map/view_models/campus_map_view_model.dart';
 import '../ui/map/widgets/campus_map_screen.dart';
 import '../ui/auth/widgets/account_setup_screen.dart';
@@ -37,6 +58,18 @@ GoRouter createAppRouter({
   required AuthRepository authRepository,
   required MarketplaceRepository marketplaceRepository,
   required ProfileRepository profileRepository,
+  required TaskRepository taskRepository,
+  required AcademicRepository academicRepository,
+  required NotesRepository notesRepository,
+  LostFoundRepository? lostFoundRepository,
+  CalendarRepository? calendarRepository,
+  SchedulerRepository? schedulerRepository,
+  ToolSession? calendarSession,
+  CalendarReminderCoordinator? calendarCoordinator,
+  required NotesSession notesSession,
+  required NoteDraftStore noteDrafts,
+  required NoteFileService noteFiles,
+  required NotesExitGuard notesGuard,
   required CurrentIdentityViewModel identity,
   required ExternalUrlService externalUrls,
   required SessionViewModel session,
@@ -45,11 +78,19 @@ GoRouter createAppRouter({
   bool holdSplash = false,
   Future<bool> Function()? onOnboardingCompleted,
 }) {
+  final rootNavigator = GlobalKey<NavigatorState>();
   return GoRouter(
+    navigatorKey: rootNavigator,
     initialLocation: StartupDestination.splash.path,
     refreshListenable: Listenable.merge([authRepository, entry]),
     redirect: (context, state) {
       final path = state.uri.path;
+      final notesPath =
+          path == '/tools/notes' ||
+          path.startsWith('/tools/notes/') ||
+          path == '/tools/lost-found' ||
+          path == '/tools/calendar' ||
+          path == '/tools/scheduler';
       if (!entry.startupCompleted) {
         if (path == StartupDestination.splash.path) return null;
         if (!entry.startupReady) return StartupDestination.splash.path;
@@ -89,7 +130,19 @@ GoRouter createAppRouter({
       if (path == '/session') {
         return StartupDestination.signIn.path;
       }
-      return public ? null : StartupDestination.signIn.path;
+      if ((path == '/tools/todo' || path == '/tools/gpa' || notesPath) &&
+          authRepository.sessionNotice != null) {
+        return StartupDestination.signIn.path;
+      }
+      // The public planner path renders an access gate only for guests. Its
+      // ViewModel never reads personal tasks before authenticated eligibility.
+      return public ||
+              path == ShellDestination.tools.path ||
+              path == '/tools/todo' ||
+              path == '/tools/gpa' ||
+              notesPath
+          ? null
+          : StartupDestination.signIn.path;
     },
     routes: [
       GoRoute(
@@ -167,7 +220,11 @@ GoRouter createAppRouter({
                       : destination == ShellDestination.market
                       ? MarketplaceScreen(repository: marketplaceRepository)
                       : destination == ShellDestination.profile
-                      ? ProfileScreen(repository: profileRepository)
+                      ? ProfileScreen(
+                          repository: profileRepository,
+                          auth: authRepository,
+                          academics: academicRepository,
+                        )
                       : destination == ShellDestination.map
                       ? CampusMapScreen(model: campusMap)
                       : AppFeaturePlaceholder(
@@ -199,12 +256,106 @@ GoRouter createAppRouter({
                               // Children of '/' retain Home beneath them for back.
                               path: auxiliary.path.substring(1),
                               builder: (context, state) =>
-                                  AppFeaturePlaceholder(
-                                    title: '${auxiliary.label} coming soon',
-                                    description: 'This part of Balamandian is planned for a future update.',
-                                    icon: auxiliary.icon,
-                                    onBack: () => context.go('/'),
-                                  ),
+                                  auxiliary == ShellDestination.tools
+                                  ? ToolsScreen(
+                                      auth: authRepository,
+                                      profiles: profileRepository,
+                                      externalUrls: externalUrls,
+                                    )
+                                  : AppFeaturePlaceholder(
+                                      title: '${auxiliary.label} coming soon',
+                                      description: 'This part of Balamandian is planned for a future update.',
+                                      icon: auxiliary.icon,
+                                      onBack: () => context.go('/'),
+                                    ),
+                              routes: auxiliary == ShellDestination.tools
+                                  ? [
+                                      GoRoute(
+                                        path: 'scheduler',
+                                        builder: (context, state) =>
+                                            SchedulerScreen(
+                                              auth: authRepository,
+                                              profiles: profileRepository,
+                                              repository: schedulerRepository!,
+                                              syncReminders: () =>
+                                                  calendarCoordinator!.refresh(
+                                                    requestPermission: true,
+                                                  ),
+                                              externalUrls: externalUrls,
+                                            ),
+                                      ),
+                                      GoRoute(
+                                        path: 'calendar',
+                                        builder: (context, state) =>
+                                            CampusCalendarScreen(
+                                              repository: calendarRepository!,
+                                              session: calendarSession!,
+                                              reminders: calendarCoordinator!,
+                                              externalUrls: externalUrls,
+                                              eventId: state
+                                                  .uri
+                                                  .queryParameters['event'],
+                                            ),
+                                      ),
+                                      GoRoute(
+                                        path: 'lost-found',
+                                        builder: (context, state) =>
+                                            LostFoundScreen(
+                                              auth: authRepository,
+                                              profiles: profileRepository,
+                                              repository: lostFoundRepository!,
+                                              files: noteFiles,
+                                            ),
+                                      ),
+                                      GoRoute(
+                                        path: 'notes',
+                                        builder: (context, state) =>
+                                            NotesBrowserScreen(
+                                              session: notesSession,
+                                              repository: notesRepository,
+                                              drafts: noteDrafts,
+                                            ),
+                                        routes: [
+                                          GoRoute(
+                                            path: ':noteId',
+                                            parentNavigatorKey: rootNavigator,
+                                            onExit: (context, state) =>
+                                                notesGuard.check(),
+                                            builder: (context, state) =>
+                                                NoteEditorScreen(
+                                                  key: state.pageKey,
+                                                  noteId: state
+                                                      .pathParameters['noteId']!,
+                                                  session: notesSession,
+                                                  repository: notesRepository,
+                                                  drafts: noteDrafts,
+                                                  files: noteFiles,
+                                                  guard: notesGuard,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                      GoRoute(
+                                        path: 'gpa',
+                                        builder: (context, state) =>
+                                            GpaCalculatorScreen(
+                                              auth: authRepository,
+                                              profiles: profileRepository,
+                                              repository: academicRepository,
+                                              externalUrls: externalUrls,
+                                            ),
+                                      ),
+                                      GoRoute(
+                                        path: 'todo',
+                                        builder: (context, state) =>
+                                            TaskPlannerScreen(
+                                              auth: authRepository,
+                                              profiles: profileRepository,
+                                              repository: taskRepository,
+                                            ),
+                                      ),
+                                    ]
+                                  : [],
                             ),
                         ],
                 ),

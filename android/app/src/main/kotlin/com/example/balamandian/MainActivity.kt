@@ -1,5 +1,6 @@
 package com.example.balamandian
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -10,7 +11,10 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    private var reminders: CalendarReminderBridge? = null
+    private var reminderChannel: MethodChannel? = null
     private var channel: MethodChannel? = null
+    private var notesFilesChannel: MethodChannel? = null
     private var splashView: SplashScreenView? = null
     private var pendingLayout: MethodChannel.Result? = null
     private var pendingReveal: MethodChannel.Result? = null
@@ -36,6 +40,11 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        reminderChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "balamandian/calendar-reminders")
+        reminders = CalendarReminderBridge(this, reminderChannel!!)
+        reminderChannel?.setMethodCallHandler(reminders)
+        notesFilesChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "balamandian/notes-files")
+        notesFilesChannel?.setMethodCallHandler(NotesPdfOpener(this))
         channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "balamandian/splash")
         channel?.setMethodCallHandler { call, result ->
             when (call.method) {
@@ -116,7 +125,12 @@ class MainActivity : FlutterActivity() {
         result.success(null)
     }
 
+    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); reminders?.accept(intent) }
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) { super.onRequestPermissionsResult(requestCode, permissions, grantResults); reminders?.permissionReply(requestCode) }
     override fun onDestroy() {
+        reminders?.dispose()
+        reminderChannel?.setMethodCallHandler(null)
+        notesFilesChannel?.setMethodCallHandler(null)
         channel?.setMethodCallHandler(null)
         pendingLayout?.error("cancelled", "Activity destroyed", null)
         pendingLayout = null

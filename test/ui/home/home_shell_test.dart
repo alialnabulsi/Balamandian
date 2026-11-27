@@ -276,7 +276,7 @@ void main() {
         await tester.tap(quick(label));
         await tester.pumpAndSettle();
         expect(
-          find.text(label == 'Market' ? 'Marketplace' : '$label coming soon'),
+          find.text(label == 'Tools' ? 'Tools' : '$label coming soon'),
           findsOneWidget,
         );
         expect(quick(label), findsNothing);
@@ -290,7 +290,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(quick(label), findsNothing);
         expect(
-          find.text(label == 'Market' ? 'Marketplace' : '$label coming soon'),
+          find.text(label == 'Tools' ? 'Tools' : '$label coming soon'),
           findsOneWidget,
         );
         await tester.binding.handlePopRoute();

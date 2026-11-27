@@ -1,3 +1,11 @@
+import 'data/repositories/scheduler_repository.dart';
+import 'data/repositories/calendar_repository.dart';
+import 'data/services/calendar_reminder_service.dart';
+import 'ui/calendar/view_models/calendar_reminder_coordinator.dart';
+import 'ui/tools/view_models/tool_session.dart';
+import 'data/repositories/lost_found_repository.dart';
+import 'data/services/tools_api_service.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -19,6 +27,18 @@ import 'data/services/external_url_service.dart';
 import 'data/repositories/profile_repository.dart';
 import 'data/repositories/api_profile_repository.dart';
 import 'data/services/profile_api_service.dart';
+import 'data/repositories/task_repository.dart';
+import 'data/repositories/api_task_repository.dart';
+import 'data/services/task_api_service.dart';
+import 'data/repositories/academic_repository.dart';
+import 'data/repositories/api_academic_repository.dart';
+import 'data/repositories/notes_repository.dart';
+import 'data/repositories/api_notes_repository.dart';
+import 'data/services/notes_api_service.dart';
+import 'data/services/note_draft_store.dart';
+import 'data/services/note_file_service.dart';
+import 'ui/notes/view_models/notes_session.dart';
+import 'ui/notes/view_models/notes_exit_guard.dart';
 import 'domain/models/auth_session.dart';
 import 'ui/profile/view_models/current_identity_view_model.dart';
 import 'routing/app_router.dart';
@@ -41,6 +61,15 @@ class MainApp extends StatefulWidget {
     this.authRepository,
     this.marketplaceRepository,
     this.profileRepository,
+    this.taskRepository,
+    this.academicRepository,
+    this.notesRepository,
+    this.lostFoundRepository,
+    this.calendarRepository,
+    this.schedulerRepository,
+    this.calendarReminders,
+    this.noteDrafts,
+    this.noteFiles,
     this.externalUrls,
     this.onboardingRepository,
     this.themeMode = ThemeMode.system,
@@ -54,6 +83,15 @@ class MainApp extends StatefulWidget {
   final AuthRepository? authRepository;
   final MarketplaceRepository? marketplaceRepository;
   final ProfileRepository? profileRepository;
+  final TaskRepository? taskRepository;
+  final AcademicRepository? academicRepository;
+  final NotesRepository? notesRepository;
+  final LostFoundRepository? lostFoundRepository;
+  final CalendarRepository? calendarRepository;
+  final SchedulerRepository? schedulerRepository;
+  final CalendarReminderService? calendarReminders;
+  final NoteDraftStore? noteDrafts;
+  final NoteFileService? noteFiles;
   final ExternalUrlService? externalUrls;
   final OnboardingRepository? onboardingRepository;
   final ThemeMode themeMode;
@@ -84,13 +122,113 @@ class _MainAppState extends State<MainApp> {
   AuthApiService? _api;
   MarketplaceApiService? _marketplaceApi;
   ProfileApiService? _profileApi;
-  late final ProfileRepository _profileRepository =
-      widget.profileRepository ??
-      ApiProfileRepository(
-        api: _profileApi = ProfileApiService(
+  TaskApiService? _taskApi;
+  ToolsApiService? _schedulerApi;
+  late final SchedulerRepository _schedulerRepository =
+      widget.schedulerRepository ??
+      ApiSchedulerRepository(
+        _schedulerApi = ToolsApiService(
+          client: http.Client(),
+          baseUrl: Uri.parse(AuthApiService.configuredBaseUrl),
+          feature: 'scheduler',
+        ),
+        _authRepository.withSession,
+      );
+  ToolsApiService? _calendarApi;
+  late final CalendarRepository _calendarRepository =
+      widget.calendarRepository ??
+      ApiCalendarRepository(
+        _calendarApi = ToolsApiService(
+          client: http.Client(),
+          baseUrl: Uri.parse(AuthApiService.configuredBaseUrl),
+          feature: 'calendar',
+        ),
+        _authRepository.withSession,
+      );
+  late final _calendarSession = ToolSession(
+    auth: _authRepository,
+    profiles: _profileRepository,
+    cancelPending: _calendarRepository.cancelPending,
+  );
+  late final CalendarReminderService _calendarDevice =
+      widget.calendarReminders ?? AndroidCalendarReminders();
+  late final _calendarCoordinator = CalendarReminderCoordinator(
+    _calendarSession,
+    _calendarRepository,
+    _calendarDevice,
+  );
+  Map<String, String>? _calendarLink;
+  void _openCalendarLink(Map<String, String> link) {
+    _calendarLink = link;
+    _consumeCalendarLink();
+  }
+
+  void _consumeCalendarLink() {
+    final link = _calendarLink;
+    if (link == null || !_entry.startupCompleted) return;
+    _calendarLink = null;
+    final owner = _authRepository.user?.id;
+    _router.go(
+      owner == link['owner']
+          ? '/tools/calendar?event=${link['event']}'
+          : '/tools/calendar',
+    );
+  }
+
+  ToolsApiService? _lostFoundApi;
+  late final LostFoundRepository _lostFoundRepository =
+      widget.lostFoundRepository ??
+      ApiLostFoundRepository(
+        _lostFoundApi = ToolsApiService(
+          client: http.Client(),
+          baseUrl: Uri.parse(AuthApiService.configuredBaseUrl),
+          feature: 'lost-found',
+        ),
+        _authRepository.withSession,
+      );
+  NotesApiService? _notesApi;
+  late final NotesRepository _notesRepository =
+      widget.notesRepository ??
+      ApiNotesRepository(
+        api: _notesApi = NotesApiService(
           client: http.Client(),
           baseUrl: Uri.parse(AuthApiService.configuredBaseUrl),
         ),
+        withSession: _authRepository.withSession,
+      );
+  late final NoteDraftStore _noteDrafts =
+      widget.noteDrafts ?? FileNoteDraftStore();
+  late final NoteFileService _noteFiles =
+      widget.noteFiles ?? PlatformNoteFileService();
+  late final _notesSession = NotesSession(
+    auth: _authRepository,
+    profiles: _profileRepository,
+    repository: _notesRepository,
+  );
+  final _notesGuard = NotesExitGuard();
+  late final _profileTransport = _profileApi = ProfileApiService(
+    client: http.Client(),
+    baseUrl: Uri.parse(AuthApiService.configuredBaseUrl),
+  );
+  late final AcademicRepository _academicRepository =
+      widget.academicRepository ??
+      ApiAcademicRepository(
+        api: _profileTransport,
+        withSession: _authRepository.withSession,
+      );
+  late final TaskRepository _taskRepository =
+      widget.taskRepository ??
+      ApiTaskRepository(
+        api: _taskApi = TaskApiService(
+          client: http.Client(),
+          baseUrl: Uri.parse(AuthApiService.configuredBaseUrl),
+        ),
+        withSession: _authRepository.withSession,
+      );
+  late final ProfileRepository _profileRepository =
+      widget.profileRepository ??
+      ApiProfileRepository(
+        api: _profileTransport,
         withSession: _authRepository.withSession,
       );
   late final _identity = CurrentIdentityViewModel(
@@ -119,6 +257,18 @@ class _MainAppState extends State<MainApp> {
     authRepository: _authRepository,
     marketplaceRepository: _marketplaceRepository,
     profileRepository: _profileRepository,
+    taskRepository: _taskRepository,
+    academicRepository: _academicRepository,
+    notesRepository: _notesRepository,
+    lostFoundRepository: _lostFoundRepository,
+    calendarRepository: _calendarRepository,
+    schedulerRepository: _schedulerRepository,
+    calendarSession: _calendarSession,
+    calendarCoordinator: _calendarCoordinator,
+    notesSession: _notesSession,
+    noteDrafts: _noteDrafts,
+    noteFiles: _noteFiles,
+    notesGuard: _notesGuard,
     identity: _identity,
     externalUrls: widget.externalUrls ?? const PlatformExternalUrlService(),
     session: _session,
@@ -130,7 +280,9 @@ class _MainAppState extends State<MainApp> {
       return completed;
     },
   );
-  late final AuthUiController _defaultAuthUi = AuthUiController();
+  late final AuthUiController _defaultAuthUi = AuthUiController(
+    onGuest: () => _router.go('/tools'),
+  );
   late final SessionViewModel _session = SessionViewModel(
     repository: _authRepository,
   );
@@ -148,6 +300,15 @@ class _MainAppState extends State<MainApp> {
     super.initState();
     _authRepository.addListener(_syncProfile);
     _syncProfile();
+    _calendarCoordinator;
+    _calendarDevice.onLink(_openCalendarLink);
+    _entry.addListener(_consumeCalendarLink);
+    _calendarDevice
+        .initialLink()
+        .then((link) {
+          if (mounted && link != null) _openCalendarLink(link);
+        })
+        .catchError((Object _) {});
     unawaited(_entry.initialize());
   }
 
@@ -157,6 +318,9 @@ class _MainAppState extends State<MainApp> {
         : null;
     if (_campusSessionId != null && _campusSessionId != user?.id) {
       _campusMap.resetSession();
+      _lostFoundRepository.cancelPending();
+      _schedulerRepository.cancelPending();
+      unawaited(_noteFiles.clear());
     }
     _campusSessionId = user?.id;
     _profileRepository.bindSession(user?.id, user);
@@ -177,7 +341,17 @@ class _MainAppState extends State<MainApp> {
 
   @override
   void dispose() {
+    _entry.removeListener(_consumeCalendarLink);
+    _calendarDevice.onLink(null);
+    _calendarCoordinator.dispose();
+    _calendarSession.dispose();
+    _calendarApi?.close();
+    _schedulerApi?.close();
     _router.dispose();
+    _notesSession.dispose();
+    _notesApi?.close();
+    _lostFoundApi?.close();
+    unawaited(_noteFiles.clear());
     if (widget.campusMap == null) _campusMap.dispose();
     _entry.dispose();
     _session.dispose();
@@ -185,6 +359,7 @@ class _MainAppState extends State<MainApp> {
     _identity.dispose();
     if (widget.profileRepository == null) _profileRepository.dispose();
     _profileApi?.close();
+    _taskApi?.close();
     if (widget.authRepository == null) _authRepository.dispose();
     _api?.close();
     _marketplaceApi?.close();

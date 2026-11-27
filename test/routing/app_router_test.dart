@@ -11,8 +11,10 @@ import 'package:go_router/go_router.dart';
 
 import '../auth_test_support.dart';
 import '../ui/startup_test_support.dart' show prepareAppSplash;
+import '../ui/home/home_shell_test.dart' show loadHomeFonts;
 
 void main() {
+  setUpAll(loadHomeFonts);
   testWidgets('Home and theme load, and navigation survives an app rebuild', (
     tester,
   ) async {

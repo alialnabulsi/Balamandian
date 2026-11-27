@@ -189,6 +189,8 @@ class ProfileFailure implements Exception {
   const ProfileFailure(this.code, this.message);
   final String code, message;
   static const messages = {
+    'ACADEMICS_FORBIDDEN':
+        'Academic results are available only to student accounts.',
     'PROFILE_UNAVAILABLE': 'Your university identity is temporarily unavailable. Your session is still valid. Please retry.',
     'PROFILE_NOT_FOUND': 'This university profile is unavailable.',
     'AVATAR_INVALID': 'Choose a single-frame JPG, PNG or WebP up to 1 MB and 4096 pixels per side.',

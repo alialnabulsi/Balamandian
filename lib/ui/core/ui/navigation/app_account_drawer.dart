@@ -17,11 +17,13 @@ class AppAccountDrawer extends StatelessWidget {
     this.avatarWidget,
     this.displayName,
     this.username,
+    this.onSignIn,
   });
 
   final ShellDestination selected;
   final ValueChanged<ShellDestination> onSelected;
   final VoidCallback? onLogout;
+  final VoidCallback? onSignIn;
   final List<ShellDestination> destinations;
   final String? email, sisId;
   final ImageProvider? avatar;
@@ -43,7 +45,14 @@ class AppAccountDrawer extends StatelessWidget {
             children: [
               const Divider(),
               const SizedBox(height: 8),
-              DrawerLogoutButton(onPressed: onLogout),
+              if (onSignIn != null)
+                FilledButton.icon(
+                  onPressed: onSignIn,
+                  icon: const Icon(Icons.login_rounded),
+                  label: const Text('Sign in'),
+                )
+              else
+                DrawerLogoutButton(onPressed: onLogout),
             ],
           ),
         ),
