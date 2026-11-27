@@ -8,10 +8,12 @@ class ProfileHeader extends StatelessWidget implements PreferredSizeWidget {
     required this.onShare,
     this.onMenu,
     this.onDiscover,
+    this.onSafety,
     this.canGoBack = false,
   });
   final String? username;
   final VoidCallback? onAccount, onShare, onMenu, onDiscover;
+  final VoidCallback? onSafety;
   final bool canGoBack;
   @override
   Size get preferredSize => const Size.fromHeight(64);
@@ -47,6 +49,12 @@ class ProfileHeader extends StatelessWidget implements PreferredSizeWidget {
       ),
     ),
     actions: [
+      if (onSafety != null)
+        IconButton(
+          tooltip: 'Profile safety options',
+          onPressed: onSafety,
+          icon: const Icon(Icons.more_horiz),
+        ),
       if (onDiscover != null)
         IconButton(
           tooltip: 'Discover members',

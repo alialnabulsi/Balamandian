@@ -18,6 +18,7 @@ class UserProfileViewModel extends ChangeNotifier {
           ? _repository.error
           : null);
   UserProfile? _loaded;
+  int _loadGeneration = 0;
   UserProfile? get profile => userId == null
       ? _repository.currentUser
       : _repository.cached(userId!) ?? _loaded;
@@ -33,8 +34,10 @@ class UserProfileViewModel extends ChangeNotifier {
   }
 
   Future<Uint8List> avatar(String path) => _repository.avatar(path);
-  Future<void> load({bool refresh = false}) async {
-    if (loading || _disposed) return;
+  Future<void> load({bool refresh = false, bool revalidate = false}) async {
+    if ((loading && !revalidate) || _disposed) return;
+    final generation = ++_loadGeneration;
+    if (revalidate) _loaded = null;
     loading = true;
     _error = null;
     notifyListeners();
@@ -42,15 +45,20 @@ class UserProfileViewModel extends ChangeNotifier {
       if (userId == null) {
         await _repository.loadOwn(refresh: refresh);
       } else {
-        _loaded = await _repository.profile(userId!, refresh: refresh);
+        final profile = await _repository.profile(userId!, refresh: refresh);
+        if (generation == _loadGeneration) _loaded = profile;
       }
     } on ProfileFailure catch (e) {
-      _error = e.message;
+      if (generation == _loadGeneration) _error = e.message;
     } catch (_) {
-      _error = 'Your profile could not be loaded. Please retry.';
+      if (generation == _loadGeneration) {
+        _error = 'Your profile could not be loaded. Please retry.';
+      }
     } finally {
-      loading = false;
-      _changed();
+      if (generation == _loadGeneration) {
+        loading = false;
+        _changed();
+      }
     }
   }
 
@@ -61,7 +69,10 @@ class UserProfileViewModel extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      await _repository.follow(value.identity.id, !value.isFollowing);
+      await _repository.follow(
+        value.identity.id,
+        !value.isFollowing && !value.followRequested,
+      );
     } on ProfileFailure catch (e) {
       _error = e.message;
     } catch (_) {

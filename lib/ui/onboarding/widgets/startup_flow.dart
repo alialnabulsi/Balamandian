@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../routing/community_post_link.dart';
 import '../../../routing/startup_destination.dart';
 import '../../auth/view_models/auth_ui_controller.dart';
 import '../../core/themes/startup_tokens.dart';
@@ -38,12 +39,14 @@ class StartupFlow extends StatefulWidget {
     super.key,
     required this.screen,
     required this.child,
+    this.linkedPost,
     this.onOnboardingCompleted,
     this.onStartupCompleted,
     this.onboardingError,
   });
   final StartupDestination screen;
   final Widget child;
+  final String? linkedPost;
   final Future<bool> Function()? onOnboardingCompleted;
   final VoidCallback? onStartupCompleted;
   final String? onboardingError;
@@ -130,7 +133,14 @@ class _StartupFlowState extends State<StartupFlow>
       }
       if (!mounted) return;
       final leavingSplash = widget.screen == StartupDestination.splash;
-      context.go(path, extra: extra);
+      final post = widget.linkedPost;
+      final location = post != null && path.startsWith('/welcome/')
+          ? Uri(
+              path: path,
+              queryParameters: {communityPostLinkParameter: post},
+            ).toString()
+          : path;
+      context.go(location, extra: extra);
       if (leavingSplash) widget.onStartupCompleted?.call();
       await Future<void>.delayed(const Duration(milliseconds: 20));
       if (!mounted) return;

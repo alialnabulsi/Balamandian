@@ -117,7 +117,10 @@ class MemberListViewModel extends ChangeNotifier {
     error = null;
     _publish();
     try {
-      final updated = await _repository.follow(id, !member.isFollowing);
+      final updated = await _repository.follow(
+        id,
+        !member.isFollowing && !member.followRequested,
+      );
       if (!_disposed &&
           _repository.currentUserId == _sessionUserId &&
           _sessionUserId != null) {

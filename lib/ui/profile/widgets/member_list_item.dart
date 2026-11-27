@@ -78,6 +78,7 @@ class MemberListItem extends StatelessWidget {
     );
     final action = FollowButton(
       following: member.isFollowing,
+      requested: member.followRequested,
       pending: pending,
       name: member.identity.displayName,
       onPressed: onFollow,

@@ -12,8 +12,10 @@ class ProfileActions extends StatelessWidget {
     required this.onEdit,
     required this.onFollow,
     required this.onShare,
+    this.requested = false,
   });
   final bool isSelf, isFollowing, pending;
+  final bool requested;
   final VoidCallback onEdit, onFollow, onShare;
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -26,7 +28,11 @@ class ProfileActions extends StatelessWidget {
               child: const Text('Edit profile'),
             )
           : AsyncActionButton(
-              label: isFollowing ? 'Following' : 'Follow',
+              label: requested
+                  ? 'Requested'
+                  : isFollowing
+                  ? 'Following'
+                  : 'Follow',
               running: pending,
               onPressed: onFollow,
               style: style,

@@ -5,6 +5,10 @@ organization, adapted from Flutter's [Compass architecture case study](https://d
 architecture guide, and recommendations. These are principles to apply as the
 app grows, rather than a requirement to reproduce every Compass directory.
 
+The [Community & Messaging specification](Docs/community-messaging.md) records
+the Stage 1 feed, stories, posts, privacy, notifications and local demo, plus the
+boundaries for the later stages.
+
 The [campus map report](Docs/campus-map.md) covers the Mapbox integration,
 outdoor routing and navigation foundation, local simulation, configuration and
 verification. The [geographic data contract](assets/maps/campus/README.md) records

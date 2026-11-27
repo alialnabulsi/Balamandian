@@ -21,7 +21,7 @@ class AppIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => IconButton(
-    tooltip: tooltip,
+    tooltip: badgeLabel == null ? tooltip : '$tooltip, $badgeLabel unread',
     onPressed: onPressed,
     style: IconButton.styleFrom(
       minimumSize: const Size.square(ShellTokens.tapSize),
@@ -30,7 +30,9 @@ class AppIconButton extends StatelessWidget {
     ),
     icon: Badge(
       isLabelVisible: badgeLabel != null,
-      label: badgeLabel == null ? null : Text(badgeLabel!),
+      label: badgeLabel == null
+          ? null
+          : ExcludeSemantics(child: Text(badgeLabel!)),
       child: child ?? Icon(icon),
     ),
   );

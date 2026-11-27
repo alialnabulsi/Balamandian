@@ -18,6 +18,9 @@ dependencies:
   flutter_secure_storage: ^11.2.0
   mapbox_maps_flutter: 3.35.2
   geolocator: ^14.1.2
+  share_plus: 13.3.1
+  file_selector: 1.1.0
+  flutter_webrtc: 1.6.3
 
 dev_dependencies:
   integration_test:

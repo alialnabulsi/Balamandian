@@ -8,6 +8,9 @@ import 'package:http/http.dart' as http;
 
 import 'data/repositories/api_auth_repository.dart';
 import 'data/repositories/auth_repository.dart';
+import 'data/repositories/community_repository.dart';
+import 'data/repositories/messaging_repository.dart';
+import 'data/services/community_api_service.dart';
 import 'data/repositories/onboarding_repository.dart';
 import 'data/services/onboarding_store.dart';
 import 'data/services/auth_api_service.dart';
@@ -21,7 +24,13 @@ import 'data/repositories/api_profile_repository.dart';
 import 'data/services/profile_api_service.dart';
 import 'domain/models/auth_session.dart';
 import 'ui/profile/view_models/current_identity_view_model.dart';
+import 'ui/community/view_models/community_inbox_model.dart';
+import 'ui/messaging/view_models/messaging_session.dart';
+import 'ui/messaging/view_models/calling_session.dart';
+import 'ui/messaging/widgets/voice_call.dart';
+import 'ui/messaging/widgets/messaging_scope.dart';
 import 'routing/app_router.dart';
+import 'routing/community_post_link.dart';
 import 'routing/startup_destination.dart';
 import 'ui/core/themes/app_theme.dart';
 import 'ui/core/ui/backgrounds/app_branded_background.dart';
@@ -41,6 +50,8 @@ class MainApp extends StatefulWidget {
     this.authRepository,
     this.marketplaceRepository,
     this.profileRepository,
+    this.communityRepository,
+    this.messagingRepository,
     this.externalUrls,
     this.onboardingRepository,
     this.themeMode = ThemeMode.system,
@@ -54,6 +65,8 @@ class MainApp extends StatefulWidget {
   final AuthRepository? authRepository;
   final MarketplaceRepository? marketplaceRepository;
   final ProfileRepository? profileRepository;
+  final CommunityRepository? communityRepository;
+  final MessagingRepository? messagingRepository;
   final ExternalUrlService? externalUrls;
   final OnboardingRepository? onboardingRepository;
   final ThemeMode themeMode;
@@ -114,11 +127,61 @@ class _MainAppState extends State<MainApp> {
         ),
         credentials: const SecureSessionCredentialStore(),
       );
+  late final CommunityRepository? _community =
+      widget.communityRepository ??
+      (widget.authRepository == null
+          ? CommunityRepository(
+              CommunityApiService(
+                http.Client(),
+                Uri.parse(AuthApiService.configuredBaseUrl),
+              ),
+              _authRepository,
+            )
+          : null);
+  late final _inbox = _community == null
+      ? null
+      : CommunityInboxModel(_community);
+  late final _messagingRepository =
+      widget.messagingRepository ??
+      (widget.authRepository == null && _community != null
+          ? MessagingRepository(
+              CommunityApiService(
+                http.Client(),
+                Uri.parse(AuthApiService.configuredBaseUrl),
+                area: 'messaging',
+              ),
+              _authRepository,
+              _community,
+            )
+          : null);
+  late final _messaging = _messagingRepository == null
+      ? null
+      : MessagingSession(_messagingRepository);
+  late final _calling =
+      _messagingRepository == null || widget.authRepository != null
+      ? null
+      : CallingSession(_messagingRepository);
+  AppLifecycleListener? _communityLifecycle;
+  String? _communityUserId;
+  bool _communityVisible = true;
+  String get _initialLocation {
+    if (widget.initialLocation != '/welcome/splash') {
+      return widget.initialLocation;
+    }
+    final route = Uri.tryParse(
+      WidgetsBinding.instance.platformDispatcher.defaultRouteName,
+    );
+    return communityPostPath(route?.path) ?? widget.initialLocation;
+  }
+
   late final GoRouter _router = createAppRouter(
     campusMap: _campusMap,
     authRepository: _authRepository,
     marketplaceRepository: _marketplaceRepository,
     profileRepository: _profileRepository,
+    community: _community,
+    inbox: _inbox,
+    messaging: _messaging != null,
     identity: _identity,
     externalUrls: widget.externalUrls ?? const PlatformExternalUrlService(),
     session: _session,
@@ -139,7 +202,7 @@ class _MainAppState extends State<MainApp> {
     onboarding:
         widget.onboardingRepository ??
         OnboardingRepository(store: const SecureOnboardingStore()),
-    initialLocation: widget.initialLocation,
+    initialLocation: _initialLocation,
     firstDestination: widget.afterSplash,
   );
 
@@ -147,6 +210,20 @@ class _MainAppState extends State<MainApp> {
   void initState() {
     super.initState();
     _authRepository.addListener(_syncProfile);
+    _community?.addListener(_refreshCommunityIdentity);
+    if (_community != null || _messaging != null) {
+      _communityLifecycle = AppLifecycleListener(
+        onStateChange: (state) {
+          final visible = state == AppLifecycleState.resumed;
+          if (_communityVisible == visible) return;
+          _communityVisible = visible;
+          _inbox?.active(visible && _communityUserId != null);
+          _messaging?.activate(_authRepository.user?.id, visible);
+          _calling?.activate(_authRepository.user?.id, visible);
+          if (visible && _communityUserId != null) _community?.invalidate();
+        },
+      );
+    }
     _syncProfile();
     unawaited(_entry.initialize());
   }
@@ -160,6 +237,14 @@ class _MainAppState extends State<MainApp> {
     }
     _campusSessionId = user?.id;
     _profileRepository.bindSession(user?.id, user);
+    _messaging?.activate(user?.id, _communityVisible);
+    _calling?.activate(user?.id, _communityVisible);
+    if (_community != null && _communityUserId != user?.id) {
+      _communityUserId = user?.id;
+      _inbox?.active(false, clear: true);
+      _community.invalidate();
+      _inbox?.active(_communityVisible && user != null);
+    }
     if (user != null &&
         _profileRepository.currentUser == null &&
         !_profileRepository.loading) {
@@ -167,9 +252,14 @@ class _MainAppState extends State<MainApp> {
     }
   }
 
-  Future<void> _loadProfile() async {
+  void _refreshCommunityIdentity() {
+    _profileRepository.invalidatePublic();
+    if (_communityUserId != null) unawaited(_loadProfile(refresh: true));
+  }
+
+  Future<void> _loadProfile({bool refresh = false}) async {
     try {
-      await _profileRepository.loadOwn();
+      await _profileRepository.loadOwn(refresh: refresh);
     } on Object {
       /* A profile error never invalidates a valid session. */
     }
@@ -182,6 +272,13 @@ class _MainAppState extends State<MainApp> {
     _entry.dispose();
     _session.dispose();
     _authRepository.removeListener(_syncProfile);
+    _communityLifecycle?.dispose();
+    _inbox?.dispose();
+    _messaging?.dispose();
+    _calling?.dispose();
+    if (widget.messagingRepository == null) _messagingRepository?.dispose();
+    _community?.removeListener(_refreshCommunityIdentity);
+    if (widget.communityRepository == null) _community?.dispose();
     _identity.dispose();
     if (widget.profileRepository == null) _profileRepository.dispose();
     _profileApi?.close();
@@ -205,7 +302,17 @@ class _MainAppState extends State<MainApp> {
         routerConfig: _router,
         builder: (context, child) => AppEntryOverlay(
           model: _entry,
-          child: AppBrandedBackground(child: child!),
+          child: AppBrandedBackground(
+            child: _messaging == null
+                ? child!
+                : MessagingScope(
+                    session: _messaging,
+                    profiles: _profileRepository,
+                    child: _calling == null
+                        ? child!
+                        : CallingHost(calls: _calling, child: child!),
+                  ),
+          ),
         ),
       ),
     );

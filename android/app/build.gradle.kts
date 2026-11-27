@@ -1,7 +1,14 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val releasePropertiesFile = rootProject.file("key.properties")
+val releaseProperties = Properties().apply {
+    if (releasePropertiesFile.isFile) releasePropertiesFile.inputStream().use { load(it) }
 }
 
 android {
@@ -15,6 +22,7 @@ android {
     }
 
     defaultConfig {
+        manifestPlaceholders["communityLinksHost"] = providers.gradleProperty("communityLinksHost").getOrElse("links.balamandian.invalid")
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.balamandian"
         // You can update the following values to match your application needs.
@@ -29,11 +37,26 @@ android {
         versionName = flutter.versionName
     }
 
+    if (releasePropertiesFile.isFile) {
+        signingConfigs.create("production") {
+            fun property(name: String): String = requireNotNull(releaseProperties.getProperty(name)) {
+                "Set $name in android/key.properties for release signing."
+            }
+            storeFile = rootProject.file(property("storeFile"))
+            storePassword = property("storePassword")
+            keyAlias = property("keyAlias")
+            keyPassword = property("keyPassword")
+        }
+    }
+
     buildTypes {
+        debug {
+            if (providers.environmentVariable("BALAMANDIAN_ISOLATED_VOICE_DEMO").orNull == "true") {
+                applicationIdSuffix = ".voiceqa"
+            }
+        }
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("production")
         }
     }
 }
