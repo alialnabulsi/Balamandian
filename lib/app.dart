@@ -89,6 +89,8 @@ class MainApp extends StatefulWidget {
     this.afterSplash = StartupDestination.campus,
     this.onOnboardingCompleted,
     this.campusMap,
+    this.guideRoute,
+    this.aiRoute,
   });
   final AuthUiController? authUi;
   final AuthRepository? authRepository;
@@ -113,6 +115,8 @@ class MainApp extends StatefulWidget {
   final StartupDestination afterSplash;
   final VoidCallback? onOnboardingCompleted;
   final CampusMapViewModel? campusMap;
+  final GoRoute? guideRoute;
+  final GoRoute? aiRoute;
 
   @override
   State<MainApp> createState() => _MainAppState();
@@ -323,6 +327,8 @@ class _MainAppState extends State<MainApp> {
     lostFoundRepository: _lostFoundRepository,
     calendarRepository: _calendarRepository,
     schedulerRepository: _schedulerRepository,
+    guideRoute: widget.guideRoute,
+    aiRoute: widget.aiRoute,
     calendarSession: _calendarSession,
     calendarCoordinator: _calendarCoordinator,
     notesSession: _notesSession,
