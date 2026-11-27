@@ -13,25 +13,27 @@ import '../home/home_shell_test.dart' show loadHomeFonts;
 import 'marketplace_widget_support.dart';
 
 Future<void> captureMarket(WidgetTester tester, String name, Size size) async {
-  await tester.runAsync(() async {
-    RenderRepaintBoundary? repaint;
-    void visit(RenderObject object) {
-      if (repaint != null) return;
-      if (object is RenderRepaintBoundary && object.size == size) {
-        repaint = object;
-        return;
+  if (const bool.fromEnvironment('CAPTURE_UI')) {
+    await tester.runAsync(() async {
+      RenderRepaintBoundary? repaint;
+      void visit(RenderObject object) {
+        if (repaint != null) return;
+        if (object is RenderRepaintBoundary && object.size == size) {
+          repaint = object;
+          return;
+        }
+        object.visitChildren(visit);
       }
-      object.visitChildren(visit);
-    }
 
-    visit(tester.binding.renderViews.single);
-    final image = await repaint!.toImage(pixelRatio: 1);
-    final data = await image.toByteData(format: ui.ImageByteFormat.png);
-    final file = File('build/ui-verification/marketplace/$name.png');
-    await file.parent.create(recursive: true);
-    await file.writeAsBytes(data!.buffer.asUint8List());
-    image.dispose();
-  });
+      visit(tester.binding.renderViews.single);
+      final image = await repaint!.toImage(pixelRatio: 1);
+      final data = await image.toByteData(format: ui.ImageByteFormat.png);
+      final file = File('build/ui-verification/marketplace/$name.png');
+      await file.parent.create(recursive: true);
+      await file.writeAsBytes(data!.buffer.asUint8List());
+      image.dispose();
+    });
+  }
 }
 
 void main() {

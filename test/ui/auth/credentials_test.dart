@@ -258,13 +258,9 @@ void main() {
     },
   );
 
-  testWidgets('Guest remains on entry without a connected action', (
-    tester,
-  ) async {
+  testWidgets('Guest entry stays postponed', (tester) async {
     await pumpStartup(tester, screen: 'getting-started');
-    await tester.tap(find.text('Continue as guest'));
-    await tester.pump();
-    expect(find.text('Log in with SIS'), findsOneWidget);
+    expect(find.text('Continue as guest'), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

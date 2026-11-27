@@ -5,13 +5,11 @@ import 'package:flutter/material.dart';
 import '../../../routing/startup_destination.dart';
 import '../../core/themes/startup_tokens.dart';
 import '../../core/ui/action_button.dart';
-import '../../core/ui/asset_icon.dart';
 import '../../core/ui/brand.dart';
 import '../../core/ui/backgrounds/app_branded_background.dart';
 import '../../core/ui/crest_coin.dart';
 import '../../core/ui/decorative_art.dart';
 import '../../onboarding/widgets/startup_flow.dart';
-import '../view_models/auth_ui_controller.dart';
 
 class GettingStartedScreen extends StatelessWidget {
   const GettingStartedScreen({super.key});
@@ -204,32 +202,6 @@ class GettingStartedScreen extends StatelessWidget {
                                 ),
                               ),
                             ],
-                          ),
-                          TextButton(
-                            onPressed: nav.busy
-                                ? null
-                                : () => AuthUiScope.of(context).requestGuest(),
-                            child: Wrap(
-                              alignment: WrapAlignment.center,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                Text(
-                                  'Continue as guest',
-                                  style: StartupTokens.text(
-                                    14,
-                                    20,
-                                    weight: FontWeight.w500,
-                                    color: guestColor,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                AssetIcon(
-                                  'arrow-right',
-                                  size: 20,
-                                  color: guestColor,
-                                ),
-                              ],
-                            ),
                           ),
                         ],
                       ),

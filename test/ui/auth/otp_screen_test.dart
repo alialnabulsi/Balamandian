@@ -206,25 +206,29 @@ void main() {
         await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
         semantics.dispose();
       }
-      await tester.runAsync(() async {
-        RenderRepaintBoundary? boundary;
-        void visit(RenderObject object) {
-          if (boundary != null) return;
-          if (object is RenderRepaintBoundary && object.size == size) {
-            boundary = object;
-            return;
+      if (const bool.fromEnvironment('CAPTURE_UI')) {
+        await tester.runAsync(() async {
+          RenderRepaintBoundary? boundary;
+          void visit(RenderObject object) {
+            if (boundary != null) return;
+            if (object is RenderRepaintBoundary && object.size == size) {
+              boundary = object;
+              return;
+            }
+            object.visitChildren(visit);
           }
-          object.visitChildren(visit);
-        }
 
-        visit(tester.binding.renderViews.single);
-        final rendered = await boundary!.toImage(pixelRatio: 1);
-        final bytes = await rendered.toByteData(format: ui.ImageByteFormat.png);
-        final file = File('build/ui-verification/auth/otp-$variant.png');
-        await file.parent.create(recursive: true);
-        await file.writeAsBytes(bytes!.buffer.asUint8List());
-        rendered.dispose();
-      });
+          visit(tester.binding.renderViews.single);
+          final rendered = await boundary!.toImage(pixelRatio: 1);
+          final bytes = await rendered.toByteData(
+            format: ui.ImageByteFormat.png,
+          );
+          final file = File('build/ui-verification/auth/otp-$variant.png');
+          await file.parent.create(recursive: true);
+          await file.writeAsBytes(bytes!.buffer.asUint8List());
+          rendered.dispose();
+        });
+      }
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }

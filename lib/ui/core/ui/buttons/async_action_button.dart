@@ -40,6 +40,7 @@ class AsyncActionButton extends StatelessWidget {
               labels: [label, caption],
             ),
           ),
+          const SizedBox(width: 24),
         ],
       ),
     );

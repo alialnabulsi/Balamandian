@@ -202,16 +202,18 @@ Future<void> _capture(WidgetTester tester, String name) async {
   final boundary = tester.renderObject<RenderRepaintBoundary>(
     find.byKey(const ValueKey('community-capture')),
   );
-  await tester.runAsync(() async {
-    final image = await boundary.toImage(pixelRatio: 1.5);
-    final bytes = (await image.toByteData(format: ui.ImageByteFormat.png))!
-        .buffer
-        .asUint8List();
-    final file = File('build/community-verification/$name.png');
-    await file.parent.create(recursive: true);
-    await file.writeAsBytes(bytes);
-    image.dispose();
-  });
+  if (const bool.fromEnvironment('CAPTURE_UI')) {
+    await tester.runAsync(() async {
+      final image = await boundary.toImage(pixelRatio: 1.5);
+      final bytes = (await image.toByteData(format: ui.ImageByteFormat.png))!
+          .buffer
+          .asUint8List();
+      final file = File('build/community-verification/$name.png');
+      await file.parent.create(recursive: true);
+      await file.writeAsBytes(bytes);
+      image.dispose();
+    });
+  }
 }
 
 void main() {

@@ -125,7 +125,6 @@ void main() {
         '/profile',
         '/guide',
         '/ai',
-        '/tools',
         '/settings',
       ]) {
         router.go(path);

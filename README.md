@@ -20,6 +20,15 @@ The [profile implementation report](Docs/profile.md) records the connected socia
 identity feature, routes, reusable components, official identity ownership,
 avatar/follow contracts, database synchronization and manual device checks.
 
+The [GPA calculator report](Docs/gpa-calculator.md) covers the temporary manual
+calculator, official equivalence policy, private cached results and SIS grade import.
+
+The [My Notes report](Docs/my-notes.md) covers private nested folders, revisioned
+structured notes, editable handwriting, authenticated image/PDF attachments,
+debounced autosave and account-scoped app-private draft recovery. `/tools/notes`
+uses the shared shell; its nested editor uses the root navigator for full space
+and guarded Back navigation. New notes open a writable blank page; Save returns to the notes browser.
+
 Current architecture-related structure, including prepared directories:
 
 Directories marked `prepared` contain only a `.gitkeep` file so Git can track
@@ -190,7 +199,20 @@ Navigation (current foundation and future conventions):
 Navigation uses Flutter's recommended `go_router` package with
 `MaterialApp.router`. The route table lives in `lib/routing/app_router.dart`.
 `/` displays Home; `/map`, `/market` and `/profile` are persistent shell branches.
-`/guide`, `/ai`, `/tools` and `/settings` are lightweight placeholders nested under Home.
+`/guide`, `/ai` and `/settings` are lightweight placeholders nested under Home.
+`/tools` is the authenticated Tools hub in the Home branch. The drawer and
+floating quick actions open the same destination. Its six compact shortcuts use
+the current profile's institutional roles, including mixed-role accounts. Calendar
+academic reads require sign-in; personal tools enforce their documented roles.
+University service URLs are centralized in
+`lib/ui/tools/view_models/tools_hub_view_model.dart`. Contact placeholders do not dial.
+To-do Planner now opens `/tools/todo` within the same shell. Its List and Kanban
+views share the complete collection loaded from all pages of `/api/v1/tasks`.
+The existing authenticated session boundary protects networking. Account changes
+clear private state and invalidate late responses. See
+[the planner report](Docs/to-do-planner.md) for architecture, behavior and checks.
+GPA Calculator opens `/tools/gpa` for student-containing accounts. It offers
+temporary weighted numeric semester/cumulative predictions and an explicit SIS GPA/CGPA import. The backend persists results calculated from original SIS grade records in the private profile cache. Failed or empty imports preserve manual entries.
 `/welcome/*` contains the startup screens and OTP verification outside this shell.
 Their persistent shell owns the approved curved wipe and prevents duplicate navigation.
 `MainApp` owns one router for its widget lifecycle, retains it across rebuilds,
@@ -209,18 +231,21 @@ Authentication redirects and session restoration consume the shared repository's
 notifications. Every actual launch first plays the original Flutter splash at
 `/welcome/splash`, concurrently with session restoration. The existing transition
 opens the resolved destination after both complete. `/session` provides Retry
-for recoverable validation errors. Shell destinations require an authenticated session; login,
-registration, OTP and onboarding remain public. Successful restoration opens
-Home; invalid sessions and logout lead to Login with protected history removed.
+for recoverable validation errors. Every Tools destination requires an authenticated
+session. Invalid sessions and logout remove shell access and lead to Login.
+Guest mode and web administration remain postponed.
 Refresh tokens and application permission policies remain deferred. The Home shell uses
 `StatefulShellRoute.indexedStack` for its four tab navigators. Native app-link configuration is
 also deferred; adopting a declarative router alone does not configure it.
 Unmatched locations use go_router's built-in error handling; a custom not-found
-experience awaits an approved design. Map remains a placeholder; Profile is connected;
-no role policies or route code generation are included. Registration opens `/welcome/verify-email`;
+experience awaits an approved design. Campus Map and Profile remain connected;
+Tools availability is frontend presentation policy, not authorization for future
+backend endpoints. No route code generation is included.
+Registration opens `/welcome/verify-email`;
 successful authentication saves sessions securely before its destination opens.
-OTP success now opens optional, persistent profile personalization; guest actions
-remain deferred. Normal login/restoration still open Home. Onboarding completion is
+OTP success opens optional, persistent profile personalization. Login and
+restoration open Home. Back closes the drawer or popup before leaving the feature.
+Onboarding completion is
 persisted separately from credentials: first-time users see the tour, returning
 unauthenticated users see the existing auth entry, and validated sessions open
 Home after the full splash. Genuine background returns replay the same splash
@@ -240,6 +265,30 @@ See [Home Shell implementation notes](Docs/home-shell.md) for the component tree
 destination behavior, identity handoff, theme decisions and focused checks.
 
 Local authentication development:
+
+For a USB-connected Android phone, start Balamandian-API in another terminal,
+then use the launcher below. The ignored `dev-config.json` must contain
+`API_BASE_URL` set to `http://127.0.0.1:<backend-port>` and the public
+`MAPBOX_ACCESS_TOKEN`. The launcher checks backend health, restores USB forwarding
+after a reconnect, and passes the configuration to Flutter on every run.
+
+```powershell
+.\tool\run_phone.ps1
+# Optional: check the connection without rebuilding or launching.
+.\tool\run_phone.ps1 -CheckOnly
+```
+
+The Android build fixes Flutter 3.47.5's `integration_test` wildcard selectors to
+the already resolved AndroidX versions: runner 1.3.0, rules 1.2.0 and Espresso
+3.3.0. This avoids Maven version-list lookups during normal USB runs when Google
+Maven DNS is unavailable. It does not upgrade those libraries or disable TLS.
+A fresh dependency cache still needs network access; review these selectors when
+upgrading Flutter. The existing Mapbox KGP warning is separate from dependency
+resolution failures.
+
+Plain `flutter run` does not read `dev-config.json`; it uses the emulator default
+`http://10.0.2.2:3000` and has no Mapbox token unless supplied explicitly.
+After changing build definitions, stop the previous run and launch again.
 
 ```sh
 # Android emulator (also the default debug origin)
@@ -370,3 +419,6 @@ back stack, and preservation of the router and current location across an app
 rebuild. It also unmounts the app to exercise router cleanup. `flutter test --no-pub`
 additionally verifies startup, forms, accessibility, photo handling and responsive
 screenshots. Screenshot artifacts are generated in ignored `build/ui-verification/`.
+
+The [remaining tools checkpoint](Docs/remaining-tools.md) covers private Lost & Found,
+Calendar with Android device reminders, registration-based Schedule/Scheduler, real SIS source/cache mappings and verification.

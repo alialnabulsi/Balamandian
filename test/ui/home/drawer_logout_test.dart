@@ -84,21 +84,23 @@ void main() {
           semantics.dispose();
           expect(tester.takeException(), isNull);
           if (size.width == 390) {
-            await tester.runAsync(() async {
-              final boundary =
-                  key.currentContext!.findRenderObject()!
-                      as RenderRepaintBoundary;
-              final image = await boundary.toImage();
-              final bytes = await image.toByteData(
-                format: ui.ImageByteFormat.png,
-              );
-              final file = File(
-                'build/ui-verification/auth-session/drawer-${dark ? 'dark' : 'light'}.png',
-              );
-              await file.parent.create(recursive: true);
-              await file.writeAsBytes(bytes!.buffer.asUint8List());
-              image.dispose();
-            });
+            if (const bool.fromEnvironment('CAPTURE_UI')) {
+              await tester.runAsync(() async {
+                final boundary =
+                    key.currentContext!.findRenderObject()!
+                        as RenderRepaintBoundary;
+                final image = await boundary.toImage();
+                final bytes = await image.toByteData(
+                  format: ui.ImageByteFormat.png,
+                );
+                final file = File(
+                  'build/ui-verification/auth-session/drawer-${dark ? 'dark' : 'light'}.png',
+                );
+                await file.parent.create(recursive: true);
+                await file.writeAsBytes(bytes!.buffer.asUint8List());
+                image.dispose();
+              });
+            }
           }
           await tester.pumpWidget(const SizedBox.shrink());
         },

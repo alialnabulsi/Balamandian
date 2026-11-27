@@ -1,8 +1,8 @@
 package com.example.balamandian
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.content.Intent
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
@@ -14,7 +14,10 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    private var reminders: CalendarReminderBridge? = null
+    private var reminderChannel: MethodChannel? = null
     private var channel: MethodChannel? = null
+    private var notesFilesChannel: MethodChannel? = null
     private var voiceChannel: MethodChannel? = null
     private var voiceBluetooth: MethodChannel.Result? = null
     private var academicPdf: AcademicPdfChannel? = null
@@ -43,6 +46,11 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        reminderChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "balamandian/calendar-reminders")
+        reminders = CalendarReminderBridge(this, reminderChannel!!)
+        reminderChannel?.setMethodCallHandler(reminders)
+        notesFilesChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "balamandian/notes-files")
+        notesFilesChannel?.setMethodCallHandler(NotesPdfOpener(this))
         voiceChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "balamandian/voice_audio")
         voiceChannel?.setMethodCallHandler { call, reply ->
             val service = Intent(this, VoiceAudioService::class.java)
@@ -148,7 +156,11 @@ class MainActivity : FlutterActivity() {
         result.success(null)
     }
 
+    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); reminders?.accept(intent) }
     override fun onDestroy() {
+        reminders?.dispose()
+        reminderChannel?.setMethodCallHandler(null)
+        notesFilesChannel?.setMethodCallHandler(null)
         voiceBluetooth?.success(false)
         voiceBluetooth = null
         voiceChannel?.setMethodCallHandler(null)
@@ -168,6 +180,7 @@ class MainActivity : FlutterActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        reminders?.permissionReply(requestCode)
         if (requestCode == 4702) {
             voiceBluetooth?.success(grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED)
             voiceBluetooth = null

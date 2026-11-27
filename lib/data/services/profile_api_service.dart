@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 
 import '../../domain/models/auth_failure.dart';
 import '../../domain/models/profile_models.dart';
+import '../../domain/models/academic_profile.dart';
 
 class ProfileApiService {
   ProfileApiService({
@@ -36,6 +37,18 @@ class ProfileApiService {
   final http.Client _client;
   final Uri _baseUrl;
   final Duration timeout;
+  Future<AcademicProfile> academics(String token) => _json(
+    token,
+    'GET',
+    '/api/v1/profile/me/academics',
+    AcademicProfile.fromJson,
+  );
+  Future<AcademicProfile> syncAcademics(String token) => _json(
+    token,
+    'POST',
+    '/api/v1/profile/me/academics/sync',
+    AcademicProfile.fromJson,
+  );
   Future<UserProfile> own(String token) =>
       _json(token, 'GET', '/api/v1/profile/me', UserProfile.fromJson);
   Future<UserProfile> profile(String token, String id) => _json(

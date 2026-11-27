@@ -7,6 +7,9 @@ import '../../messaging/widgets/messaging_scope.dart';
 import '../../messaging/widgets/messaging_navigation.dart';
 
 import '../../../data/repositories/profile_repository.dart';
+import '../../../data/repositories/auth_repository.dart';
+import '../../../data/repositories/academic_repository.dart';
+import 'academic_results_section.dart';
 import '../../../data/repositories/community_repository.dart';
 import '../../../domain/models/profile_models.dart';
 import '../../community/widgets/community_actions.dart';
@@ -30,8 +33,12 @@ class ProfileScreen extends StatefulWidget {
     super.key,
     required this.repository,
     this.userId,
+    this.auth,
+    this.academics,
     this.community,
   });
+  final AuthRepository? auth;
+  final AcademicRepository? academics;
   final ProfileRepository repository;
   final CommunityRepository? community;
   final String? userId;
@@ -138,6 +145,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     builder: (_) => AccountInformationSheet(
       profile: _model.profile!,
       loadAvatar: _model.avatar,
+      academicSection: widget.auth != null && widget.academics != null
+          ? AcademicResultsSection(
+              auth: widget.auth!,
+              profiles: widget.repository,
+              repository: widget.academics!,
+            )
+          : null,
     ),
   );
   void _share() => showModalBottomSheet<void>(

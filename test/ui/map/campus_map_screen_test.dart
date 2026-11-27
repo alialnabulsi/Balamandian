@@ -270,21 +270,23 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         if (config.$1.width == 390) {
-          await tester.runAsync(() async {
-            final image =
-                await (boundary.currentContext!.findRenderObject()!
-                        as RenderRepaintBoundary)
-                    .toImage();
-            final bytes = await image.toByteData(
-              format: ui.ImageByteFormat.png,
-            );
-            image.dispose();
-            final file = File(
-              'build/campus-map-verification/planning-${dark ? 'dark' : 'light'}.png',
-            );
-            await file.parent.create(recursive: true);
-            await file.writeAsBytes(bytes!.buffer.asUint8List());
-          });
+          if (const bool.fromEnvironment('CAPTURE_UI')) {
+            await tester.runAsync(() async {
+              final image =
+                  await (boundary.currentContext!.findRenderObject()!
+                          as RenderRepaintBoundary)
+                      .toImage();
+              final bytes = await image.toByteData(
+                format: ui.ImageByteFormat.png,
+              );
+              image.dispose();
+              final file = File(
+                'build/campus-map-verification/planning-${dark ? 'dark' : 'light'}.png',
+              );
+              await file.parent.create(recursive: true);
+              await file.writeAsBytes(bytes!.buffer.asUint8List());
+            });
+          }
         }
         model.closeSelection();
         model.beginSearch();
