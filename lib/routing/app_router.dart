@@ -39,6 +39,9 @@ import '../ui/onboarding/widgets/startup_flow.dart';
 import '../ui/onboarding/widgets/tour_screen.dart';
 import 'community_post_link.dart';
 import '../ui/messaging/widgets/chat_thread.dart';
+import '../ui/messaging/widgets/academic_discovery.dart';
+import '../ui/messaging/widgets/study_room_editor.dart';
+import '../ui/messaging/widgets/study_workspace.dart';
 import '../ui/messaging/widgets/message_search.dart';
 import '../ui/messaging/widgets/messaging_inbox.dart';
 import '../ui/messaging/widgets/messaging_info.dart';
@@ -137,6 +140,16 @@ GoRouter createAppRouter({
           builder: (context, state) => const MessagingRecipient(),
         ),
         GoRoute(
+          path: '/messages/discover',
+          builder: (context, state) => AcademicDiscovery(
+            studyFirst: state.uri.queryParameters['tab'] == 'study',
+          ),
+        ),
+        GoRoute(
+          path: '/messages/study/new',
+          builder: (context, state) => const StudyRoomEditor(),
+        ),
+        GoRoute(
           path: '/messages/new-group',
           builder: (context, state) => const MessagingRecipient(group: true),
         ),
@@ -174,6 +187,16 @@ GoRouter createAppRouter({
           builder: (context, state) => MessageSearch(
             thread: state.pathParameters['id']!,
             filter: state.uri.queryParameters['filter'],
+            section: state.uri.queryParameters['section'],
+          ),
+        ),
+        GoRoute(
+          path: '/messages/:id/study',
+          builder: (context, state) => StudyWorkspace(
+            id: state.pathParameters['id']!,
+            initial: state.uri.queryParameters['tab'] == 'sessions'
+                ? StudyArea.sessions
+                : StudyArea.resources,
           ),
         ),
         GoRoute(
@@ -183,6 +206,10 @@ GoRouter createAppRouter({
               key: state.pageKey,
               id: state.pathParameters['id']!,
               story: state.uri.queryParameters['story'],
+              initialSection:
+                  state.uri.queryParameters['section'] == 'announcement'
+                  ? 'announcement'
+                  : 'discussion',
               initialAnchor: int.tryParse(
                 state.uri.queryParameters['anchor'] ?? '',
               ),

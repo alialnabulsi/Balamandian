@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../../domain/models/community.dart';
 import '../../domain/models/messaging.dart';
 import '../services/community_api_service.dart';
@@ -46,10 +48,11 @@ class MessagingRepository {
     String mode = 'inbox',
     String? cursor,
     String search = '',
+    String? kind,
   }) async => CommunityPage.fromJson(
     await object(
       'conversations',
-      query: {'mode': mode, 'cursor': ?cursor, 'q': search},
+      query: {'mode': mode, 'cursor': ?cursor, 'q': search, 'kind': ?kind},
     ),
     Conversation.new,
   );
@@ -60,6 +63,7 @@ class MessagingRepository {
     String? search,
     String? filter,
     int? anchor,
+    String? section,
   }) async => ChatHistory(
     await object(
       'conversations/$id/messages',
@@ -67,6 +71,7 @@ class MessagingRepository {
         'before': ?before,
         'q': ?search,
         'filter': ?filter,
+        'section': ?section,
         if (anchor != null) 'anchor': '$anchor',
       },
     ),
@@ -83,6 +88,25 @@ class MessagingRepository {
 
   Future<String> direct(String peer) async =>
       (await object('direct/$peer', method: 'PUT'))['id'] as String;
+
+  Future<Uint8List> academicDocument(
+    String thread,
+    String id, {
+    Uint8List? bytes,
+    String? name,
+    String? type,
+    String? title,
+    void Function(double)? progress,
+  }) => _auth.withSession(
+    (token) => _api.document(
+      token,
+      'academic/rooms/$thread/resources/$id',
+      bytes: bytes,
+      type: type,
+      query: bytes == null ? null : {'filename': name!, 'title': title!},
+      progress: progress,
+    ),
+  );
 
   Future<ChatSync> sync(
     String? revision,

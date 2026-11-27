@@ -119,11 +119,20 @@ class ChatBubble extends StatelessWidget {
                             ),
                           )
                         else ...[
-                          if (message.forwarded || message.pinned)
+                          if (message.announcement)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Text(
+                                'Announcement',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: colors.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          if (message.forwarded)
                             Text(
-                              message.forwarded
-                                  ? 'Forwarded'
-                                  : 'Pinned message',
+                              'Forwarded',
                               style: theme.textTheme.labelSmall?.copyWith(
                                 color: colors.onSurfaceVariant,
                               ),
@@ -141,7 +150,11 @@ class ChatBubble extends StatelessWidget {
                                   onReply(int.parse(reply['seq'] as String)),
                             ),
                           if (message.referenceKind case final kind?)
-                            ChatReference(kind: kind, id: message.referenceId),
+                            ChatReference(
+                              kind: kind,
+                              id: message.referenceId,
+                              preview: message.referencePreview,
+                            ),
                           if (message.images.isNotEmpty)
                             ChatImageGallery(images: message.images),
                           if (message.body.isNotEmpty)
@@ -173,6 +186,7 @@ class ChatBubble extends StatelessWidget {
                                           ? Icons.check_rounded
                                           : Icons.done_all_rounded,
                                       size: 15,
+                                      semanticLabel: status,
                                       color: message.read
                                           ? colors.primary
                                           : colors.onSurfaceVariant,
@@ -309,23 +323,72 @@ class ChatContextStrip extends StatelessWidget {
 }
 
 class ChatReference extends StatelessWidget {
-  const ChatReference({super.key, required this.kind, required this.id});
+  const ChatReference({
+    super.key,
+    required this.kind,
+    required this.id,
+    this.preview,
+  });
   final String kind;
   final String? id;
+  final CommunityJson? preview;
   @override
   Widget build(BuildContext context) {
     final post = kind == 'post';
+    final repository = MessagingScope.of(
+      context,
+      listen: false,
+    ).session.repository.media;
+    final title = post ? 'Shared campus post' : 'Story reply';
+    final detail = id == null
+        ? 'Content unavailable'
+        : (preview?['author'] as String?) ??
+              (post ? 'Open campus post' : 'Open story');
+    final open = id == null
+        ? null
+        : () => context.push(post ? '/posts/$id' : '/community/stories/$id');
+    if (preview?['image'] case final CommunityJson image when id != null) {
+      final theme = Theme.of(context);
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: InkWell(
+          onTap: open,
+          borderRadius: BorderRadius.circular(12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: SizedBox.square(
+                  dimension: 51,
+                  child: CommunityMedia(
+                    repository: repository,
+                    image: CommunityImage.fromJson(image),
+                    label: title,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(title, style: theme.textTheme.labelMedium),
+                    Text(detail, style: theme.textTheme.bodySmall),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return ChatContextStrip(
       icon: post ? Icons.collections_outlined : Icons.auto_awesome_outlined,
-      title: post ? 'Shared campus post' : 'Story reply',
-      detail: id == null
-          ? 'Content unavailable'
-          : post
-          ? 'Open campus post'
-          : 'Open story',
-      onTap: id == null
-          ? null
-          : () => context.push(post ? '/posts/$id' : '/community/stories/$id'),
+      title: title,
+      detail: detail,
+      onTap: open,
     );
   }
 }

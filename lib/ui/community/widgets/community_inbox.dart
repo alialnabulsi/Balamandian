@@ -105,7 +105,15 @@ class CommunityInboxScreen extends StatelessWidget {
                           loadAvatar: loadAvatar,
                           onOpen: () async {
                             final path = activity.conversationId != null
-                                ? '/messages/${activity.conversationId}'
+                                ? switch (activity.kind) {
+                                    'academic_announcement' =>
+                                      '/messages/${activity.conversationId}?section=announcement',
+                                    'academic_resource' =>
+                                      '/messages/${activity.conversationId}/study',
+                                    'academic_session' || 'academic_reminder' =>
+                                      '/messages/${activity.conversationId}/study?tab=sessions',
+                                    _ => '/messages/${activity.conversationId}',
+                                  }
                                 : activity.kind == 'follow_request'
                                 ? '/community/requests'
                                 : activity.entryId == null
@@ -185,6 +193,19 @@ class CommunityActivityRow extends StatelessWidget {
         'invited you to a private group',
       ),
       'group_membership' => (Icons.groups_outlined, 'updated a private group'),
+      'academic_announcement' => (
+        Icons.campaign_outlined,
+        'published an announcement',
+      ),
+      'academic_resource' => (
+        Icons.folder_open_outlined,
+        'added a study resource',
+      ),
+      'academic_session' => (Icons.event_outlined, 'scheduled a study session'),
+      'academic_reminder' => (
+        Icons.alarm_outlined,
+        'scheduled a session starting soon',
+      ),
       'chat_mention' => (
         Icons.alternate_email_rounded,
         'mentioned you in a chat',

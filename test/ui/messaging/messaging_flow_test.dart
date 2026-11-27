@@ -19,8 +19,9 @@ const threadId = 'b0000000-0000-4000-8000-000000000001';
 const firstId = 'b0000000-0000-4000-8000-000000000002';
 
 class MessagingFixture {
-  MessagingFixture({this.pending = false});
+  MessagingFixture({this.pending = false, this.official = false});
   bool pending;
+  final bool official;
   bool failSend = true;
   bool unavailable = false;
   final sends = <String>[];
@@ -29,10 +30,11 @@ class MessagingFixture {
 
   Map<String, Object?> get thread => {
     'id': threadId,
-    'kind': 'direct',
-    'title': '',
+    'kind': official ? 'channel' : 'direct',
+    'title': official ? 'Computer Science' : '',
     'description': '',
-    'peer': profileJson(id: otherId, own: false),
+    'peer': official ? null : profileJson(id: otherId, own: false),
+    if (official) 'departmentName': 'Faculty of Science',
     'activityAt': date,
     'state': 'active',
     'role': 'member',
@@ -87,12 +89,40 @@ class MessagingFixture {
         'next': null,
       });
     }
+    if (parts == 'academic/spaces') {
+      return ok({
+        'items': [
+          if (request.url.queryParameters['kind'] == 'channel')
+            {
+              'id': threadId,
+              'kind': 'channel',
+              'title': 'Computer Science',
+              'description': 'Official department news',
+              'affiliation': 'Faculty of Science',
+              'memberCount': 2,
+              'joined': false,
+              'canJoin': true,
+            },
+        ],
+        'next': null,
+      });
+    }
+    if (parts == 'academic/spaces/$threadId/join') return ok({'id': threadId});
+    if (parts == 'academic/capabilities') return ok({'canCreateRoom': false});
     if (parts == 'conversations/$threadId/messages') {
+      final announcement =
+          request.url.queryParameters['section'] == 'announcement';
       return ok({
         'thread': thread,
         'items': [
           if (lastMessage != null) message(sends.last, lastMessage!, true),
-          message(firstId, 'Meet at the library after class.', false),
+          if (official && announcement)
+            {
+              ...message(firstId, 'Department tutorial this Thursday.', false),
+              'section': 'announcement',
+            }
+          else
+            message(firstId, 'Meet at the library after class.', false),
         ],
         'next': null,
       });
@@ -213,6 +243,32 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Conversation unavailable'), findsOneWidget);
       expect(find.text('Meet at the library after class.'), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets(
+    'discover and join an official department with separate sections',
+    (tester) async {
+      await messagingApp(
+        tester,
+        MessagingFixture(official: true),
+        '/messages/discover',
+      );
+      expect(find.text('Official channels'), findsOneWidget);
+      expect(find.text('Computer Science'), findsOneWidget);
+      await tester.tap(find.text('Join'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Join').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Department tutorial this Thursday.'), findsOneWidget);
+      expect(find.byTooltip('Publish announcement'), findsNothing);
+      await tester.tap(find.text('Discussion'));
+      await tester.pumpAndSettle();
+      expect(find.text('Meet at the library after class.'), findsOneWidget);
+      expect(find.text('Department tutorial this Thursday.'), findsNothing);
+      expect(find.byTooltip('Send message'), findsOneWidget);
+      expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );

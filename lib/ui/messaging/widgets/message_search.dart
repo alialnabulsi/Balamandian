@@ -11,9 +11,14 @@ import 'messaging_inbox.dart';
 import 'messaging_scope.dart';
 
 class MessageSearch extends StatefulWidget {
-  const MessageSearch({super.key, required this.thread, this.filter});
+  const MessageSearch({
+    super.key,
+    required this.thread,
+    this.filter,
+    this.section,
+  });
   final String thread;
-  final String? filter;
+  final String? filter, section;
   @override
   State<MessageSearch> createState() => _MessageSearchState();
 }
@@ -58,6 +63,7 @@ class _MessageSearchState extends State<MessageSearch> {
             before: more ? next : null,
             search: query,
             filter: widget.filter,
+            section: widget.section,
           );
       if (mounted && view == generation) {
         setState(() {

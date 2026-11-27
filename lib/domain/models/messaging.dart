@@ -26,6 +26,11 @@ class Conversation {
       memberCount = json['memberCount'] as int,
       lastSeq = int.parse(json['lastSeq'] as String),
       readSeq = int.parse(json['readSeq'] as String),
+      announcementReadSeq =
+          int.tryParse(json['announcementReadSeq']?.toString() ?? '') ?? 0,
+      departmentName = json['departmentName'] as String?,
+      courseCode = json['courseCode'] as String?,
+      courseName = json['courseName'] as String?,
       peerDelivered = int.parse(json['peerDelivered'] as String),
       peerRead = int.parse(json['peerRead'] as String),
       sendPolicy = json['sendPolicy'] as String,
@@ -41,15 +46,23 @@ class Conversation {
   final DateTime activity;
   final bool initiated, muted, archived, pinned, markedUnread;
   final int unread, memberCount, lastSeq, readSeq, peerDelivered, peerRead;
+  final int announcementReadSeq;
+  final String? departmentName, courseCode, courseName;
   final CommunityJson? latest;
-  bool get group => kind == 'group';
+  bool get group => kind != 'direct';
+  bool get privateGroup => kind == 'group';
+  bool get official => kind == 'channel';
+  bool get study => kind == 'study';
+  bool get academic => official || study;
   bool get pending => request == 'pending';
   bool get invited => state == 'invited';
   bool get owner => role == 'owner';
   bool get admin => role != 'member';
   bool get canWrite =>
       !invited &&
-      (pending ? initiated && lastSeq == 0 : sendPolicy == 'members' || admin);
+      (pending
+          ? initiated && lastSeq == 0
+          : sendPolicy != 'locked' && (sendPolicy == 'members' || admin));
   String get name => group ? title : peer?.displayName ?? 'Member';
   String get preview {
     final row = latest;
@@ -59,6 +72,9 @@ class Conversation {
     final content = switch (row) {
       {'referenceKind': 'post'} => 'Shared a campus post',
       {'referenceKind': 'story'} => 'Replied to a story',
+      {'section': 'announcement', 'text': final String value}
+          when value.isNotEmpty =>
+        'Announcement · $value',
       {'text': final String value} when value.isNotEmpty => value,
       {'image': true} => 'Sent a photo',
       _ => 'New message',
@@ -86,6 +102,8 @@ class ChatMessage {
       systemEvent = json['systemEvent'] as String?,
       referenceKind = json['referenceKind'] as String?,
       referenceId = json['referenceId'] as String?,
+      referencePreview = json['referencePreview'] as CommunityJson?,
+      announcement = json['section'] == 'announcement',
       reply = json['reply'] as CommunityJson?,
       images = (json['images'] as List)
           .cast<CommunityJson>()
@@ -101,6 +119,8 @@ class ChatMessage {
   final bool edited, deleted, forwarded, pinned;
   final bool delivered, read;
   final CommunityJson? reply;
+  final CommunityJson? referencePreview;
+  final bool announcement;
   final List<CommunityImage> images;
   final List<CommunityJson> reactions;
   bool get withinEditWindow =>

@@ -303,8 +303,9 @@ Future<void> communityPostMenu(
 Future<bool> communityConfirm(
   BuildContext context,
   String title,
-  String message,
-) async =>
+  String message, {
+  String confirm = 'Confirm',
+}) async =>
     await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -317,7 +318,7 @@ Future<bool> communityConfirm(
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Confirm'),
+            child: Text(confirm),
           ),
         ],
       ),

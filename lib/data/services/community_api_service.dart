@@ -85,6 +85,24 @@ class CommunityApiService {
     cancel: cancel,
   );
 
+  Future<Uint8List> document(
+    String token,
+    String path, {
+    Uint8List? bytes,
+    String? type,
+    Map<String, String>? query,
+    void Function(double)? progress,
+  }) => _request(
+    token,
+    bytes == null ? 'GET' : 'PUT',
+    path,
+    bytes: bytes,
+    type: type,
+    query: query,
+    progress: progress,
+    document: bytes == null,
+  );
+
   Future<Uint8List> _request(
     String token,
     String method,
@@ -95,6 +113,7 @@ class CommunityApiService {
     String? type,
     void Function(double)? progress,
     bool image = false,
+    bool document = false,
     Future<void>? cancel,
   }) async {
     final abort = Completer<void>();
@@ -141,11 +160,15 @@ class CommunityApiService {
     }
     request.followRedirects = false;
     request.headers['Authorization'] = 'Bearer $token';
-    request.headers['Accept'] = image ? 'image/webp' : 'application/json';
+    request.headers['Accept'] = document
+        ? 'application/pdf, text/plain'
+        : image
+        ? 'image/webp'
+        : 'application/json';
     try {
       final response = await _client.send(request);
       final result = BytesBuilder(copy: false);
-      final limit = image ? 8000000 : 600000;
+      final limit = image || document ? 8000000 : 600000;
       await for (final chunk in response.stream) {
         if (result.length + chunk.length > limit) {
           throw const CommunityFailure('The server response was too large.');
@@ -186,7 +209,10 @@ class CommunityApiService {
           'COMMUNITY_NOT_FOUND' ||
           'PROFILE_NOT_FOUND' => 'This content is unavailable.',
           'RATE_LIMITED' => 'Too many actions. Wait a moment and retry.',
-          'VALIDATION_ERROR' => 'Check the input or refresh and try again.',
+          'VALIDATION_ERROR' =>
+            path.startsWith('academic/') && detail != null
+                ? detail
+                : 'Check the input or refresh and try again.',
           _ =>
             area == 'messaging'
                 ? 'Messaging is temporarily unavailable. Try again.'

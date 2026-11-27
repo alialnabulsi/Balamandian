@@ -20,10 +20,12 @@ class ChatThreadScreen extends StatefulWidget {
     required this.id,
     this.story,
     this.initialAnchor,
+    this.initialSection = 'discussion',
   });
   final String id;
   final String? story;
   final int? initialAnchor;
+  final String initialSection;
   @override
   State<ChatThreadScreen> createState() => _ChatThreadScreenState();
 }
@@ -44,6 +46,7 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
       widget.id,
       referenceId: widget.story,
       referenceKind: widget.story == null ? null : 'story',
+      section: widget.initialSection,
     );
     model.addListener(_position);
     scroll.addListener(_scroll);
@@ -110,6 +113,27 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
     model.clearReference();
   }
 
+  Future<void> _showSection(String section) async {
+    if (section == model.section || model.busy || model.picking) return;
+    if ((text.text.trim().isNotEmpty || model.photos.isNotEmpty) &&
+        !await communityConfirm(
+          context,
+          'Discard this draft?',
+          'Your draft belongs to the current section.',
+        )) {
+      return;
+    }
+    if (!mounted) return;
+    focus.unfocus();
+    text.clear();
+    _draftBeforeEditing = null;
+    for (final photo in [...model.photos]) {
+      model.removePhoto(photo);
+    }
+    await model.showSection(section);
+    if (mounted && scroll.hasClients) scroll.jumpTo(0);
+  }
+
   Future<void> _options(ChatMessage message, Conversation thread) async {
     final own = message.senderId == model.session.repository.userId;
     final selection = await communityMenu<String>(
@@ -142,7 +166,7 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
         await openChatReport(
           context,
           thread.id,
-          'message',
+          message.announcement ? 'announcement' : 'message',
           subject: message.id,
         );
       case 'delete':
@@ -228,9 +252,9 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
                         ? synced?.typing.isNotEmpty == true
                               ? (thread.group
                                     ? '${synced!.typing.length} typing…'
-                                    : 'Typing…')
+                                    : '${thread.peer?.displayName.split(' ').first ?? 'Member'} is typing…')
                               : synced?.online == true
-                              ? 'Online'
+                              ? 'Active now'
                               : synced?.lastSeen != null
                               ? 'Last seen ${DateFormat.MMMd().add_jm().format(synced!.lastSeen!)}'
                               : null
@@ -243,7 +267,7 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
                   tooltip: 'Search messages',
                   onPressed: () async {
                     final result = await context.push<int>(
-                      '/messages/${thread.id}/search',
+                      '/messages/${thread.id}/search${thread.academic ? '?section=${model.section}' : ''}',
                     );
                     if (result != null && mounted) await _jump(result);
                   },
@@ -256,6 +280,21 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
               constraints: const BoxConstraints(maxWidth: 720),
               child: Column(
                 children: [
+                  if (thread?.academic == true)
+                    AcademicThreadNavigation(
+                      announcement: model.announcements,
+                      study: thread!.study,
+                      onSection: _showSection,
+                      onStudy: () =>
+                          context.push('/messages/${thread.id}/study'),
+                    ),
+                  if (thread != null && model.anchor == null)
+                    if (model.messages.where((m) => m.pinned).firstOrNull
+                        case final pinned?)
+                      ChatPinnedJump(
+                        message: pinned,
+                        onTap: () => _jump(pinned.seq),
+                      ),
                   if (model.session.reconnecting)
                     const MessagingStatus(
                       text: 'Reconnecting to messages',
@@ -299,7 +338,9 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
                           ),
                   ),
                   if (thread != null && !thread.invited)
-                    if (thread.canWrite)
+                    if (model.announcements
+                        ? thread.academic && thread.admin
+                        : thread.canWrite)
                       ChatComposer(
                         model: model,
                         text: text,
@@ -319,6 +360,10 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
                         child: MessagingStatus(
                           text: thread.pending
                               ? 'Waiting for the member to accept'
+                              : model.announcements
+                              ? 'Only administrators can publish announcements'
+                              : thread.sendPolicy == 'locked'
+                              ? 'Discussion is locked'
                               : 'Only administrators can write here',
                           icon: Icons.lock_outline_rounded,
                         ),
@@ -357,15 +402,38 @@ class ConversationHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  thread.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium,
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        thread.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                    ),
+                    if (thread.official)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 5),
+                        child: Icon(
+                          Icons.verified_rounded,
+                          size: 16,
+                          color: theme.colorScheme.primary,
+                          semanticLabel: 'Verified department',
+                        ),
+                      ),
+                  ],
                 ),
                 Text(
                   subtitle ??
-                      (thread.group
+                      (thread.official
+                          ? thread.departmentName ?? 'Official channel'
+                          : thread.study
+                          ? [
+                              thread.courseCode,
+                              thread.courseName,
+                            ].nonNulls.join(' · ')
+                          : thread.group
                           ? '${thread.memberCount} members'
                           : 'Conversation info'),
                   maxLines: 1,
@@ -382,6 +450,70 @@ class ConversationHeader extends StatelessWidget {
       ),
     );
   }
+}
+
+class AcademicThreadNavigation extends StatelessWidget {
+  const AcademicThreadNavigation({
+    super.key,
+    required this.announcement,
+    required this.study,
+    required this.onSection,
+    required this.onStudy,
+  });
+  final bool announcement, study;
+  final ValueChanged<String> onSection;
+  final VoidCallback onStudy;
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 2, 10, 8),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 6,
+        runSpacing: 3,
+        children: [
+          for (final (label, key, chosen) in [
+            ('Announcements', 'announcement', announcement),
+            ('Discussion', 'discussion', !announcement),
+          ])
+            ChoiceChip(
+              label: Text(label),
+              selected: chosen,
+              showCheckmark: false,
+              selectedColor: colors.primaryContainer,
+              labelStyle: TextStyle(
+                color: chosen
+                    ? colors.onPrimaryContainer
+                    : colors.onSurfaceVariant,
+              ),
+              onSelected: (_) => onSection(key),
+            ),
+          if (study)
+            ActionChip(
+              avatar: const Icon(Icons.auto_stories_outlined, size: 17),
+              label: const Text('Study tools'),
+              onPressed: onStudy,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class ChatPinnedJump extends StatelessWidget {
+  const ChatPinnedJump({super.key, required this.message, required this.onTap});
+  final ChatMessage message;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    child: ChatContextStrip(
+      icon: Icons.push_pin_outlined,
+      title: message.body.isEmpty ? 'Pinned attachment' : message.body,
+      onTap: onTap,
+    ),
+  );
 }
 
 class ChatMessagesList extends StatelessWidget {
@@ -414,13 +546,28 @@ class ChatMessagesList extends StatelessWidget {
     final user = model.session.repository.userId;
     if (items.isEmpty) {
       if (model.loading) return const MessagingSkeleton();
+      final (heading, detail, icon) = model.announcements
+          ? (
+              'No announcements yet',
+              'Department and room updates will appear here.',
+              Icons.campaign_outlined,
+            )
+          : thread.academic && !thread.canWrite
+          ? (
+              'No discussion yet',
+              'Messages will appear here when members with permission post.',
+              Icons.forum_outlined,
+            )
+          : (
+              'Start the conversation',
+              'Send a message to get started.',
+              Icons.chat_bubble_outline_rounded,
+            );
       return ContentState(
-        title: model.error == null
-            ? 'Start the conversation'
-            : 'Could not load messages',
-        message: model.error?.toString() ?? 'Send a message to get started.',
+        title: model.error == null ? heading : 'Could not load messages',
+        message: model.error?.toString() ?? detail,
         onRetry: model.error == null ? null : model.load,
-        icon: Icons.chat_bubble_outline_rounded,
+        icon: icon,
       );
     }
     return ListView.builder(
@@ -593,7 +740,8 @@ class ChatMessageMenu extends StatelessWidget {
               ),
           ],
         ),
-      if (thread.canWrite && !thread.pending)
+      if ((message.announcement ? thread.admin : thread.canWrite) &&
+          !thread.pending)
         const CommunityMenuOption('Reply', Icons.reply_rounded, 'reply'),
       if (message.body.isNotEmpty)
         const CommunityMenuOption('Copy text', Icons.copy_rounded, 'copy'),
@@ -601,19 +749,23 @@ class ChatMessageMenu extends StatelessWidget {
           message.referenceKind != 'story' &&
           (message.body.isNotEmpty || message.referenceId != null))
         const CommunityMenuOption('Forward', Icons.forward_outlined, 'forward'),
-      if (own &&
-          message.withinEditWindow &&
+      if ((message.announcement
+              ? thread.admin
+              : own && message.withinEditWindow) &&
           message.body.isNotEmpty &&
           !thread.pending)
         const CommunityMenuOption('Edit message', Icons.edit_outlined, 'edit'),
-      if (thread.group && (thread.admin || thread.pinPolicy == 'members'))
+      if (thread.group &&
+          (thread.admin ||
+              !message.announcement && thread.pinPolicy == 'members'))
         CommunityMenuOption(
           message.pinned ? 'Unpin message' : 'Pin message',
           Icons.push_pin_outlined,
           'pin',
         ),
       if (!thread.pending &&
-          (own && message.withinEditWindow || thread.group && thread.admin))
+          (thread.group && thread.admin ||
+              !message.announcement && own && message.withinEditWindow))
         const CommunityMenuOption(
           'Remove for everyone',
           Icons.delete_forever_outlined,

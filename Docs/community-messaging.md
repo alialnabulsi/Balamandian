@@ -4,6 +4,8 @@ Stage 1 establishes the social feed, stories, content creation, community privac
 
 Stage 2 adds direct chats and private groups to the same branches. The accepted Stage 1 commits are `13a532e` on Flutter and `3d2a73b` on the API. [Stage 2 implementation and verification](community-stage-2-report.md) · [Messaging API](../../Balamandian-API/docs/messaging.md)
 
+Stage 3 adds official university channels and course-linked study rooms to the same conversation engine. The accepted Stage 2 commits are `3c826a9` (Flutter) and `3a28d49` (API). [Academic spaces and operator setup](../../Balamandian-API/docs/academic-spaces.md)
+
 | Stage | Product scope | Foundation and boundaries |
 | --- | --- | --- |
 | 1. Community | For You and Following, image posts, 24-hour stories, comments and one level of replies, saved posts, external sharing, follows and approvals, blocking, muting, reporting and in-app activity. | Community endpoints reuse application UUIDs, opaque bearer sessions and the approved public profile projection. PostgreSQL supplies access rules, durable activity, media metadata and reporting. Private object storage is behind an authenticated API. |
@@ -11,13 +13,22 @@ Stage 2 adds direct chats and private groups to the same branches. The accepted 
 | 3. Channels and study rooms | Verified departments publish announcements and control discussion. Course-linked rooms provide study collaboration, notes and resources. Authenticated members may discover and join both without enrollment. Only verified students may create study rooms. | Extend the conversation model through membership and policy. Reuse private media authorization for documents once their MIME, limits and retention are defined. Establish separately authenticated moderator/administrator identities and a review workflow. Web administration follows the demo. |
 | 4. Calls and demo readiness | Direct, group and study-room audio, integration, performance and native QA. Official channels never accept calls. | Gate calling by verified conversation type, membership, block state and consent. Evaluate transport and OS delivery in that stage. |
 
-Institutional roles carry equal base access. Verified student status is a feature rule for future room creation. SIS roles do not grant platform or conversation administration. Future messages, invite permissions, call policies and background OS push have no Stage 1 controls.
+Institutional roles carry equal base access. Verified student status gates study-room creation. Joining academic spaces is independent of department, course enrollment and institutional role. Platform operators and conversation administrators have distinct authorization.
 
 Stage 2 stores direct and private group conversations, member roles, ordered history, pending requests and exact receipt acknowledgements in PostgreSQL. It reuses the Community media upload and authorized download routes. A client retries a failed send with the same UUID and keeps unsent text and attachments in the current composer. The inbox and active conversation synchronize using bounded authenticated HTTP waits and the existing PostgreSQL notification listener. Typing and recent online status use short in-memory leases.
 
 An approved direct chat continues after new-contact preferences change. Blocking hides its history and media until unblocked. Shared group history filters blocked authors and removed members lose all access. Joining a group exposes messages from acceptance onward. Shared posts and story replies carry references and are checked against current Community access.
 
 For development, keep the existing `dev-config.json` and default API port 3000. Run `npm run db:migrate` before starting the updated API, then launch Flutter with `flutter run --dart-define-from-file=dev-config.json`. The isolated demo on port 3101 also seeds a photo-walk group, incoming requests and direct threads with photos, a shared post and reactions.
+
+## Stage 3 academic spaces
+
+- Open **Discover** from Messages to find official department channels or study rooms. The inbox type filter separates direct messages, private groups, channels and rooms. A current SIS course is required to create a room. Members can join existing rooms without course enrollment.
+- Academic spaces have separate announcements and discussion. Administrators publish, edit, remove and pin announcements. Discussion can be open, administrators-only or locked. Joined members can browse existing content. Leaving or removal revokes access to history and files.
+- Study tools organize resources, notes, questions and sessions. Rooms support pinned resources and notes, accepted answers, and opt-in in-app session reminders. Files have protected previews and an Android download or share action.
+- The SIS service supplies the department and course catalog. Run `npm run academic:sync` after migrating and after catalog updates. The isolated demo seeds fictional channels and study rooms without SIS access. Stage 4 can authorize calls through `allowsAudio`, active membership, block checks and consent. Official channels are excluded by the conversation kind.
+
+The Stage 3 Android review includes six native light and dark captures of discovery, announcements, course selection, a PDF preview and a resolved question. [Desktop screenshot ZIP](../../../community-stage-3-final-screenshots.zip)
 
 ## Stage 1 client
 

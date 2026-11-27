@@ -200,11 +200,12 @@ class _ConversationInfoState extends State<ConversationInfo> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: Text(
-          value?.group == true
-              ? 'Group information'
-              : 'Conversation information',
-        ),
+        title: Text(switch (value?.kind) {
+          'group' => 'Group information',
+          'channel' => 'Channel information',
+          'study' => 'Study room information',
+          _ => 'Conversation information',
+        }),
       ),
       body: SafeArea(
         child: value == null
@@ -313,7 +314,8 @@ class _ConversationInfoState extends State<ConversationInfo> {
                     ),
                     if (value.group) ...[
                       const RecipientSection(title: 'Membership'),
-                      if (value.admin || value.invitePolicy == 'members')
+                      if (value.privateGroup &&
+                          (value.admin || value.invitePolicy == 'members'))
                         ListTile(
                           leading: const Icon(Icons.group_add_outlined),
                           title: const Text('Invite members'),
@@ -329,8 +331,10 @@ class _ConversationInfoState extends State<ConversationInfo> {
                           leading: const Icon(Icons.tune_rounded),
                           title: Text(
                             value.admin
-                                ? 'Group permissions and identity'
-                                : 'Edit group identity',
+                                ? (value.academic
+                                      ? 'Permissions and identity'
+                                      : 'Group permissions and identity')
+                                : 'Edit identity',
                           ),
                           onTap: () async {
                             await context.push<void>(
@@ -362,8 +366,15 @@ class _ConversationInfoState extends State<ConversationInfo> {
                       const RecipientSection(title: 'Safety'),
                       ListTile(
                         leading: const Icon(Icons.flag_outlined),
-                        title: const Text('Report group'),
-                        onTap: () => openChatReport(context, value.id, 'group'),
+                        title: Text(
+                          value.official
+                              ? 'Report channel'
+                              : value.study
+                              ? 'Report study room'
+                              : 'Report group',
+                        ),
+                        onTap: () =>
+                            openChatReport(context, value.id, value.kind),
                       ),
                       ListTile(
                         leading: Icon(
@@ -372,7 +383,15 @@ class _ConversationInfoState extends State<ConversationInfo> {
                               : Icons.logout_rounded,
                         ),
                         title: Text(
-                          value.owner ? 'Close group' : 'Leave group',
+                          value.official
+                              ? 'Leave channel'
+                              : value.study
+                              ? (value.owner
+                                    ? 'Close study room'
+                                    : 'Leave study room')
+                              : value.owner
+                              ? 'Close group'
+                              : 'Leave group',
                         ),
                         onTap: busy
                             ? null
@@ -448,16 +467,36 @@ class ConversationIdentity extends StatelessWidget {
         children: [
           ConversationAvatar(thread: thread, size: 76),
           const SizedBox(height: 12),
-          Text(
-            thread.name,
-            style: theme.textTheme.headlineSmall,
-            textAlign: TextAlign.center,
+          Wrap(
+            spacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            alignment: WrapAlignment.center,
+            children: [
+              Text(
+                thread.name,
+                style: theme.textTheme.headlineSmall,
+                textAlign: TextAlign.center,
+              ),
+              if (thread.official)
+                Icon(
+                  Icons.verified_rounded,
+                  size: 21,
+                  color: theme.colorScheme.primary,
+                  semanticLabel: 'Verified department',
+                ),
+            ],
           ),
           const SizedBox(height: 4),
           Text(
-            thread.group
-                ? '${thread.memberCount} members · Private group'
-                : '@${thread.peer?.username ?? ''}',
+            switch (thread.kind) {
+              'channel' =>
+                '${thread.memberCount} members · ${thread.departmentName ?? 'Official channel'}',
+              'study' =>
+                '${thread.memberCount} members · ${thread.courseCode ?? 'Study room'}',
+              'group' => '${thread.memberCount} members · Private group',
+              _ => '@${thread.peer?.username ?? ''}',
+            },
+            textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -623,17 +662,26 @@ class _GroupPermissionsState extends State<GroupPermissions> {
               if (value.admin) ...[
                 const RecipientSection(title: 'Who can take these actions'),
                 for (final (label, key) in [
-                  ('Send messages', 'sendPolicy'),
-                  ('Invite members', 'invitePolicy'),
-                  ('Edit group identity', 'editPolicy'),
+                  (
+                    value.academic ? 'Discussion' : 'Send messages',
+                    'sendPolicy',
+                  ),
+                  if (value.privateGroup) ('Invite members', 'invitePolicy'),
+                  if (!value.official) ('Edit identity', 'editPolicy'),
                   ('Pin messages', 'pinPolicy'),
                 ])
                   MessagingChoice(
                     title: label,
                     value: selections[key]!,
-                    options: const {
-                      'members': 'All members',
-                      'admins': 'Administrators',
+                    options: {
+                      'members': value.academic && key == 'sendPolicy'
+                          ? 'Open to all members'
+                          : 'All members',
+                      'admins': key == 'sendPolicy' && value.academic
+                          ? 'Administrators only'
+                          : 'Administrators',
+                      if (value.academic && key == 'sendPolicy')
+                        'locked': 'Locked',
                     },
                     onSelected: busy
                         ? null

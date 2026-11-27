@@ -11,6 +11,7 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private var channel: MethodChannel? = null
+    private var academicPdf: AcademicPdfChannel? = null
     private var splashView: SplashScreenView? = null
     private var pendingLayout: MethodChannel.Result? = null
     private var pendingReveal: MethodChannel.Result? = null
@@ -36,6 +37,7 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        academicPdf = AcademicPdfChannel(applicationContext, flutterEngine.dartExecutor.binaryMessenger)
         channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "balamandian/splash")
         channel?.setMethodCallHandler { call, result ->
             when (call.method) {
@@ -117,6 +119,7 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        academicPdf?.close()
         channel?.setMethodCallHandler(null)
         pendingLayout?.error("cancelled", "Activity destroyed", null)
         pendingLayout = null

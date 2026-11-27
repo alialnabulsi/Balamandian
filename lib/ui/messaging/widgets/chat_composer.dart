@@ -102,6 +102,8 @@ class ChatComposer extends StatelessWidget {
                       decoration: InputDecoration(
                         hintText: model.referenceKind == 'story'
                             ? 'Reply to story'
+                            : model.announcements
+                            ? 'Write an announcement'
                             : 'Write a message',
                         counterText: '',
                         filled: true,
@@ -131,6 +133,8 @@ class ChatComposer extends StatelessWidget {
                           ? 'Save edit'
                           : model.sendError != null
                           ? 'Retry send'
+                          : model.announcements
+                          ? 'Publish announcement'
                           : 'Send message',
                       onPressed:
                           model.busy ||

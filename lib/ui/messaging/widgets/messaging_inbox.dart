@@ -24,6 +24,7 @@ class _MessagingInboxState extends State<MessagingInbox> {
   final scroll = ScrollController();
   List<Conversation> rows = const [];
   String mode = 'inbox';
+  String? kind;
   String? next, version;
   Object? error;
   bool loading = true, more = false;
@@ -70,6 +71,7 @@ class _MessagingInboxState extends State<MessagingInbox> {
         mode: mode,
         cursor: cursor,
         search: search.text.trim(),
+        kind: kind,
       );
       if (!mounted || current != generation) return;
       setState(() {
@@ -107,6 +109,14 @@ class _MessagingInboxState extends State<MessagingInbox> {
       appBar: AppBar(
         title: const Text('Messages'),
         actions: [
+          IconButton(
+            tooltip: 'Discover channels and rooms',
+            onPressed: () async {
+              await context.push<void>('/messages/discover');
+              if (mounted) await load();
+            },
+            icon: const Icon(Icons.travel_explore_rounded),
+          ),
           IconButton(
             tooltip: 'Messaging privacy',
             onPressed: () => context.push('/messages/privacy'),
@@ -179,6 +189,32 @@ class _MessagingInboxState extends State<MessagingInbox> {
                             unawaited(load());
                           },
                         ),
+                      if (mode != 'requests')
+                        PopupMenuButton<String>(
+                          tooltip: 'Filter conversation type',
+                          initialValue: kind ?? 'all',
+                          onSelected: (value) {
+                            kind = value == 'all' ? null : value;
+                            rows = const [];
+                            next = null;
+                            if (scroll.hasClients) scroll.jumpTo(0);
+                            unawaited(load());
+                          },
+                          itemBuilder: (_) => [
+                            for (final (value, label) in const [
+                              ('all', 'All conversations'),
+                              ('direct', 'Direct messages'),
+                              ('group', 'Private groups'),
+                              ('channel', 'Official channels'),
+                              ('study', 'Study rooms'),
+                            ])
+                              PopupMenuItem(value: value, child: Text(label)),
+                          ],
+                          icon: Icon(
+                            kind == null ? Icons.filter_list : Icons.filter_alt,
+                            color: colors.primary,
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -203,7 +239,7 @@ class _MessagingInboxState extends State<MessagingInbox> {
                             thread: thread,
                             onTap: () async {
                               await context.push<void>(
-                                '/messages/${thread.id}',
+                                '/messages/${thread.id}${thread.official ? '?section=announcement' : ''}',
                               );
                               if (mounted) await load();
                             },
@@ -384,7 +420,11 @@ class ConversationAvatar extends StatelessWidget {
             ? ColoredBox(
                 color: colors.primaryContainer,
                 child: Icon(
-                  Icons.groups_2_outlined,
+                  thread.official
+                      ? Icons.account_balance_outlined
+                      : thread.study
+                      ? Icons.menu_book_outlined
+                      : Icons.groups_2_outlined,
                   color: colors.onPrimaryContainer,
                   size: size * .52,
                 ),

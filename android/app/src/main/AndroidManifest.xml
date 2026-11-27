@@ -9,6 +9,7 @@
         android:allowBackup="false"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules">
+        <service android:name=".AcademicPdfService" android:exported="false" android:isolatedProcess="true"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

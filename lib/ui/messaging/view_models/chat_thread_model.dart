@@ -22,12 +22,15 @@ class ChatThreadModel extends ChangeNotifier {
     this.id, {
     this.referenceId,
     this.referenceKind,
+    this.section = 'discussion',
   }) {
     session.addListener(_changed);
     session.focus(id);
   }
   final MessagingSession session;
   final String id;
+  String section;
+  bool get announcements => section == 'announcement';
   final photos = <ChatPhoto>[];
   String? referenceId, referenceKind;
   Conversation? conversation;
@@ -96,10 +99,15 @@ class ChatThreadModel extends ChangeNotifier {
         id,
         before: older ? previousCursor : null,
         anchor: at,
+        section: section,
       );
       if (!_current(generation)) return;
       conversation = data.thread;
-      unreadBoundary ??= (data.thread.unread > 0 ? data.thread.readSeq : null);
+      unreadBoundary ??= data.thread.unread > 0
+          ? (announcements
+                ? data.thread.announcementReadSeq
+                : data.thread.readSeq)
+          : null;
       if (at != null) anchor = at;
       if (older || at != null || messages.isEmpty || anchor != null) {
         messages = [if (older) ...messages, ...data.page.items];
@@ -148,7 +156,12 @@ class ChatThreadModel extends ChangeNotifier {
       await session.repository.object(
         'conversations/$id/ack',
         method: 'PUT',
-        data: {'seq': '$seq', 'read': read, 'messages': ids},
+        data: {
+          'seq': '$seq',
+          'read': read,
+          'messages': ids,
+          if (announcements) 'section': section,
+        },
       );
     } catch (_) {
       if (read && _acknowledged == seq) _acknowledged = -1;
@@ -178,6 +191,17 @@ class ChatThreadModel extends ChangeNotifier {
     anchor = null;
     messages = const [];
     await load();
+  }
+
+  Future<void> showSection(String value) async {
+    if (value == section) return;
+    section = value;
+    _submittedId = _submittedText = null;
+    _acknowledged = -1;
+    unreadBoundary = null;
+    reply = editing = null;
+    sendError = null;
+    await live();
   }
 
   void setReply(ChatMessage? value) {
@@ -325,6 +349,7 @@ class ChatThreadModel extends ChangeNotifier {
           method: 'PUT',
           data: {
             'text': text,
+            if (announcements) 'section': section,
             'images': photos.map((photo) => photo.uploaded!.id).toList(),
             'replyId': reply?.id,
             'referenceId': referenceId,
