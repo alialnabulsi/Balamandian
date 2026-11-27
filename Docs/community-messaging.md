@@ -30,6 +30,14 @@ For development, keep the existing `dev-config.json` and default API port 3000. 
 
 The Stage 3 Android review includes six native light and dark captures of discovery, announcements, course selection, a PDF preview and a resolved question. [Desktop screenshot ZIP](../../../community-stage-3-final-screenshots.zip)
 
+## Stage 4 voice and release readiness
+
+Direct chats, private groups and study rooms can carry audio-only calls. Members choose to answer or join. The client uses WebRTC for real audio and the existing authenticated API for call state and signaling. Calls can be minimized and include audio routing, participant indicators and durable history. Incoming ringing requires the app in the foreground. [Voice calling setup](../../Balamandian-API/docs/voice-calls.md)
+
+Apply `0011_voice_calls.sql` through `npm run db:migrate` and continue with the existing API port 3000 and Flutter `dev-config.json`. Keep the private R2 reader configured for previously uploaded R2 objects even when new uploads use PostgreSQL. [Media and release configuration](../../Balamandian-API/docs/community.md)
+
+Android uses the release keystore configured in the ignored `android/key.properties`. Verified HTTPS App Links still need a controlled host and an association file for the final package and signing certificate. The installed custom-scheme fallback retains the existing authenticated post lookup. [Android release setup](https://docs.flutter.dev/deployment/android) · [App Links setup](https://docs.flutter.dev/cookbook/navigation/set-up-app-links)
+
 ## Stage 1 client
 
 - Home uses a lazy sliver feed, bounded thumbnail decodes, near-end pagination and pull-to-refresh. Changing feed mode preserves the story rail. Loading, empty, connection and retry states are distinct. Feed cards include the shared member identity and links to profiles.

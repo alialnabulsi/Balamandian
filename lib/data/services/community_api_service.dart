@@ -206,6 +206,7 @@ class CommunityApiService {
             'The author has turned off this interaction.',
           'MESSAGING_RESTRICTED' =>
             detail ?? 'This conversation cannot accept that action.',
+          'CALL_BUSY' => detail ?? 'This call is busy.',
           'COMMUNITY_NOT_FOUND' ||
           'PROFILE_NOT_FOUND' => 'This content is unavailable.',
           'RATE_LIMITED' => 'Too many actions. Wait a moment and retry.',

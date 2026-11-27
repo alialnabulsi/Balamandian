@@ -26,6 +26,8 @@ import 'domain/models/auth_session.dart';
 import 'ui/profile/view_models/current_identity_view_model.dart';
 import 'ui/community/view_models/community_inbox_model.dart';
 import 'ui/messaging/view_models/messaging_session.dart';
+import 'ui/messaging/view_models/calling_session.dart';
+import 'ui/messaging/widgets/voice_call.dart';
 import 'ui/messaging/widgets/messaging_scope.dart';
 import 'routing/app_router.dart';
 import 'routing/community_post_link.dart';
@@ -155,6 +157,10 @@ class _MainAppState extends State<MainApp> {
   late final _messaging = _messagingRepository == null
       ? null
       : MessagingSession(_messagingRepository);
+  late final _calling =
+      _messagingRepository == null || widget.authRepository != null
+      ? null
+      : CallingSession(_messagingRepository);
   AppLifecycleListener? _communityLifecycle;
   String? _communityUserId;
   bool _communityVisible = true;
@@ -213,6 +219,7 @@ class _MainAppState extends State<MainApp> {
           _communityVisible = visible;
           _inbox?.active(visible && _communityUserId != null);
           _messaging?.activate(_authRepository.user?.id, visible);
+          _calling?.activate(_authRepository.user?.id, visible);
           if (visible && _communityUserId != null) _community?.invalidate();
         },
       );
@@ -231,6 +238,7 @@ class _MainAppState extends State<MainApp> {
     _campusSessionId = user?.id;
     _profileRepository.bindSession(user?.id, user);
     _messaging?.activate(user?.id, _communityVisible);
+    _calling?.activate(user?.id, _communityVisible);
     if (_community != null && _communityUserId != user?.id) {
       _communityUserId = user?.id;
       _inbox?.active(false, clear: true);
@@ -267,6 +275,7 @@ class _MainAppState extends State<MainApp> {
     _communityLifecycle?.dispose();
     _inbox?.dispose();
     _messaging?.dispose();
+    _calling?.dispose();
     if (widget.messagingRepository == null) _messagingRepository?.dispose();
     _community?.removeListener(_refreshCommunityIdentity);
     if (widget.communityRepository == null) _community?.dispose();
@@ -299,7 +308,9 @@ class _MainAppState extends State<MainApp> {
                 : MessagingScope(
                     session: _messaging,
                     profiles: _profileRepository,
-                    child: child!,
+                    child: _calling == null
+                        ? child!
+                        : CallingHost(calls: _calling, child: child!),
                   ),
           ),
         ),

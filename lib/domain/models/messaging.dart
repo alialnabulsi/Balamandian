@@ -29,6 +29,7 @@ class Conversation {
       announcementReadSeq =
           int.tryParse(json['announcementReadSeq']?.toString() ?? '') ?? 0,
       departmentName = json['departmentName'] as String?,
+      activeCallId = json['activeCallId'] as String?,
       courseCode = json['courseCode'] as String?,
       courseName = json['courseName'] as String?,
       peerDelivered = int.parse(json['peerDelivered'] as String),
@@ -48,12 +49,14 @@ class Conversation {
   final int unread, memberCount, lastSeq, readSeq, peerDelivered, peerRead;
   final int announcementReadSeq;
   final String? departmentName, courseCode, courseName;
+  final String? activeCallId;
   final CommunityJson? latest;
   bool get group => kind != 'direct';
   bool get privateGroup => kind == 'group';
   bool get official => kind == 'channel';
   bool get study => kind == 'study';
   bool get academic => official || study;
+  bool get canCall => !official && !pending && !invited && state == 'active';
   bool get pending => request == 'pending';
   bool get invited => state == 'invited';
   bool get owner => role == 'owner';

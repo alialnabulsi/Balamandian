@@ -193,6 +193,7 @@ class CommunityActivityRow extends StatelessWidget {
         'invited you to a private group',
       ),
       'group_membership' => (Icons.groups_outlined, 'updated a private group'),
+      'missed_call' => (Icons.call_missed_rounded, 'called you'),
       'academic_announcement' => (
         Icons.campaign_outlined,
         'published an announcement',

@@ -814,6 +814,17 @@ class _MessagingPrivacyState extends State<MessagingPrivacy> {
                 onSelected: busy ? null : (value) => _set('invitations', value),
               ),
               const RecipientSection(title: 'What others can see'),
+              if (values['calling'] case final String calling)
+                MessagingChoice(
+                  title: 'Incoming voice calls',
+                  value: calling,
+                  options: const {
+                    'everyone': 'Direct chats and joined rooms',
+                    'directs': 'Direct chats only',
+                    'nobody': 'Nobody',
+                  },
+                  onSelected: busy ? null : (value) => _set('calling', value),
+                ),
               SwitchListTile(
                 title: const Text('Online and typing indicators'),
                 subtitle: const Text('Show status in eligible conversations.'),

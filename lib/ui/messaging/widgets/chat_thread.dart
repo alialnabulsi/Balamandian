@@ -13,6 +13,7 @@ import 'chat_bubble.dart';
 import 'chat_composer.dart';
 import 'messaging_inbox.dart';
 import 'messaging_scope.dart';
+import 'voice_call.dart';
 
 class ChatThreadScreen extends StatefulWidget {
   const ChatThreadScreen({
@@ -262,6 +263,9 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
                     onOpen: () => context.push('/messages/${thread.id}/info'),
                   ),
             actions: [
+              if (thread?.canCall == true)
+                if (CallingHost.of(context) case final calls?)
+                  ConversationCallActions(calls: calls, thread: thread!),
               if (thread != null && !thread.invited)
                 IconButton(
                   tooltip: 'Search messages',

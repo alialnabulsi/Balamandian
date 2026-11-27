@@ -2,6 +2,10 @@ package com.example.balamandian
 
 import android.os.Build
 import android.os.Bundle
+import android.content.Intent
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import android.view.View
 import android.window.SplashScreenView
 import androidx.core.view.WindowCompat
@@ -11,6 +15,8 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private var channel: MethodChannel? = null
+    private var voiceChannel: MethodChannel? = null
+    private var voiceBluetooth: MethodChannel.Result? = null
     private var academicPdf: AcademicPdfChannel? = null
     private var splashView: SplashScreenView? = null
     private var pendingLayout: MethodChannel.Result? = null
@@ -37,6 +43,30 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        voiceChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "balamandian/voice_audio")
+        voiceChannel?.setMethodCallHandler { call, reply ->
+            val service = Intent(this, VoiceAudioService::class.java)
+            try {
+                when (call.method) {
+                    "start" -> { ContextCompat.startForegroundService(this, service); reply.success(null) }
+                    "stop" -> { stopService(service); reply.success(null) }
+                    "bluetooth" -> {
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+                            checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+                            reply.success(true)
+                        } else if (voiceBluetooth == null) {
+                            voiceBluetooth = reply
+                            requestPermissions(arrayOf(Manifest.permission.BLUETOOTH_CONNECT), 4702)
+                        } else {
+                            reply.success(false)
+                        }
+                    }
+                    else -> reply.notImplemented()
+                }
+            } catch (_: Exception) {
+                reply.error("audio_unavailable", "Open the app and allow microphone access to start a call.", null)
+            }
+        }
         academicPdf = AcademicPdfChannel(applicationContext, flutterEngine.dartExecutor.binaryMessenger)
         channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "balamandian/splash")
         channel?.setMethodCallHandler { call, result ->
@@ -119,6 +149,10 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        voiceBluetooth?.success(false)
+        voiceBluetooth = null
+        voiceChannel?.setMethodCallHandler(null)
+        stopService(Intent(this, VoiceAudioService::class.java))
         academicPdf?.close()
         channel?.setMethodCallHandler(null)
         pendingLayout?.error("cancelled", "Activity destroyed", null)
@@ -130,5 +164,13 @@ class MainActivity : FlutterActivity() {
             splashView = null
         }
         super.onDestroy()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 4702) {
+            voiceBluetooth?.success(grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED)
+            voiceBluetooth = null
+        }
     }
 }
