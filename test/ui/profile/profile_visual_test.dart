@@ -21,17 +21,19 @@ Future<void> captureProfile(
   GlobalKey boundary,
   String name,
 ) async {
-  await tester.runAsync(() async {
-    final image =
-        await (boundary.currentContext!.findRenderObject()!
-                as RenderRepaintBoundary)
-            .toImage();
-    final png = await image.toByteData(format: ui.ImageByteFormat.png);
-    image.dispose();
-    final file = File('build/profile-verification/$name.png');
-    await file.parent.create(recursive: true);
-    await file.writeAsBytes(png!.buffer.asUint8List());
-  });
+  if (const bool.fromEnvironment('CAPTURE_UI')) {
+    await tester.runAsync(() async {
+      final image =
+          await (boundary.currentContext!.findRenderObject()!
+                  as RenderRepaintBoundary)
+              .toImage();
+      final png = await image.toByteData(format: ui.ImageByteFormat.png);
+      image.dispose();
+      final file = File('build/profile-verification/$name.png');
+      await file.parent.create(recursive: true);
+      await file.writeAsBytes(png!.buffer.asUint8List());
+    });
+  }
 }
 
 void main() {

@@ -43,7 +43,12 @@ class ProfileApiService {
     '/api/v1/profile/me/academics',
     AcademicProfile.fromJson,
   );
-  Future<AcademicProfile> syncAcademics(String token)=>_json(token,'POST','/api/v1/profile/me/academics/sync',AcademicProfile.fromJson);
+  Future<AcademicProfile> syncAcademics(String token) => _json(
+    token,
+    'POST',
+    '/api/v1/profile/me/academics/sync',
+    AcademicProfile.fromJson,
+  );
   Future<UserProfile> own(String token) =>
       _json(token, 'GET', '/api/v1/profile/me', UserProfile.fromJson);
   Future<UserProfile> profile(String token, String id) => _json(

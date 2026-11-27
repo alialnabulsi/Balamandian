@@ -26,6 +26,7 @@ class ApiProfileRepository extends ProfileRepository {
   UserProfile? _own;
   Future<UserProfile>? _pending;
   int _generation = 0;
+  int _publicGeneration = 0;
   bool _disposed = false;
   @override
   UserProfile? get currentUser => _own;
@@ -93,6 +94,17 @@ class ApiProfileRepository extends ProfileRepository {
 
   @override
   UserProfile? cached(String id) => id == _userId ? _own : _profiles[id];
+
+  @override
+  void invalidatePublic() {
+    _publicGeneration++;
+    _profiles.clear();
+    _avatars.clear();
+    _profileRequests.clear();
+    _avatarRequests.clear();
+    _memberRequests.clear();
+  }
+
   @override
   Future<UserProfile> loadOwn({bool refresh = false}) {
     if (_pending != null) {
@@ -138,15 +150,21 @@ class ApiProfileRepository extends ProfileRepository {
     if (!refresh && _profiles[id] != null) return _profiles[id]!;
     if (_profileRequests[id] case final pending?) return pending;
     final generation = _generation;
+    final policy = _publicGeneration;
     final revision = _revisions[id] ?? 0;
     final pending = _run((token) => _api.profile(token, id))
-        .then(
-          (value) => revision == (_revisions[id] ?? 0)
+        .then((value) {
+          if (policy != _publicGeneration) {
+            throw ProfileFailure.fromCode('SESSION_CHANGED');
+          }
+          return revision == (_revisions[id] ?? 0)
               ? _store(value)
-              : cached(id) ?? value,
-        )
+              : cached(id) ?? value;
+        })
         .whenComplete(() {
-          if (generation == _generation) _profileRequests.remove(id);
+          if (generation == _generation && policy == _publicGeneration) {
+            _profileRequests.remove(id);
+          }
         });
     _profileRequests[id] = pending;
     return pending;
@@ -198,18 +216,28 @@ class ApiProfileRepository extends ProfileRepository {
     final key = (kind, userId, search, page);
     if (_memberRequests[key] case final pending?) return pending;
     final generation = _generation;
+    final policy = _publicGeneration;
     final pending =
         _run(
-          (t) => _api.members(
-            t,
-            kind: kind,
-            userId: userId,
-            search: search,
-            page: page,
-          ),
-        ).whenComplete(() {
-          if (generation == _generation) _memberRequests.remove(key);
-        });
+              (t) => _api.members(
+                t,
+                kind: kind,
+                userId: userId,
+                search: search,
+                page: page,
+              ),
+            )
+            .then((result) {
+              if (policy != _publicGeneration) {
+                throw ProfileFailure.fromCode('SESSION_CHANGED');
+              }
+              return result;
+            })
+            .whenComplete(() {
+              if (generation == _generation && policy == _publicGeneration) {
+                _memberRequests.remove(key);
+              }
+            });
     _memberRequests[key] = pending;
     return pending;
   }
@@ -219,14 +247,20 @@ class ApiProfileRepository extends ProfileRepository {
     if (_avatars[path] != null) return _avatars[path]!;
     if (_avatarRequests[path] case final pending?) return pending;
     final generation = _generation;
+    final policy = _publicGeneration;
     final pending = _run((t) => _api.avatar(t, path))
         .then((bytes) {
+          if (policy != _publicGeneration) {
+            throw ProfileFailure.fromCode('SESSION_CHANGED');
+          }
           if (_avatars.length >= 100) _avatars.clear();
           _avatars[path] = bytes;
           return bytes;
         })
         .whenComplete(() {
-          if (generation == _generation) _avatarRequests.remove(path);
+          if (generation == _generation && policy == _publicGeneration) {
+            _avatarRequests.remove(path);
+          }
         });
     _avatarRequests[path] = pending;
     return pending;

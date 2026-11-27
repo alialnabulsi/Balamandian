@@ -1,11 +1,63 @@
 import 'dart:async';
 
 import 'package:balamandian/domain/models/auth_failure.dart';
+import 'package:balamandian/domain/models/auth_session.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../auth_test_support.dart';
 
 void main() {
+  test('a superseded login cannot restore a locally ended session', () async {
+    final gate = Completer<void>();
+    final harness = AuthTestHarness((_) async {
+      await gate.future;
+      return success(sessionData(), 200);
+    });
+    addTearDown(harness.close);
+    await harness.repository.restoreSession();
+    final login = harness.repository.login('FICTION001', 'test');
+    final rejected = expectLater(
+      login,
+      throwsA(
+        isA<AuthFailure>().having((e) => e.code, 'code', 'SESSION_CHANGED'),
+      ),
+    );
+    await harness.repository.logout(localOnly: true);
+    gate.complete();
+    await rejected;
+    expect(harness.repository.status, SessionStatus.unauthenticated);
+    expect(harness.store.session, isNull);
+  });
+
+  test(
+    'late persistence is cleared before retry can restore a session',
+    () async {
+      final write = Completer<void>();
+      final harness = AuthTestHarness(
+        (_) async => success(sessionData(), 200),
+        credentialTimeout: const Duration(milliseconds: 15),
+      );
+      addTearDown(harness.close);
+      await harness.repository.restoreSession();
+      harness.store.waitForWrite = write.future;
+      await expectLater(
+        harness.repository.login('FICTION001', 'test'),
+        throwsA(
+          isA<AuthFailure>().having(
+            (e) => e.code,
+            'code',
+            'SESSION_STORAGE_FAILED',
+          ),
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(harness.repository.status, SessionStatus.validationError);
+      write.complete();
+      await harness.repository.retrySession();
+      expect(harness.repository.status, SessionStatus.unauthenticated);
+      expect(harness.store.session, isNull);
+    },
+  );
   test(
     'Login waits for secure persistence and replaces the previous session',
     () async {

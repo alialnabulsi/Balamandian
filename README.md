@@ -5,6 +5,10 @@ organization, adapted from Flutter's [Compass architecture case study](https://d
 architecture guide, and recommendations. These are principles to apply as the
 app grows, rather than a requirement to reproduce every Compass directory.
 
+The [Community & Messaging specification](Docs/community-messaging.md) records
+the Stage 1 feed, stories, posts, privacy, notifications and local demo, plus the
+boundaries for the later stages.
+
 The [campus map report](Docs/campus-map.md) covers the Mapbox integration,
 outdoor routing and navigation foundation, local simulation, configuration and
 verification. The [geographic data contract](assets/maps/campus/README.md) records
@@ -196,14 +200,12 @@ Navigation uses Flutter's recommended `go_router` package with
 `MaterialApp.router`. The route table lives in `lib/routing/app_router.dart`.
 `/` displays Home; `/map`, `/market` and `/profile` are persistent shell branches.
 `/guide`, `/ai` and `/settings` are lightweight placeholders nested under Home.
-`/tools` is the public Tools hub in the same Home branch. Both the drawer and
-floating quick actions open it. Its six compact shortcuts expose student/advisor
-availability from the current profile; mixed student/advisor accounts use student
-availability. Other authenticated roles can use public Calendar and resources.
-Unfinished tools show coming-soon feedback; Calendar also opens the official
-academic calendar externally. University service URLs are centralized in
-`lib/ui/tools/view_models/tools_hub_view_model.dart`, sourced from the official
-university Resources links. Contact placeholders have no dialing actions.
+`/tools` is the authenticated Tools hub in the Home branch. The drawer and
+floating quick actions open the same destination. Its six compact shortcuts use
+the current profile's institutional roles, including mixed-role accounts. Calendar
+academic reads require sign-in; personal tools enforce their documented roles.
+University service URLs are centralized in
+`lib/ui/tools/view_models/tools_hub_view_model.dart`. Contact placeholders do not dial.
 To-do Planner now opens `/tools/todo` within the same shell. Its List and Kanban
 views share the complete collection loaded from all pages of `/api/v1/tasks`.
 The existing authenticated session boundary protects networking. Account changes
@@ -229,26 +231,20 @@ Authentication redirects and session restoration consume the shared repository's
 notifications. Every actual launch first plays the original Flutter splash at
 `/welcome/splash`, concurrently with session restoration. The existing transition
 opens the resolved destination after both complete. `/session` provides Retry
-for recoverable validation errors. The Tools hub is public; `/tools/todo` and
-`/tools/gpa` render access gates for guests and never expose private data before
-authenticated role eligibility. Other shell destinations require an authenticated
-session; login, registration, OTP and onboarding remain public.
-Successful restoration opens Home; invalid sessions and logout remove access to
-protected destinations and lead to Login there. The public Tools hub can remain
-open as a guest after logout, with account availability cleared.
+for recoverable validation errors. Every Tools destination requires an authenticated
+session. Invalid sessions and logout remove shell access and lead to Login.
+Guest mode and web administration remain postponed.
 Refresh tokens and application permission policies remain deferred. The Home shell uses
 `StatefulShellRoute.indexedStack` for its four tab navigators. Native app-link configuration is
 also deferred; adopting a declarative router alone does not configure it.
 Unmatched locations use go_router's built-in error handling; a custom not-found
-experience awaits an approved design. Map remains a placeholder; Profile is connected;
+experience awaits an approved design. Campus Map and Profile remain connected;
 Tools availability is frontend presentation policy, not authorization for future
 backend endpoints. No route code generation is included.
 Registration opens `/welcome/verify-email`;
 successful authentication saves sessions securely before its destination opens.
-OTP success now opens optional, persistent profile personalization. Continue as
-guest opens Tools without creating a user/session. Other guest tool and shell
-actions offer the existing sign-in route. Back closes the drawer or popup first,
-then returns guests to the auth entry. Normal login/restoration still open Home.
+OTP success opens optional, persistent profile personalization. Login and
+restoration open Home. Back closes the drawer or popup before leaving the feature.
 Onboarding completion is
 persisted separately from credentials: first-time users see the tour, returning
 unauthenticated users see the existing auth entry, and validated sessions open

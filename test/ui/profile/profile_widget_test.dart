@@ -185,19 +185,21 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('AN'), findsOneWidget);
         expect(tester.takeException(), isNull);
-        await tester.runAsync(() async {
-          final image =
-              await (boundary.currentContext!.findRenderObject()!
-                      as RenderRepaintBoundary)
-                  .toImage();
-          final png = await image.toByteData(format: ui.ImageByteFormat.png);
-          image.dispose();
-          final file = File(
-            'build/profile-verification/${dark ? 'dark' : 'light'}-profile.png',
-          );
-          await file.parent.create(recursive: true);
-          await file.writeAsBytes(png!.buffer.asUint8List());
-        });
+        if (const bool.fromEnvironment('CAPTURE_UI')) {
+          await tester.runAsync(() async {
+            final image =
+                await (boundary.currentContext!.findRenderObject()!
+                        as RenderRepaintBoundary)
+                    .toImage();
+            final png = await image.toByteData(format: ui.ImageByteFormat.png);
+            image.dispose();
+            final file = File(
+              'build/profile-verification/${dark ? 'dark' : 'light'}-profile.png',
+            );
+            await file.parent.create(recursive: true);
+            await file.writeAsBytes(png!.buffer.asUint8List());
+          });
+        }
         await tester.pumpWidget(const SizedBox.shrink());
       },
     );

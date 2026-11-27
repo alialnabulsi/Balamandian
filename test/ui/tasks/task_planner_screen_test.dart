@@ -160,31 +160,15 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
-  testWidgets(
-    'Direct guest route has no task reads and uses cancellable sign-in prompt',
-    (tester) async {
-      final repo = await pumpPlanner(tester, guest: true);
-      expect(repo.loads, 0);
-      expect(find.text('Sign in to plan your day'), findsOneWidget);
-      await tester.tap(find.text('Sign in'));
-      await tester.pumpAndSettle();
-      expect(find.byType(SignInPrompt), findsOneWidget);
-      await tester.tap(find.text('Cancel'));
-      await tester.pumpAndSettle();
-      expect(repo.loads, 0);
-      await tester.tap(find.text('Sign in'));
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.descendant(
-          of: find.byType(SignInPrompt),
-          matching: find.text('Sign in'),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.byType(CredentialsScreen), findsOneWidget);
-      await tester.pumpWidget(const SizedBox.shrink());
-    },
-  );
+  testWidgets('Unauthenticated planner redirects before reading tasks', (
+    tester,
+  ) async {
+    final repo = await pumpPlanner(tester, guest: true);
+    expect(repo.loads, 0);
+    expect(find.byType(CredentialsScreen), findsOneWidget);
+    expect(find.byType(TaskPlannerScreen), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
   testWidgets(
     'Other roles are blocked on direct navigation and cannot query personal tasks',
     (tester) async {

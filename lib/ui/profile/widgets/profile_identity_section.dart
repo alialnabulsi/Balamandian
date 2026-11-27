@@ -19,7 +19,7 @@ class ProfileIdentitySection extends StatelessWidget {
   });
   final UserProfile profile;
   final Future<Uint8List> Function(String) loadAvatar;
-  final VoidCallback onFollowers, onFollowing;
+  final VoidCallback? onFollowers, onFollowing;
   final VoidCallback? onEdit;
   @override
   Widget build(BuildContext context) => Column(

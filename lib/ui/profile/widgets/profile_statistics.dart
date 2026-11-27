@@ -13,7 +13,7 @@ class ProfileStatistics extends StatelessWidget {
     required this.onFollowing,
   });
   final int posts, followers, following;
-  final VoidCallback onFollowers, onFollowing;
+  final VoidCallback? onFollowers, onFollowing;
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {

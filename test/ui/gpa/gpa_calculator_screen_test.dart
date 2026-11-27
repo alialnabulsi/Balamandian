@@ -1,8 +1,8 @@
+import 'package:balamandian/ui/auth/widgets/credentials_screen.dart';
 import 'package:balamandian/app.dart';
 import 'package:balamandian/ui/gpa/widgets/gpa_calculator_screen.dart';
 import 'package:balamandian/ui/gpa/widgets/gpa_input.dart';
 import 'package:balamandian/ui/home/widgets/app_shell.dart';
-import 'package:balamandian/ui/auth/widgets/sign_in_prompt.dart';
 import 'package:balamandian/ui/tools/widgets/tools_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -174,9 +174,7 @@ void main() {
       expect(find.text('Add course'), eligible ? findsOneWidget : findsNothing);
       expect(repo.reads, 0);
       if (guest) {
-        await tester.tap(find.text('Sign in').first);
-        await tester.pumpAndSettle();
-        expect(find.byType(SignInPrompt), findsOneWidget);
+        expect(find.byType(CredentialsScreen), findsOneWidget);
       }
       await tester.pumpWidget(const SizedBox.shrink());
     });

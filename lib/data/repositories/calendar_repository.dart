@@ -33,18 +33,10 @@ class ApiCalendarRepository implements CalendarRepository {
     int status = 200,
     Map<String, String>? query,
     bool member = true,
-  }) => member
-      ? withSession(
-          (t) => api.request(
-            t,
-            method,
-            path,
-            body: body,
-            status: status,
-            query: query,
-          ),
-        )
-      : api.request('', method, path, query: query);
+  }) => withSession(
+    (t) =>
+        api.request(t, method, path, body: body, status: status, query: query),
+  );
   @override
   Future<List<CampusEvent>> list(
     DateTime from,

@@ -136,12 +136,15 @@ class UserProfile {
     required this.followingCount,
     required this.isFollowing,
     required this.isSelf,
+    this.privateAccount = false,
+    this.followRequested = false,
     this.account,
   });
   final PublicUserIdentity identity;
   final String biography;
   final int postsCount, followersCount, followingCount;
   final bool isFollowing, isSelf;
+  final bool privateAccount, followRequested;
   final AccountInformation? account;
   factory UserProfile.fromJson(Object? value) {
     final j = _object(value);
@@ -153,6 +156,8 @@ class UserProfile {
       followingCount: _count(j['followingCount']),
       isFollowing: _flag(j['isFollowing']),
       isSelf: _flag(j['isSelf']),
+      privateAccount: j['privateAccount'] == true,
+      followRequested: j['followRequested'] == true,
       account: j['account'] == null
           ? null
           : AccountInformation.fromJson(j['account']),

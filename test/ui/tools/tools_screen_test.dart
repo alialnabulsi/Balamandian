@@ -7,9 +7,7 @@ import 'dart:ui' as ui;
 import 'package:balamandian/app.dart';
 import 'package:balamandian/domain/models/profile_models.dart';
 import 'package:balamandian/ui/auth/widgets/credentials_screen.dart';
-import 'package:balamandian/ui/auth/widgets/getting_started_screen.dart';
 import 'package:balamandian/ui/auth/widgets/sign_in_prompt.dart';
-import 'package:balamandian/ui/core/ui/buttons/drawer_logout_button.dart';
 import 'package:balamandian/ui/core/ui/navigation/app_account_drawer.dart';
 import 'package:balamandian/ui/core/ui/quick_actions/app_quick_action.dart';
 import 'package:balamandian/ui/home/widgets/app_shell.dart';
@@ -35,7 +33,7 @@ import 'tools_hub_view_model_test.dart' show setRoles;
 
 Future<(AuthTestHarness, FakeExternalUrlService)> pumpTools(
   WidgetTester tester, {
-  bool guest = true,
+  bool guest = false,
   List<String> roles = const ['student'],
   String location = '/tools',
   Size size = const Size(412, 915),
@@ -91,25 +89,27 @@ GoRouter toolsRouter(WidgetTester tester) =>
     GoRouter.of(tester.element(find.byType(AppShell)));
 
 Future<void> captureTools(WidgetTester tester, String name, Size size) async {
-  await tester.runAsync(() async {
-    RenderRepaintBoundary? boundary;
-    void visit(RenderObject object) {
-      if (boundary != null) return;
-      if (object is RenderRepaintBoundary && object.size == size) {
-        boundary = object;
-      } else {
-        object.visitChildren(visit);
+  if (const bool.fromEnvironment('CAPTURE_UI')) {
+    await tester.runAsync(() async {
+      RenderRepaintBoundary? boundary;
+      void visit(RenderObject object) {
+        if (boundary != null) return;
+        if (object is RenderRepaintBoundary && object.size == size) {
+          boundary = object;
+        } else {
+          object.visitChildren(visit);
+        }
       }
-    }
 
-    visit(tester.binding.renderViews.single);
-    final image = await boundary!.toImage();
-    final png = await image.toByteData(format: ui.ImageByteFormat.png);
-    final file = File('build/ui-verification/tools/$name.png');
-    await file.parent.create(recursive: true);
-    await file.writeAsBytes(png!.buffer.asUint8List());
-    image.dispose();
-  });
+      visit(tester.binding.renderViews.single);
+      final image = await boundary!.toImage();
+      final png = await image.toByteData(format: ui.ImageByteFormat.png);
+      final file = File('build/ui-verification/tools/$name.png');
+      await file.parent.create(recursive: true);
+      await file.writeAsBytes(png!.buffer.asUint8List());
+      image.dispose();
+    });
+  }
 }
 
 void main() {
@@ -118,7 +118,7 @@ void main() {
   testWidgets('Drawer and floating actions reach the same Tools screen', (
     tester,
   ) async {
-    await pumpTools(tester, guest: false, location: '/');
+    await pumpTools(tester, guest: false, location: '/guide');
     await tester.tap(find.byTooltip('Open account menu'));
     await tester.pumpAndSettle();
     await tester.tap(
@@ -134,6 +134,8 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.path, '/');
+    router.go('/guide');
+    await tester.pumpAndSettle();
     await tester.tap(quick('Open quick actions'));
     await tester.pumpAndSettle();
     await tester.tap(quick('Tools'));
@@ -143,97 +145,23 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets(
-    'Guest prompt cancels in place, accepts existing sign-in; Back returns to entry',
-    (tester) async {
-      final (auth, _) = await pumpTools(tester);
-      final router = toolsRouter(tester);
-      expect(auth.repository.user, isNull);
-      expect(auth.store.writes, 0);
-      await tester.tap(shortcut('GPA Calculator'));
-      await tester.pumpAndSettle();
-      expect(find.byType(SignInPrompt), findsOneWidget);
-      await tester.tap(find.text('Cancel'));
-      await tester.pumpAndSettle();
-      expect(router.routeInformationProvider.value.uri.path, '/tools');
-      await tester.binding.handlePopRoute();
-      await tester.pumpAndSettle();
-      expect(find.byType(GettingStartedScreen), findsOneWidget);
-      await tester.tap(find.text('Continue as guest'));
-      await tester.pumpAndSettle();
-      expect(find.byType(ToolsScreen), findsOneWidget);
-      await tester.tap(shortcut('My Notes'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Sign in'));
-      await tester.pumpAndSettle();
+  for (final path in [
+    '/tools',
+    '/tools/tasks',
+    '/tools/gpa',
+    '/tools/notes',
+    '/tools/calendar',
+    '/tools/lost-found',
+    '/tools/scheduler',
+  ]) {
+    testWidgets('Unauthenticated $path redirects to sign in', (tester) async {
+      await pumpTools(tester, guest: true, location: path);
       expect(find.byType(CredentialsScreen), findsOneWidget);
-      expect(
-        router.routeInformationProvider.value.uri.path,
-        '/welcome/sign-in',
-      );
+      expect(find.byType(AppShell), findsNothing);
+      expect(find.byType(ToolsScreen), findsNothing);
       await tester.pumpWidget(const SizedBox.shrink());
-    },
-  );
-
-  testWidgets(
-    'Guest shell has identity/sign-in, protects every shell action and direct route',
-    (tester) async {
-      await pumpTools(tester);
-      final router = toolsRouter(tester);
-      await tester.tap(find.byTooltip('Open account menu'));
-      await tester.pumpAndSettle();
-      expect(find.text('Guest'), findsOneWidget);
-      expect(find.byType(DrawerLogoutButton), findsNothing);
-      await tester.binding.handlePopRoute();
-      await tester.pumpAndSettle();
-      expect(router.routeInformationProvider.value.uri.path, '/tools');
-      for (final tooltip in ['Search', 'Notifications', 'Messages', 'Create']) {
-        await tester.tap(find.byTooltip(tooltip));
-        await tester.pumpAndSettle();
-        expect(find.byType(SignInPrompt), findsOneWidget);
-        await tester.tap(find.text('Cancel'));
-        await tester.pumpAndSettle();
-      }
-      await tester.tap(find.byTooltip('Open account menu'));
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.descendant(
-          of: find.byType(AppAccountDrawer),
-          matching: find.text('Profile'),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.byType(SignInPrompt), findsOneWidget);
-      await tester.tap(find.text('Cancel'));
-      await tester.pumpAndSettle();
-      for (final path in [
-        '/',
-        '/map',
-        '/market',
-        '/profile',
-        '/members',
-        '/guide',
-        '/ai',
-        '/settings',
-      ]) {
-        router.go(path);
-        await tester.pumpAndSettle();
-        expect(
-          router.routeInformationProvider.value.uri.path,
-          '/welcome/sign-in',
-        );
-        expect(find.byType(AppShell), findsNothing);
-        router.go('/tools');
-        await tester.pumpAndSettle();
-      }
-      await tester.tap(find.byTooltip('Open account menu'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Sign in'));
-      await tester.pumpAndSettle();
-      expect(find.byType(CredentialsScreen), findsOneWidget);
-      await tester.pumpWidget(const SizedBox.shrink());
-    },
-  );
+    });
+  }
 
   for (final roles in [
     ['student'],
@@ -302,49 +230,48 @@ void main() {
     },
   );
 
-  testWidgets(
-    'Guest Calendar, official services, failures and inert contacts',
-    (tester) async {
-      final (_, urls) = await pumpTools(tester);
-      await tester.tap(shortcut('Calendar'));
+  testWidgets('Calendar, official services, failures and inert contacts', (
+    tester,
+  ) async {
+    final (_, urls) = await pumpTools(tester);
+    await tester.tap(shortcut('Calendar'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CampusMonthCalendar), findsOneWidget);
+    await tester.tap(find.byTooltip('Back to Tools'));
+    await tester.pumpAndSettle();
+    for (final service in [
+      ('SIS', UniversityLinks.sis),
+      ('Moodle', UniversityLinks.moodle),
+      ('iMail', UniversityLinks.imail),
+    ]) {
+      await tester.ensureVisible(shortcut(service.$1));
+      await tester.tap(shortcut(service.$1));
       await tester.pumpAndSettle();
-      expect(find.byType(CampusMonthCalendar), findsOneWidget);
-      await tester.tap(find.byTooltip('Back to Tools'));
+      expect(urls.launched.last, service.$2);
+    }
+    urls.result = false;
+    await tester.tap(shortcut('SIS'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('This link could not be opened. Please try again.'),
+      findsOneWidget,
+    );
+    final launches = urls.launched.length;
+    for (final label in [
+      'Campus Security',
+      'Campus Medical Support',
+      'Student Affairs',
+      'IT Helpdesk',
+    ]) {
+      await tester.ensureVisible(find.text(label));
+      await tester.tap(find.text(label));
       await tester.pumpAndSettle();
-      for (final service in [
-        ('SIS', UniversityLinks.sis),
-        ('Moodle', UniversityLinks.moodle),
-        ('iMail', UniversityLinks.imail),
-      ]) {
-        await tester.ensureVisible(shortcut(service.$1));
-        await tester.tap(shortcut(service.$1));
-        await tester.pumpAndSettle();
-        expect(urls.launched.last, service.$2);
-      }
-      urls.result = false;
-      await tester.tap(shortcut('SIS'));
-      await tester.pumpAndSettle();
-      expect(
-        find.text('This link could not be opened. Please try again.'),
-        findsOneWidget,
-      );
-      final launches = urls.launched.length;
-      for (final label in [
-        'Campus Security',
-        'Campus Medical Support',
-        'Student Affairs',
-        'IT Helpdesk',
-      ]) {
-        await tester.ensureVisible(find.text(label));
-        await tester.tap(find.text(label));
-        await tester.pumpAndSettle();
-      }
-      expect(find.byType(CampusContactItem), findsNWidgets(4));
-      expect(urls.launched.length, launches);
-      expect(urls.launched.any((uri) => uri.scheme == 'tel'), isFalse);
-      await tester.pumpWidget(const SizedBox.shrink());
-    },
-  );
+    }
+    expect(find.byType(CampusContactItem), findsNWidgets(4));
+    expect(urls.launched.length, launches);
+    expect(urls.launched.any((uri) => uri.scheme == 'tel'), isFalse);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 
   testWidgets(
     'Logout and next login refresh shortcut availability in the retained hub',
@@ -363,15 +290,12 @@ void main() {
       );
       await auth.repository.logout(localOnly: true);
       await tester.pumpAndSettle();
-      expect(find.byType(ToolsScreen), findsOneWidget);
-      expect(
-        tester
-            .widget<ToolShortcut>(shortcut('GPA Calculator'))
-            .availabilityLabel,
-        'Sign in required',
-      );
+      expect(find.byType(ToolsScreen), findsNothing);
+      expect(find.byType(CredentialsScreen), findsOneWidget);
       setRoles(profiles, ['advisor']);
       await auth.repository.login('FICTION001', 'test');
+      await tester.pumpAndSettle();
+      GoRouter.of(tester.element(find.byType(AppShell))).go('/tools');
       await tester.pumpAndSettle();
       expect(
         tester
@@ -423,7 +347,6 @@ void main() {
           tester.getSemantics(shortcut('GPA Calculator')),
           matchesSemantics(
             label: 'GPA Calculator',
-            hint: 'Sign in required',
             isButton: true,
             hasEnabledState: true,
             isEnabled: true,

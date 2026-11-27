@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../domain/models/profile_models.dart';
 
 abstract class ProfileRepository extends ChangeNotifier {
+  void invalidatePublic() {}
   UserProfile? get currentUser;
   String? get currentUserId;
   String? get error;

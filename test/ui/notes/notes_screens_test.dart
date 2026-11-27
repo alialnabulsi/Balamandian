@@ -1,3 +1,4 @@
+import 'package:balamandian/ui/auth/widgets/credentials_screen.dart';
 import 'package:balamandian/app.dart';
 import 'package:balamandian/domain/models/note_models.dart';
 import 'package:balamandian/ui/notes/widgets/notes_browser_screen.dart';
@@ -6,7 +7,6 @@ import 'package:balamandian/ui/notes/widgets/note_text_block.dart';
 import 'package:balamandian/ui/notes/widgets/note_drawing_canvas.dart';
 import 'package:balamandian/ui/notes/widgets/note_drawing_editor.dart';
 import 'package:balamandian/ui/notes/widgets/notes_dialogs.dart';
-import 'package:balamandian/ui/auth/widgets/sign_in_prompt.dart';
 import 'package:balamandian/ui/core/ui/quick_actions/expandable_quick_actions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -243,9 +243,7 @@ void main() {
       );
       expect(repo.reads, allowed ? 1 : 0);
       if (guest) {
-        await tester.tap(find.text('Sign in').first);
-        await tester.pumpAndSettle();
-        expect(find.byType(SignInPrompt), findsOneWidget);
+        expect(find.byType(CredentialsScreen), findsOneWidget);
       }
       await tester.pumpWidget(const SizedBox.shrink());
     });

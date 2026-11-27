@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
@@ -7,17 +5,18 @@ import 'package:go_router/go_router.dart';
 import '../../../domain/models/auth_session.dart';
 import '../../auth/view_models/session_view_model.dart';
 import '../../auth/widgets/logout_dialog.dart';
-import '../../auth/widgets/sign_in_prompt.dart';
-import '../../../routing/startup_destination.dart';
 import '../../../routing/shell_destination.dart';
 import '../../core/ui/navigation/app_account_drawer.dart';
 import '../../core/ui/navigation/app_bottom_bar.dart';
 import '../../core/ui/navigation/balamandian_top_bar.dart';
 import '../../core/ui/quick_actions/expandable_quick_actions.dart';
 import '../../profile/view_models/current_identity_view_model.dart';
+import '../../community/view_models/community_inbox_model.dart';
+import '../../community/widgets/community_actions.dart';
 import '../../core/ui/avatars/member_avatar.dart';
 import '../../core/ui/measure_size.dart';
 import '../../core/ui/navigation/bottom_chrome_scope.dart';
+import '../../messaging/widgets/messaging_scope.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({
@@ -27,6 +26,8 @@ class AppShell extends StatefulWidget {
     required this.session,
     required this.identity,
     required this.mapNavigationFocus,
+    this.inbox,
+    this.communityEnabled = false,
   });
 
   final StatefulNavigationShell navigationShell;
@@ -34,6 +35,8 @@ class AppShell extends StatefulWidget {
   final SessionViewModel session;
   final CurrentIdentityViewModel identity;
   final ValueListenable<bool> mapNavigationFocus;
+  final CommunityInboxModel? inbox;
+  final bool communityEnabled;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -42,29 +45,7 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _logoutFlow = false;
-  bool _signInFlow = false;
   double _bottomHeight = 0;
-
-  bool get _guest => widget.session.status == SessionStatus.unauthenticated;
-
-  void _signIn() {
-    _scaffoldKey.currentState?.closeDrawer();
-    context.go(StartupDestination.signIn.path);
-  }
-
-  Future<void> _promptSignIn(String feature) async {
-    if (_signInFlow) return;
-    _signInFlow = true;
-    try {
-      final signIn = await showDialog<bool>(
-        context: context,
-        builder: (_) => SignInPrompt(feature: feature),
-      );
-      if (mounted && _guest && signIn == true) _signIn();
-    } finally {
-      _signInFlow = false;
-    }
-  }
 
   Future<void> _logout() async {
     if (_logoutFlow || widget.session.busy) return;
@@ -94,10 +75,6 @@ class _AppShellState extends State<AppShell> {
 
   void _select(ShellDestination destination) {
     _scaffoldKey.currentState?.closeDrawer();
-    if (_guest && destination != ShellDestination.tools) {
-      unawaited(_promptSignIn(destination.label));
-      return;
-    }
     if (destination.branchIndex case final index?) {
       widget.navigationShell.goBranch(
         index,
@@ -111,10 +88,6 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _comingSoon(String feature) {
-    if (_guest) {
-      unawaited(_promptSignIn(feature));
-      return;
-    }
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text('$feature is coming soon.')));
@@ -126,18 +99,10 @@ class _AppShellState extends State<AppShell> {
       widget.session,
       widget.identity,
       widget.mapNavigationFocus,
+      widget.inbox,
     ]),
     builder: (context, _) {
-      if (widget.session.user == null &&
-          !(_guest &&
-              (widget.location == ShellDestination.tools.path ||
-                  widget.location == '/tools/todo' ||
-                  widget.location == '/tools/gpa' ||
-                  widget.location == '/tools/notes' ||
-                  widget.location == '/tools/lost-found' ||
-                  widget.location == '/tools/scheduler' ||
-                  widget.location.split('?').first == '/tools/calendar' ||
-                  widget.location.startsWith('/tools/notes/')))) {
+      if (widget.session.user == null) {
         return ColoredBox(
           color: Theme.of(context).colorScheme.surface,
           child: const SizedBox.expand(),
@@ -159,26 +124,33 @@ class _AppShellState extends State<AppShell> {
                         size: 32,
                       ),
                       onAccount: () => _scaffoldKey.currentState?.openDrawer(),
-                      onSearch: () {
-                        if (_guest) {
-                          unawaited(_promptSignIn('member search'));
-                        } else {
-                          context.push('/members');
-                        }
+                      onSearch: () => context.push('/members'),
+                      onNotifications: () => widget.inbox == null
+                          ? _comingSoon('Notifications')
+                          : context.push('/community/activity'),
+                      notificationBadge: (widget.inbox?.unread ?? 0) > 0
+                          ? '${widget.inbox!.unread > 99 ? '99+' : widget.inbox!.unread}'
+                          : null,
+                      onMessages: () =>
+                          MessagingScope.maybeOf(context, listen: false) == null
+                          ? _comingSoon('Messages')
+                          : context.push('/messages'),
+                      messageBadge: switch (MessagingScope.maybeOf(context)
+                              ?.session
+                              .unread ??
+                          0) {
+                        0 => null,
+                        > 99 => '99+',
+                        final count => '$count',
                       },
-                      onNotifications: () => _comingSoon('Notifications'),
-                      onMessages: () => _comingSoon('Messages'),
                     ),
               drawer: AppAccountDrawer(
                 selected: ShellDestination.fromPath(widget.location),
                 onSelected: _select,
                 onLogout: widget.session.busy ? null : _logout,
-                onSignIn: _guest ? _signIn : null,
                 email: widget.session.user?.institutionalEmail,
                 sisId: widget.session.user?.sisUserId,
-                displayName: _guest
-                    ? 'Guest'
-                    : widget.identity.profile?.identity.displayName,
+                displayName: widget.identity.profile?.identity.displayName,
                 username: widget.identity.profile?.identity.username,
                 avatarWidget: MemberAvatar(
                   identity: widget.identity.profile?.identity,
@@ -210,10 +182,16 @@ class _AppShellState extends State<AppShell> {
                       child: AppBottomBar(
                         selected: ShellDestination.fromPath(widget.location),
                         onSelected: _select,
-                        onCreate: () => _comingSoon('Create'),
+                        onCreate: () => widget.communityEnabled
+                            ? openCommunityCreate(context)
+                            : _comingSoon('Create'),
                       ),
                     ),
-              floatingActionButton: widget.location == '/map'
+              floatingActionButton:
+                  widget.location == '/map' ||
+                      (widget.communityEnabled &&
+                          widget.location == '/settings') ||
+                      (widget.communityEnabled && widget.location == '/')
                   ? null
                   : ExpandableQuickActions(
                       navigationId: widget.location,

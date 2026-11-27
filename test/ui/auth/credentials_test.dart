@@ -7,7 +7,6 @@ import 'package:balamandian/ui/auth/widgets/otp_screen.dart';
 import 'package:balamandian/ui/auth/widgets/account_setup_screen.dart';
 import 'package:balamandian/ui/core/ui/action_button.dart';
 import 'package:balamandian/ui/home/widgets/home_screen.dart';
-import 'package:balamandian/ui/tools/widgets/tools_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -259,11 +258,9 @@ void main() {
     },
   );
 
-  testWidgets('Guest entry opens the public Tools hub', (tester) async {
+  testWidgets('Guest entry stays postponed', (tester) async {
     await pumpStartup(tester, screen: 'getting-started');
-    await tester.tap(find.text('Continue as guest'));
-    await tester.pumpAndSettle();
-    expect(find.byType(ToolsScreen), findsOneWidget);
+    expect(find.text('Continue as guest'), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

@@ -1,4 +1,4 @@
-import 'package:balamandian/ui/calendar/widgets/campus_month_calendar.dart';
+import 'package:balamandian/ui/auth/widgets/credentials_screen.dart';
 import 'package:balamandian/app.dart';
 import 'package:balamandian/data/repositories/lost_found_repository.dart';
 import 'package:balamandian/data/services/tools_api_service.dart';
@@ -10,7 +10,6 @@ import 'package:balamandian/ui/tools/view_models/tool_session.dart';
 import 'package:balamandian/ui/tools/widgets/tool_scoped_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
 import 'package:http/testing.dart';
 
 import '../auth_test_support.dart';
@@ -83,35 +82,21 @@ Future<(AuthTestHarness, FakeCalendarDevice)> pumpTools(
 
 void main() {
   setUpAll(loadHomeFonts);
-  for (final path in ['/tools/lost-found', '/tools/scheduler']) {
-    testWidgets('guest direct $path is a sign-in gate', (tester) async {
+  for (final path in [
+    '/tools/lost-found',
+    '/tools/scheduler',
+    '/tools/calendar',
+  ]) {
+    testWidgets('Unauthenticated $path stays outside the shell', (
+      tester,
+    ) async {
       await pumpTools(tester, path, guest: true);
-      expect(
-        find.byType(
-          path.endsWith('scheduler') ? SchedulerScreen : LostFoundScreen,
-        ),
-        findsOneWidget,
-      );
-      expect(find.text('Sign in'), findsWidgets);
-      expect(find.textContaining('Checking account'), findsNothing);
-      expect(tester.takeException(), isNull);
+      expect(find.byType(CredentialsScreen), findsOneWidget);
+      expect(find.byType(CampusCalendarScreen), findsNothing);
+      expect(find.byType(SchedulerScreen), findsNothing);
+      expect(find.byType(LostFoundScreen), findsNothing);
     });
   }
-  testWidgets('guest calendar is public and Back preserves the Tools shell', (
-    tester,
-  ) async {
-    await pumpTools(tester, '/tools/calendar', guest: true);
-    expect(find.byType(CampusCalendarScreen), findsOneWidget);
-    expect(find.byType(CampusMonthCalendar), findsOneWidget);
-    await tester.tap(find.byTooltip('Back to Tools'));
-    await tester.pumpAndSettle();
-    final context = tester.element(find.text('GPA Calculator'));
-    expect(
-      GoRouter.of(context).routeInformationProvider.value.uri.path,
-      '/tools',
-    );
-    expect(tester.takeException(), isNull);
-  });
   testWidgets(
     'cold and warm notification deep links open only the active owner event',
     (tester) async {

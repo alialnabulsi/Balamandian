@@ -84,12 +84,7 @@ class ApiNotesRepository implements NotesRepository {
   @override
   Future<PersonalNote> create({String? folderId}) async =>
       PersonalNote.fromJson(
-        await _request(
-          'POST',
-          '',
-          body: {'folderId': ?folderId},
-          status: 201,
-        ),
+        await _request('POST', '', body: {'folderId': ?folderId}, status: 201),
       );
   @override
   Future<PersonalNote> save(String id, NoteDraft draft) async =>

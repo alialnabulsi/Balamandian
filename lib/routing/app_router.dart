@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/widgets.dart';
 
 import '../data/repositories/auth_repository.dart';
+import '../data/repositories/community_repository.dart';
 import '../data/repositories/marketplace_repository.dart';
 import '../data/services/external_url_service.dart';
 import '../data/repositories/profile_repository.dart';
@@ -38,6 +39,12 @@ import '../ui/core/ui/app_feature_placeholder.dart';
 import '../ui/home/widgets/app_shell.dart';
 import '../ui/home/widgets/home_screen.dart';
 import '../ui/tools/widgets/tools_screen.dart';
+import '../ui/community/view_models/community_inbox_model.dart';
+import '../ui/community/widgets/community_composer.dart';
+import '../ui/community/widgets/community_entry_screen.dart';
+import '../ui/community/widgets/community_feed.dart';
+import '../ui/community/widgets/community_inbox.dart';
+import '../ui/community/widgets/community_settings.dart';
 import '../ui/map/view_models/campus_map_view_model.dart';
 import '../ui/map/widgets/campus_map_screen.dart';
 import '../ui/auth/widgets/account_setup_screen.dart';
@@ -51,6 +58,15 @@ import '../ui/onboarding/widgets/native_splash_reveal.dart';
 import '../ui/onboarding/view_models/app_entry_view_model.dart';
 import '../ui/onboarding/widgets/startup_flow.dart';
 import '../ui/onboarding/widgets/tour_screen.dart';
+import 'community_post_link.dart';
+import '../ui/messaging/widgets/chat_thread.dart';
+import '../ui/messaging/widgets/academic_discovery.dart';
+import '../ui/messaging/widgets/study_room_editor.dart';
+import '../ui/messaging/widgets/study_workspace.dart';
+import '../ui/messaging/widgets/message_search.dart';
+import '../ui/messaging/widgets/messaging_inbox.dart';
+import '../ui/messaging/widgets/messaging_info.dart';
+import '../ui/messaging/widgets/messaging_recipient.dart';
 import 'startup_destination.dart';
 import 'shell_destination.dart';
 
@@ -75,29 +91,45 @@ GoRouter createAppRouter({
   required SessionViewModel session,
   required AppEntryViewModel entry,
   required CampusMapViewModel campusMap,
+  CommunityRepository? community,
+  CommunityInboxModel? inbox,
+  bool messaging = false,
   bool holdSplash = false,
   Future<bool> Function()? onOnboardingCompleted,
 }) {
   final rootNavigator = GlobalKey<NavigatorState>();
+  String? linkedPost(Uri uri) => community == null
+      ? null
+      : communityPostPath(uri.path) ??
+            communityPostPath(uri.queryParameters[communityPostLinkParameter]);
+
+  String withLinkedPost(String path, String? post) => post == null
+      ? path
+      : Uri(
+          path: path,
+          queryParameters: {communityPostLinkParameter: post},
+        ).toString();
+
   return GoRouter(
     navigatorKey: rootNavigator,
     initialLocation: StartupDestination.splash.path,
     refreshListenable: Listenable.merge([authRepository, entry]),
     redirect: (context, state) {
       final path = state.uri.path;
-      final notesPath =
-          path == '/tools/notes' ||
-          path.startsWith('/tools/notes/') ||
-          path == '/tools/lost-found' ||
-          path == '/tools/calendar' ||
-          path == '/tools/scheduler';
+      final post = linkedPost(state.uri);
       if (!entry.startupCompleted) {
         if (path == StartupDestination.splash.path) return null;
-        if (!entry.startupReady) return StartupDestination.splash.path;
+        if (!entry.startupReady) {
+          return withLinkedPost(StartupDestination.splash.path, post);
+        }
       } else if (path == StartupDestination.splash.path) {
-        return entry.destination ?? StartupDestination.gettingStarted.path;
+        return post ??
+            entry.destination ??
+            StartupDestination.gettingStarted.path;
       }
-      if (entry.error != null) return path == '/session' ? null : '/session';
+      if (entry.error != null) {
+        return path == '/session' ? null : withLinkedPost('/session', post);
+      }
       final public =
           StartupDestination.values.any(
             (destination) => destination.path == path,
@@ -113,38 +145,191 @@ GoRouter createAppRouter({
           (authRepository.status == SessionStatus.signingOut &&
               authRepository.user == null);
       if (blocked) {
-        return path == '/session' ? null : '/session';
+        return path == '/session' ? null : withLinkedPost('/session', post);
       }
       if (authenticated) {
         if (authRepository.needsProfilePersonalization) {
           return path == StartupDestination.accountSetup.path
               ? null
-              : StartupDestination.accountSetup.path;
+              : withLinkedPost(StartupDestination.accountSetup.path, post);
         }
         return public ||
                 path == '/session' ||
                 path == StartupDestination.accountSetup.path
-            ? '/'
+            ? post ?? '/'
             : null;
       }
-      if (path == '/session') {
-        return StartupDestination.signIn.path;
-      }
-      if ((path == '/tools/todo' || path == '/tools/gpa' || notesPath) &&
-          authRepository.sessionNotice != null) {
-        return StartupDestination.signIn.path;
-      }
-      // The public planner path renders an access gate only for guests. Its
-      // ViewModel never reads personal tasks before authenticated eligibility.
-      return public ||
-              path == ShellDestination.tools.path ||
-              path == '/tools/todo' ||
-              path == '/tools/gpa' ||
-              notesPath
+      return public
           ? null
-          : StartupDestination.signIn.path;
+          : withLinkedPost(StartupDestination.signIn.path, post);
     },
     routes: [
+      if (messaging) ...[
+        GoRoute(
+          path: '/messages',
+          builder: (context, state) =>
+              const NativeSplashReveal(child: MessagingInbox()),
+        ),
+        GoRoute(
+          path: '/messages/new',
+          builder: (context, state) => const MessagingRecipient(),
+        ),
+        GoRoute(
+          path: '/messages/discover',
+          builder: (context, state) => AcademicDiscovery(
+            studyFirst: state.uri.queryParameters['tab'] == 'study',
+          ),
+        ),
+        GoRoute(
+          path: '/messages/study/new',
+          builder: (context, state) => const StudyRoomEditor(),
+        ),
+        GoRoute(
+          path: '/messages/new-group',
+          builder: (context, state) => const MessagingRecipient(group: true),
+        ),
+        GoRoute(
+          path: '/messages/privacy',
+          builder: (context, state) => const MessagingPrivacy(),
+        ),
+        GoRoute(
+          path: '/messages/share/:post',
+          builder: (context, state) =>
+              MessagingRecipient(post: state.pathParameters['post']),
+        ),
+        GoRoute(
+          path: '/messages/forward/:message',
+          builder: (context, state) =>
+              MessagingRecipient(forward: state.pathParameters['message']),
+        ),
+        GoRoute(
+          path: '/messages/:id/info',
+          builder: (context, state) =>
+              ConversationInfo(id: state.pathParameters['id']!),
+        ),
+        GoRoute(
+          path: '/messages/:id/invite',
+          builder: (context, state) =>
+              MessagingRecipient(invitation: state.pathParameters['id']),
+        ),
+        GoRoute(
+          path: '/messages/:id/permissions',
+          builder: (context, state) =>
+              GroupPermissions(id: state.pathParameters['id']!),
+        ),
+        GoRoute(
+          path: '/messages/:id/search',
+          builder: (context, state) => MessageSearch(
+            thread: state.pathParameters['id']!,
+            filter: state.uri.queryParameters['filter'],
+            section: state.uri.queryParameters['section'],
+          ),
+        ),
+        GoRoute(
+          path: '/messages/:id/study',
+          builder: (context, state) => StudyWorkspace(
+            id: state.pathParameters['id']!,
+            initial: state.uri.queryParameters['tab'] == 'sessions'
+                ? StudyArea.sessions
+                : StudyArea.resources,
+          ),
+        ),
+        GoRoute(
+          path: '/messages/:id',
+          builder: (context, state) => NativeSplashReveal(
+            child: ChatThreadScreen(
+              key: state.pageKey,
+              id: state.pathParameters['id']!,
+              story: state.uri.queryParameters['story'],
+              initialSection:
+                  state.uri.queryParameters['section'] == 'announcement'
+                  ? 'announcement'
+                  : 'discussion',
+              initialAnchor: int.tryParse(
+                state.uri.queryParameters['anchor'] ?? '',
+              ),
+            ),
+          ),
+        ),
+      ],
+      if (community != null) ...[
+        GoRoute(
+          path: '/posts/:id',
+          builder: (context, state) => NativeSplashReveal(
+            child: CommunityEntryScreen(
+              key: state.pageKey,
+              repository: community,
+              id: state.pathParameters['id']!,
+              initialPhoto:
+                  int.tryParse(state.uri.queryParameters['photo'] ?? '') ?? 0,
+              loadAvatar: identity.avatar,
+            ),
+          ),
+        ),
+        GoRoute(
+          path: '/community/create/post',
+          builder: (context, state) =>
+              CommunityComposer(repository: community, story: false),
+        ),
+        GoRoute(
+          path: '/community/create/story',
+          builder: (context, state) =>
+              CommunityComposer(repository: community, story: true),
+        ),
+        GoRoute(
+          path: '/community/edit/:id',
+          builder: (context, state) => CommunityEntryScreen(
+            key: state.pageKey,
+            repository: community,
+            id: state.pathParameters['id']!,
+            loadAvatar: identity.avatar,
+            edit: true,
+          ),
+        ),
+        GoRoute(
+          path: '/community/stories/:id',
+          builder: (context, state) => CommunityEntryScreen(
+            key: state.pageKey,
+            repository: community,
+            id: state.pathParameters['id']!,
+            loadAvatar: identity.avatar,
+            story: true,
+          ),
+        ),
+        GoRoute(
+          path: '/community/saved',
+          builder: (context, state) => CommunityFeed(
+            repository: community,
+            identity: identity,
+            path: 'saved',
+            title: 'Saved posts',
+          ),
+        ),
+        GoRoute(
+          path: '/community/archive',
+          builder: (context, state) => CommunityFeed(
+            repository: community,
+            identity: identity,
+            path: 'archive',
+            title: 'Post archive',
+          ),
+        ),
+        for (final kind in ['requests', 'blocked', 'muted'])
+          GoRoute(
+            path: '/community/$kind',
+            builder: (context, state) => CommunityRelationships(
+              repository: community,
+              kind: kind,
+              loadAvatar: identity.avatar,
+            ),
+          ),
+        if (inbox != null)
+          GoRoute(
+            path: '/community/activity',
+            builder: (context, state) =>
+                CommunityInboxScreen(model: inbox, loadAvatar: identity.avatar),
+          ),
+      ],
       GoRoute(
         path: '/profile/edit',
         builder: (context, state) =>
@@ -163,6 +348,7 @@ GoRouter createAppRouter({
               key: state.pageKey,
               repository: profileRepository,
               userId: state.pathParameters['userId']!,
+              community: community,
             ),
             routes: [
               for (final kind in [
@@ -192,7 +378,7 @@ GoRouter createAppRouter({
               : () async {
                   await entry.retryPreferences();
                   if (context.mounted && entry.error == null) {
-                    context.go(entry.destination!);
+                    context.go(linkedPost(state.uri) ?? entry.destination!);
                   }
                 },
           allowLocalSignOut: entry.error == null,
@@ -205,6 +391,8 @@ GoRouter createAppRouter({
             location: state.uri.path,
             session: session,
             identity: identity,
+            inbox: inbox,
+            communityEnabled: community != null,
             mapNavigationFocus: campusMap.navigationFocus,
           ),
         ),
@@ -216,7 +404,12 @@ GoRouter createAppRouter({
                   path: destination.path,
                   builder: (context, state) =>
                       destination == ShellDestination.home
-                      ? const HomeScreen()
+                      ? community == null
+                            ? const HomeScreen()
+                            : CommunityFeed(
+                                repository: community,
+                                identity: identity,
+                              )
                       : destination == ShellDestination.market
                       ? MarketplaceScreen(repository: marketplaceRepository)
                       : destination == ShellDestination.profile
@@ -224,6 +417,7 @@ GoRouter createAppRouter({
                           repository: profileRepository,
                           auth: authRepository,
                           academics: academicRepository,
+                          community: community,
                         )
                       : destination == ShellDestination.map
                       ? CampusMapScreen(model: campusMap)
@@ -261,6 +455,12 @@ GoRouter createAppRouter({
                                       auth: authRepository,
                                       profiles: profileRepository,
                                       externalUrls: externalUrls,
+                                    )
+                                  : auxiliary == ShellDestination.settings &&
+                                        community != null
+                                  ? CommunitySettings(
+                                      repository: community,
+                                      inShell: true,
                                     )
                                   : AppFeaturePlaceholder(
                                       title: '${auxiliary.label} coming soon',
@@ -368,6 +568,7 @@ GoRouter createAppRouter({
           listenable: entry,
           builder: (context, _) => StartupFlow(
             screen: StartupDestination.fromPath(state.uri.path),
+            linkedPost: linkedPost(state.uri),
             onOnboardingCompleted: onOnboardingCompleted,
             onStartupCompleted: entry.completeStartup,
             onboardingError: entry.onboardingError,
@@ -387,7 +588,12 @@ GoRouter createAppRouter({
                     listenable: entry,
                     builder: (context, _) => SplashScreen(
                       hold: holdSplash || !entry.startupReady,
-                      nextPath: entry.destination,
+                      nextPath:
+                          linkedPost(state.uri) ??
+                          (community == null
+                              ? null
+                              : communityPostPath(entry.initialLocation)) ??
+                          entry.destination,
                       onAnimationCompleted: entry.animationCompleted,
                     ),
                   ),
@@ -407,10 +613,7 @@ GoRouter createAppRouter({
                   ),
                   StartupDestination.accountSetup => AccountSetupScreen(
                     repository: profileRepository,
-                    onCompleted: () {
-                      authRepository.completeProfilePersonalization();
-                      context.go('/');
-                    },
+                    onCompleted: authRepository.completeProfilePersonalization,
                   ),
                   StartupDestination.verifyEmail => OtpScreen(
                     repository: authRepository,
