@@ -15,6 +15,11 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 
 import 'data/repositories/api_auth_repository.dart';
+import 'data/repositories/guide_repository.dart';
+import 'data/repositories/api_guide_repository.dart';
+import 'data/services/guide_api_service.dart';
+import 'ui/guide/guide_routes.dart';
+import 'ui/guide/view_models/guide_session.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/community_repository.dart';
 import 'data/repositories/messaging_repository.dart';
@@ -90,6 +95,7 @@ class MainApp extends StatefulWidget {
     this.onOnboardingCompleted,
     this.campusMap,
     this.guideRoute,
+    this.guideRepository,
     this.aiRoute,
   });
   final AuthUiController? authUi;
@@ -116,6 +122,7 @@ class MainApp extends StatefulWidget {
   final VoidCallback? onOnboardingCompleted;
   final CampusMapViewModel? campusMap;
   final GoRoute? guideRoute;
+  final GuideRepository? guideRepository;
   final GoRoute? aiRoute;
 
   @override
@@ -140,6 +147,17 @@ class _MainAppState extends State<MainApp> {
   MarketplaceApiService? _marketplaceApi;
   ProfileApiService? _profileApi;
   TaskApiService? _taskApi;
+  GuideApiService? _guideApi;
+  late final GuideRepository _guideRepository =
+      widget.guideRepository ??
+      ApiGuideRepository(
+        api: _guideApi = GuideApiService(
+          client: http.Client(),
+          baseUrl: Uri.parse(AuthApiService.configuredBaseUrl),
+        ),
+        withSession: _authRepository.withSession,
+      );
+  GuideSession? _guideSession;
   ToolsApiService? _schedulerApi;
   late final SchedulerRepository _schedulerRepository =
       widget.schedulerRepository ??
@@ -327,7 +345,16 @@ class _MainAppState extends State<MainApp> {
     lostFoundRepository: _lostFoundRepository,
     calendarRepository: _calendarRepository,
     schedulerRepository: _schedulerRepository,
-    guideRoute: widget.guideRoute,
+    guideRoute:
+        widget.guideRoute ??
+        createGuideRoute(
+          session: _guideSession ??= GuideSession(
+            auth: _authRepository,
+            repository: _guideRepository,
+          ),
+          externalUrls:
+              widget.externalUrls ?? const PlatformExternalUrlService(),
+        ),
     aiRoute: widget.aiRoute,
     calendarSession: _calendarSession,
     calendarCoordinator: _calendarCoordinator,
@@ -444,6 +471,8 @@ class _MainAppState extends State<MainApp> {
     _calendarApi?.close();
     _schedulerApi?.close();
     _router.dispose();
+    _guideSession?.dispose();
+    _guideApi?.close();
     _notesSession.dispose();
     _notesApi?.close();
     _lostFoundApi?.close();

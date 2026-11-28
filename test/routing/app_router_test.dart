@@ -1,5 +1,6 @@
 import '../profile_test_support.dart';
 import '../marketplace_test_support.dart';
+import '../guide_test_support.dart';
 
 import 'package:balamandian/app.dart';
 import 'package:balamandian/domain/models/guide_article_ref.dart';
@@ -44,6 +45,7 @@ void main() {
         marketplaceRepository: FakeMarketplaceRepository(),
         externalUrls: FakeExternalUrlService(),
         key: appKey,
+        guideRepository: FakeGuideRepository(),
         initialLocation: '/',
         themeMode: ThemeMode.light,
         authRepository: harness.repository,
@@ -87,7 +89,7 @@ void main() {
 
     router.go('/guide');
     await tester.pumpAndSettle();
-    expect(find.text('Guide coming soon'), findsOneWidget);
+    expect(find.text('University Guide'), findsOneWidget);
     router.go('/ai');
     await tester.pumpAndSettle();
     expect(find.text('AI coming soon'), findsOneWidget);
