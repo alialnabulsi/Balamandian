@@ -20,11 +20,13 @@ class GuideArticleScreen extends StatefulWidget {
     required this.articleId,
     required this.externalUrls,
     this.citedVersion,
+    this.onAskAi,
   });
   final GuideSession session;
   final String articleId;
   final int? citedVersion;
   final ExternalUrlService externalUrls;
+  final ValueChanged<String>? onAskAi;
   @override
   State<GuideArticleScreen> createState() => _GuideArticleScreenState();
 }
@@ -90,6 +92,12 @@ class _GuideArticleScreenState extends State<GuideArticleScreen> {
                   articleId: article.summary.id,
                   bookmarks: widget.session.bookmarks,
                 ),
+                if (widget.onAskAi case final onAskAi?)
+                  OutlinedButton.icon(
+                    onPressed: () => onAskAi(article.summary.id),
+                    icon: const Icon(Icons.auto_awesome_outlined),
+                    label: const Text('Ask AI'),
+                  ),
                 const SizedBox(height: 24),
                 GuideMarkdownBody(
                   markdown: article.markdown,

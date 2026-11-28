@@ -92,7 +92,8 @@ void main() {
     expect(find.text('University Guide'), findsOneWidget);
     router.go('/ai');
     await tester.pumpAndSettle();
-    expect(find.text('AI coming soon'), findsOneWidget);
+    expect(find.text('Balamandian AI'), findsOneWidget);
+    expect(find.text('What would you like to know?'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
     expect(tester.takeException(), isNull);

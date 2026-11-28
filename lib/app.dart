@@ -41,6 +41,9 @@ import 'data/services/task_api_service.dart';
 import 'data/repositories/academic_repository.dart';
 import 'data/repositories/api_academic_repository.dart';
 import 'data/repositories/notes_repository.dart';
+import 'data/repositories/ai_assistant_repository.dart';
+import 'data/repositories/api_ai_assistant_repository.dart';
+import 'data/services/ai_assistant_api_service.dart';
 import 'data/repositories/api_notes_repository.dart';
 import 'data/services/notes_api_service.dart';
 import 'data/services/note_draft_store.dart';
@@ -67,6 +70,8 @@ import 'data/repositories/campus_repository.dart';
 import 'data/repositories/campus_location_repository.dart';
 import 'data/services/campus_location_service.dart';
 import 'ui/map/view_models/campus_map_view_model.dart';
+import 'ui/ai_assistant/view_models/ai_assistant_view_model.dart';
+import 'ui/ai_assistant/widgets/ai_assistant_screen.dart';
 
 class MainApp extends StatefulWidget {
   const MainApp({
@@ -97,6 +102,7 @@ class MainApp extends StatefulWidget {
     this.guideRoute,
     this.guideRepository,
     this.aiRoute,
+    this.aiRepository,
   });
   final AuthUiController? authUi;
   final AuthRepository? authRepository;
@@ -124,12 +130,37 @@ class MainApp extends StatefulWidget {
   final GoRoute? guideRoute;
   final GuideRepository? guideRepository;
   final GoRoute? aiRoute;
+  final AiAssistantRepository? aiRepository;
 
   @override
   State<MainApp> createState() => _MainAppState();
 }
 
 class _MainAppState extends State<MainApp> {
+  AiAssistantApiService? _aiApi;
+  AiAssistantViewModel? _aiModel;
+  late final GoRoute _aiRoute =
+      widget.aiRoute ??
+      aiAssistantRoute(
+        model: _aiModel ??= AiAssistantViewModel(
+          widget.aiRepository ??
+              ApiAiAssistantRepository(
+                _aiApi = AiAssistantApiService(
+                  http.Client(),
+                  Uri.parse(AuthApiService.configuredBaseUrl),
+                ),
+                _authRepository,
+              ),
+          _authRepository,
+        ),
+        externalUrls: widget.externalUrls ?? const PlatformExternalUrlService(),
+        guideAvailable:
+            widget.guideRoute?.routes.any(
+              (route) =>
+                  route is GoRoute && route.path == 'articles/:articleId',
+            ) ??
+            true,
+      );
   String? _campusSessionId;
   late final _campusMap =
       widget.campusMap ??
@@ -354,8 +385,13 @@ class _MainAppState extends State<MainApp> {
           ),
           externalUrls:
               widget.externalUrls ?? const PlatformExternalUrlService(),
+          aiAvailable: _aiRoute.routes.any(
+            (route) =>
+                route is GoRoute &&
+                route.path == 'conversations/:conversationId',
+          ),
         ),
-    aiRoute: widget.aiRoute,
+    aiRoute: _aiRoute,
     calendarSession: _calendarSession,
     calendarCoordinator: _calendarCoordinator,
     notesSession: _notesSession,
@@ -473,6 +509,8 @@ class _MainAppState extends State<MainApp> {
     _router.dispose();
     _guideSession?.dispose();
     _guideApi?.close();
+    _aiModel?.dispose();
+    _aiApi?.close();
     _notesSession.dispose();
     _notesApi?.close();
     _lostFoundApi?.close();
